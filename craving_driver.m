@@ -1,6 +1,6 @@
 function[] = craving_driver()
 
-number_of_subjects = 1;
+number_of_subjects = 3;
 [subject_ids, subject_sessions] = get_subject_ids(number_of_subjects);
 
 for s = 1:number_of_subjects

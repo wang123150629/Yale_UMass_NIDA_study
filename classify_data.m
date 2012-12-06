@@ -1,4 +1,5 @@
-function[] = classify_data(nClasses, data, subject_id, title_str, feature_set_flag);
+function[mean_over_runs, errorbars_over_runs, chance_baseline] = classify_data(nClasses, data,...
+									subject_id, feature_set_flag)
 
 switch nClasses
 case 2
@@ -26,7 +27,8 @@ for c = 1:nComparisons
 				partition_and_relabel(classes_to_compare(c, :), data, tr_percent);
 		for k = 1:numel(classifierList)
 			accuracies(r, c, k) = classifierList{k}(complete_train_set, complete_test_set,...
-					      subject_id, classes_to_compare(c, :));
+					      subject_id, feature_set_flag, classes_to_compare(c, :));
+			close all;
 		end
 	end
 end
@@ -34,20 +36,9 @@ end
 mean_over_runs = reshape(mean(accuracies), nComparisons, numel(classifierList))';
 errorbars_over_runs = reshape(std(accuracies), nComparisons, numel(classifierList))' ./ sqrt(nRuns);
 
-figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
-errorbar(1:nComparisons, mean_over_runs(1, :), errorbars_over_runs(1, :), 'r', 'LineWidth', 2); hold on;
-errorbar(1:nComparisons, mean_over_runs(2, :), errorbars_over_runs(2, :), 'b', 'LineWidth', 2);
-plot(mean(chance_baseline), 'ko-', 'LineWidth', 2);
-ylim([40, 100]); xlim([1, nComparisons]); grid on;
-xlabel('Analysis'); ylabel('Accuracies');
-title(sprintf('%s-Two class, avg(%d runs)\n%s', strrep(subject_id, '_', '-'), nRuns, title_str));
-legend('log. reg', 'svm(2)', 'chance', 'Location', 'SouthWest', 'Orientation', 'Horizontal');
-set(gca, 'XTickLabel', {'base vs. 8mg', 'base vs. 16mg', 'base vs. 32mg', '8mg vs. 16mg', '8mg vs. 32mg', '16mg vs. 32mg', 'base vs. all'});
-file_name = sprintf('%s/subj_%s_feat%d_class2_perf', get_project_settings('plots'), subject_id, feature_set_flag);
-savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [accuracy] = two_class_logreg(complete_train_set, complete_test_set, subject_id, classes_to_compare)
+function [accuracy] = two_class_logreg(complete_train_set, complete_test_set, subject_id,...
+					feature_set_flag, classes_to_compare)
 
 % Fitting betas using glmfit
 % betas = glmfit(complete_train_set(:, 1:end-1), complete_train_set(:, end), 'binomial')';
@@ -56,7 +47,7 @@ options.Method = 'lbfgs';
 X = complete_train_set(:, 1:end-1);
 X = [ones(size(X, 1), 1), X];
 Y = 2 * complete_train_set(:, end)-1;
-betas = minFunc(@LogisticLoss, zeros(151, 1), options, X, Y)';
+betas = minFunc(@LogisticLoss, zeros(size(X, 2), 1), options, X, Y)';
 
 % Adding ones to the test set since there is an intercept term that comes from glmfit
 intercept_added_test_set = complete_test_set(:, 1:end-1)';
@@ -76,31 +67,50 @@ scaled_betas = scale_data(betas, lower, upper);
 hold on;
 plot(scaled_betas, 'k-');
 title(sprintf('%s\noverloaded with lbfgs betas', title_str));
-file_name = sprintf('%s/subj_%s_logreg_%s', get_project_settings('plots'), subject_id,...
+file_name = sprintf('%s/subj_%s_feat%d_logreg_%s', get_project_settings('plots'), subject_id, feature_set_flag,...
 						 strrep(num2str(classes_to_compare), ' ', ''));
 savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [accuracy] = two_class_svm(complete_train_set, complete_test_set, subject_id, classes_to_compare)
+function [accuracy] = two_class_svm(complete_train_set, complete_test_set, subject_id,...
+					feature_set_flag, classes_to_compare)
 
-svmStruct = svmtrain(complete_train_set(:, 1:end-1), complete_train_set(:, end),...
-					'kernel_function', 'quadratic', 'method', 'LS');
+svmStruct = svmtrain(complete_train_set(:, 1:end-1), complete_train_set(:, end), 'kernel_function',...
+						'quadratic', 'method', 'LS', 'autoscale', false);
 class_guessed = svmclassify(svmStruct, complete_test_set(:, 1:end-1));
 accuracy = sum(class_guessed == complete_test_set(:, end)) * 100 / size(complete_test_set, 1);
 
+%{
 top_how_many = 50;
+
 zero_idx = find(svmStruct.Alpha > 0);
-[sorted_val_zero, sort_idx_zero] = sort(svmStruct.Alpha(svmStruct.Alpha > 0));
+zero_support_vectors = svmStruct.SupportVectors(zero_idx, :);
+zero_alpha_weights = svmStruct.Alpha(zero_idx);
+[sorted_val_zero, sort_idx_zero] = sort(zero_alpha_weights, 'descend');
+% zero_weighted = svmStruct.Alpha(zero_idx)' * zero_support_vectors;
+% zero_weighted = mean(zero_support_vectors(sort_idx_zero(1:top_how_many), :));
+zero_weighted = sorted_val_zero(1:top_how_many)' * zero_support_vectors(sort_idx_zero(1:top_how_many), :);
+
 one_idx = find(svmStruct.Alpha < 0);
-[sorted_val_one, sort_idx_one] = sort(svmStruct.Alpha(svmStruct.Alpha < 0));
+one_support_vectors = svmStruct.SupportVectors(one_idx, :);
+one_alpha_weights = svmStruct.Alpha(one_idx);
+[sorted_val_one, sort_idx_one] = sort(one_alpha_weights);
+% one_weighted = abs(svmStruct.Alpha(one_idx))' * one_support_vectors;
+% one_weighted = mean(one_support_vectors(sort_idx_one(1:top_how_many), :));
+one_weighted = abs(sorted_val_one(1:top_how_many))' * one_support_vectors(sort_idx_one(1:top_how_many), :);
+
 [lower, upper, title_str] = plot_ten_minute_means(subject_id, classes_to_compare, false);
 hold on;
-plot(mean(complete_train_set(zero_idx(sort_idx_zero(end-top_how_many:end)), 1:end-1))', 'k-'); hold on;
-plot(mean(complete_train_set(one_idx(sort_idx_one(end-top_how_many:end)), 1:end-1))', 'k--')
-title(sprintf('%s\noverloaded with support vectors', title_str));
-file_name = sprintf('%s/subj_%s_svm_%s', get_project_settings('plots'), subject_id,...
+zero_weighted = scale_data(zero_weighted, lower, upper);
+plot(zero_weighted, 'k-'); hold on;
+one_weighted = scale_data(one_weighted, lower, upper);
+plot(one_weighted, 'k--');
+title(sprintf('%s\noverloaded with mean of top %d support vectors', title_str, top_how_many));
+
+file_name = sprintf('%s/subj_%s_feat%d_svm_%s', get_project_settings('plots'), subject_id, feature_set_flag,...
 						 strrep(num2str(classes_to_compare), ' ', ''));
 savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[complete_train_set, complete_test_set, chance_baseline] = partition_and_relabel(classes_to_compare,...
@@ -146,7 +156,7 @@ test_set = data(test_samples, :);
 %{
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [] = multi_class_comparisons(nRuns, tr_percent, interpolated_ecg, subject_id, title_str, feature_set_flag)
+function [] = multi_class_comparisons(nRuns, tr_percent, interpolated_ecg, subject_id)
 
 global write_dir;
 global image_format;
@@ -235,5 +245,19 @@ complete_test_set = [test_set_minus_label, complete_test_set(:, end)];
 figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
 plot(log(latent));
 xlabel('Principal components'); ylabel('log(eigenvalues)'); title(sprintf('PCA on interpolated ECG b/w RR'));
+%}
+
+%{
+figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
+errorbar(1:nComparisons, mean_over_runs(1, :), errorbars_over_runs(1, :), 'r', 'LineWidth', 2); hold on;
+errorbar(1:nComparisons, mean_over_runs(2, :), errorbars_over_runs(2, :), 'b', 'LineWidth', 2);
+plot(mean(chance_baseline), 'ko-', 'LineWidth', 2);
+ylim([40, 100]); xlim([0.5, nComparisons+0.5]); grid on;
+xlabel('Analysis'); ylabel('Accuracies');
+title(sprintf('%s-Two class, avg(%d runs)\n%s', strrep(subject_id, '_', '-'), nRuns, title_str));
+legend('log. reg', 'svm(2)', 'chance', 'Location', 'SouthWest', 'Orientation', 'Horizontal');
+set(gca, 'XTickLabel', {'base vs. 8mg', 'base vs. 16mg', 'base vs. 32mg', '8mg vs. 16mg', '8mg vs. 32mg', '16mg vs. 32mg', 'base vs. all'});
+file_name = sprintf('%s/subj_%s_feat%d_class2_perf', get_project_settings('plots'), subject_id, feature_set_flag);
+savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 %}
 

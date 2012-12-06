@@ -32,8 +32,6 @@ click_indices = find(behav_mat(:, 7) == 1);
 infusion_indices = find(behav_mat(:, 8) == 1);
 vas_indices = find(behav_mat(:, 9) >= 0);
 
-keyboard
-
 %------------------------------------------------------------------------------
 figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
 
@@ -43,7 +41,7 @@ subplot(2, 1, 1);
 set(get(ax(1), 'Ylabel'), 'String', 'Heart rate');
 set(get(ax(2), 'Ylabel'), 'String', 'VAS-Cocaine');
 set(ax(1), 'ylim', [0, max_heart_rate]);
-set(ax(2), 'ylim', [0, 10]);
+set(ax(2), 'ylim', [0, 13]);
 set(ax(1), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(ax(2), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(h1, 'LineStyle', '-');
@@ -53,15 +51,13 @@ xlabel('Time(seconds)');
 title(sprintf('Subject %s', strrep(subject_id, '_', '-')));
 grid on; set(gca, 'Layer', 'top');
 
-keyboard
-
 max_breathing_rate = 35;
 subplot(2, 1, 2);
 [ax, h1, h2] = plotyy(index_maps.summary, summary_mat(:, data_mat_columns.BR), index_maps.behav(vas_indices), behav_mat(vas_indices, 14)); hold on;
 set(get(ax(1), 'Ylabel'), 'String', 'Breathing rate');
 set(get(ax(2), 'Ylabel'), 'String', 'VAS-Anxious');
 set(ax(1), 'ylim', [0, max_breathing_rate]);
-set(ax(2), 'ylim', [0, 10]);
+set(ax(2), 'ylim', [0, 13]);
 set(ax(1), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(ax(2), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(h1, 'LineStyle', '-');
@@ -91,7 +87,6 @@ grid on; set(gca, 'Layer', 'top');
 
 file_name = sprintf('%s/subject_%s_summ_ecg', write_dir, subject_id);
 savesamesize(gcf, 'file', file_name, 'format', sprintf('-d%s', image_format));
-%}
 
 %------------------------------------------------------------------------------
 figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
@@ -289,6 +284,7 @@ grid on; set(gca, 'Layer', 'top');
 
 % title(title_str);
 savesamesize(gcf, 'file', file_name, 'format', sprintf('-d%s', image_format));
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = plot_behav_data_on_top(min_val, max_val, dosage_levels, behav_mat, click_indices, infusion_indices, behav_indices)

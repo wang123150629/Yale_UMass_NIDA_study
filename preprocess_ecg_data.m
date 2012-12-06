@@ -1,4 +1,4 @@
-function[clean_interpolated_ecg] = preprocess_ecg_data(subject_id, subject_session)
+function[clean_interpolated_ecg] = preprocess_ecg_data(subject_id, subject_session, subject_threshold)
 
 data_dir = get_project_settings('data');
 write_dir = get_project_settings('plots');
@@ -18,11 +18,12 @@ index_maps = find_start_end_time(summary_mat, behav_mat, time_resolution);
 ecg_mat = csvread(fullfile(data_dir, subject_id, subject_session, sprintf('%s_ECG_clean.csv', subject_session)), 1, 0);
 
 dosage_levels = [-3, 8, 16, 32];
-rr_peak_detect_threshold = [0.05, 0.05, 0.05, 0.05];
+assert(length(subject_threshold) == length(dosage_levels));
 cut_off_heart_rate = [150, 300]; % i.e 150 x 4 = 600 milliseconds to 300 x 4 = 1200 milliseconds
 
 clean_interpolated_ecg = [];
-ten_minute_means = [];
+rr_ten_minute_means = [];
+pqrst_ten_minute_means = [];
 for d = 1:length(dosage_levels)
 	disp(sprintf('dosage=%d', dosage_levels(d)));
 	interpolated_ecg = [];
@@ -70,7 +71,7 @@ for d = 1:length(dosage_levels)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Plot 1: Raw ECG for baselines, 8mg, etc
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	figure('visible', 'off'); set(gcf, 'Position', [10, 10, 1200, 800]);
+	figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
 	plot(x, 'b-');
 	xlabel('Time(4ms resolution)'); ylabel('millivolts');
 	title(sprintf('%s, raw ECG', title_str)); ylim([0, 5]);
@@ -78,18 +79,18 @@ for d = 1:length(dosage_levels)
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 	%}
 
-	[rr, rs] = rrextract(x, 250, rr_peak_detect_threshold(d));
+	[rr, rs] = rrextract(x, 250, subject_threshold(d));
 	rr_start_end = [rr(1:end-1); rr(2:end)-1]';
 	hold_start_end_indices = [];
 	valid_rr_intervals = [];
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Plot 2: Raw ECG broken into RR chunks; variable length
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% figure('visible', 'off'); set(gcf, 'Position', [10, 10, 1200, 800]);
+	% figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
 	for s = 1:size(rr_start_end, 1)
 		if (rr_start_end(s, 2) - rr_start_end(s, 1)) > cut_off_heart_rate(1) &...
 		   (rr_start_end(s, 2) - rr_start_end(s, 1)) <= cut_off_heart_rate(2)
-			% plot(x(rr_start_end(s, 1):rr_start_end(s, 2)), 'r-');
+			% plot(x(rr_start_end(s, 1):rr_start_end(s, 2)), 'r-'); hold on;
 
 			% Interplotaing the RR chunks
 			x_length = length(x(rr_start_end(s, 1):rr_start_end(s, 2)));
@@ -114,81 +115,106 @@ for d = 1:length(dosage_levels)
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 	%}
 
-	% Reordering the data such that we see PQRST and NOT RSTPQR
-	interpolated_ecg = [interpolated_ecg(1:end-1, 76:150), interpolated_ecg(2:end, 1:75)];
-
-	% Gathering the mean
-	interpol_ecg_means = mean(interpolated_ecg, 2);
-	% Gathering the std
-	interpol_ecg_std = std(interpolated_ecg, [], 2);
+	% Gathering mean prior to any filter
+	rr_sample_means = mean(interpolated_ecg, 2);
+	% Gathering the std prior to any filter
+	rr_sample_std = std(interpolated_ecg, [], 2);
 	% standardizing the instances
-	interpolated_ecg = bsxfun(@rdivide, bsxfun(@minus, interpolated_ecg, mean(interpolated_ecg, 2)),...
-	 			std(interpolated_ecg, [], 2));
-	mean_rr_chunks = mean(interpolated_ecg);
-	std_rr_chunks = std(interpolated_ecg);
-	lower = repmat(mean_rr_chunks - how_many_std_dev*std_rr_chunks, size(interpolated_ecg, 1), 1);
-	upper = repmat(mean_rr_chunks + how_many_std_dev*std_rr_chunks, size(interpolated_ecg, 1), 1);
-	good_rr_chunks = sum(interpolated_ecg > lower & interpolated_ecg < upper, 2) == nInterpolatedFeatures;
+	rr_std_interpolated_ecg = bsxfun(@rdivide, bsxfun(@minus, interpolated_ecg, rr_sample_means),...
+	 				rr_sample_std);
+	% We will need to gather the mean again here to idenitfy samples > 3 std dev
+	mean_features = mean(rr_std_interpolated_ecg, 1);
+	std_features = std(rr_std_interpolated_ecg, [], 1);
+	lower = repmat(mean_features - how_many_std_dev*std_features, size(rr_std_interpolated_ecg, 1), 1);
+	upper = repmat(mean_features + how_many_std_dev*std_features, size(rr_std_interpolated_ecg, 1), 1);
+	good_rr_samples = sum(rr_std_interpolated_ecg > lower &...
+			      rr_std_interpolated_ecg < upper, 2) == nInterpolatedFeatures;
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Plot 3: Interpolated ECG but teasing apart as good and bad samples
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	figure('visible', 'off'); set(gcf, 'Position', [10, 10, 1200, 800]);
-	colors = jet(size(interpolated_ecg, 1));
+	colors = jet(size(rr_std_interpolated_ecg, 1));
 
 	subplot(2, 1, 1);
-	plot(interpolated_ecg(good_rr_chunks, :)'); hold on;
-	plot(mean(interpolated_ecg(good_rr_chunks, :)), 'k-', 'LineWidth', 2);
-	title(sprintf('%s\nGood samples=%d, std dev=%d', title_str, sum(good_rr_chunks), how_many_std_dev));
+	plot(rr_std_interpolated_ecg(good_rr_samples, :)'); hold on;
+	plot(mean(rr_std_interpolated_ecg(good_rr_samples, :), 1), 'k-', 'LineWidth', 2);
+	title(sprintf('%s\nGood samples=%d, std dev=%d', title_str, sum(good_rr_samples), how_many_std_dev));
 	xlabel('Time(milliseconds)'); ylabel('std millivolts');
 	set(gca, 'XTickLabel', str2num(get(gca, 'XTickLabel')) * 4);
 
 	subplot(2, 1, 2);
-	plot(interpolated_ecg(~good_rr_chunks, :)'); hold on;
-	plot(mean(interpolated_ecg(good_rr_chunks, :)), 'k-', 'LineWidth', 2);
+	plot(rr_std_interpolated_ecg(~good_rr_samples, :)'); hold on;
+	plot(mean(rr_std_interpolated_ecg(good_rr_samples, :), 1), 'k-', 'LineWidth', 2);
 	title(sprintf('%s\nBad samples=%d, std dev=%d', title_str,...
-				length(good_rr_chunks) - sum(good_rr_chunks), how_many_std_dev));
+				length(good_rr_samples) - sum(good_rr_samples), how_many_std_dev));
 	xlabel('Time(milliseconds)'); ylabel('std millivolts');
 	set(gca, 'XTickLabel', str2num(get(gca, 'XTickLabel')) * 4);
-
-	file_name = sprintf('%s/pqrst/subj_%s_dos_%d_rr_inter', write_dir, subject_id, d);
+	file_name = sprintf('%s/subj_%s_dos_%d_rr_inter', write_dir, subject_id, d);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 
-	disp(sprintf('No. of samples=%d', sum(good_rr_chunks)));
-	clean_interpolated_ecg = [clean_interpolated_ecg; interpolated_ecg(good_rr_chunks, :),...
-					valid_rr_intervals(good_rr_chunks),...
-					interpol_ecg_means(good_rr_chunks),...
-					interpol_ecg_std(good_rr_chunks),...
-					repmat(d, sum(good_rr_chunks), 1)];
+	disp(sprintf('No. of samples=%d', sum(good_rr_samples)));
+	clean_interpolated_ecg = [clean_interpolated_ecg; rr_std_interpolated_ecg(good_rr_samples, :),...
+					valid_rr_intervals(good_rr_samples),...
+					rr_sample_means(good_rr_samples),...
+					rr_sample_std(good_rr_samples),...
+					repmat(d, sum(good_rr_samples), 1)];
 	if dosage_levels(d) > 0
-		clean_interpolated_ecg = [clean_interpolated_ecg; interpolated_ecg(good_rr_chunks, :),...
-					valid_rr_intervals(good_rr_chunks),...
-					interpol_ecg_means(good_rr_chunks),...
-					interpol_ecg_std(good_rr_chunks),...
-					repmat(length(dosage_levels)+1, sum(good_rr_chunks), 1)];
+		clean_interpolated_ecg = [clean_interpolated_ecg; rr_std_interpolated_ecg(good_rr_samples, :),...
+					valid_rr_intervals(good_rr_samples),...
+					rr_sample_means(good_rr_samples),...
+					rr_sample_std(good_rr_samples),...
+					repmat(length(dosage_levels)+1, sum(good_rr_samples), 1)];
 	end
+
+	pqrst_interpolated_ecg = [interpolated_ecg(1:end-1, 76:150), interpolated_ecg(2:end, 1:75)];
+	% standardizing the instances
+	pqrst_std_interpolated_ecg = bsxfun(@rdivide, bsxfun(@minus, pqrst_interpolated_ecg,...
+			mean(pqrst_interpolated_ecg, 2)), std(pqrst_interpolated_ecg, [], 2));
+	% We will need to gather the mean again here to idenitfy samples > 3 std dev
+	mean_features = mean(pqrst_std_interpolated_ecg, 1);
+	std_features = std(pqrst_std_interpolated_ecg, [], 1);
+	lower = repmat(mean_features - how_many_std_dev*std_features, size(pqrst_std_interpolated_ecg, 1), 1);
+	upper = repmat(mean_features + how_many_std_dev*std_features, size(pqrst_std_interpolated_ecg, 1), 1);
+	good_pqrst_samples = sum(pqrst_std_interpolated_ecg > lower &...
+			         pqrst_std_interpolated_ecg < upper, 2) == nInterpolatedFeatures;
 
 	% This is taking the entire, say baseline, session and breaking it into ten minute intervals
 	samples_clusters = [1:(250 * 60 * 10):size(x, 1), size(x, 1)];
 	% This aligns the start and end times into a matrix form like [start 1, end 1; start 2, end 2, etc]
 	samples_clusters = [samples_clusters(1:end-1); samples_clusters(2:end)-1]';
 	for s = 1:size(samples_clusters, 1)
-		% Fishing out exactly how many RR interpolated chunks are within a ten minute interval
+		% Fishing out exactly how many RR interpolated chunks are within this ten minute interval
 		target_idx = find(hold_start_end_indices(:, 2) >= samples_clusters(s, 1) &...
 				  hold_start_end_indices(:, 2) <= samples_clusters(s, 2));
 		% This is the case since some of the rr's are not of valid length and the others might be
 		% 3 std dev or more from the mean. By intersecting we pick only the qualified ones
-		target_idx = intersect(target_idx, find(good_rr_chunks));
-		if ~isempty(target_idx)
-			ten_minute_means = [ten_minute_means; mean(interpolated_ecg(target_idx, :)),...
-			x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
-			x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
-			length(target_idx), d];
+		rr_target_idx = intersect(target_idx, find(good_rr_samples));
+		if ~isempty(rr_target_idx)
+			rr_ten_minute_means = [rr_ten_minute_means;...
+				mean(rr_std_interpolated_ecg(rr_target_idx, :), 1),...
+				x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
+				x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
+				length(rr_target_idx), d];
+		end
+
+		% This is the case since some of the rr's are not of valid length and the others might be
+		% 3 std dev or more from the mean. By intersecting we pick only the qualified ones
+		pqrst_target_idx = intersect(target_idx, find(good_pqrst_samples));
+		if ~isempty(pqrst_target_idx)
+			pqrst_ten_minute_means = [pqrst_ten_minute_means;...
+				mean(pqrst_std_interpolated_ecg(pqrst_target_idx, :), 1),...
+				x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
+				x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
+				length(pqrst_target_idx), d];
 		end
 	end
 end
 
-save(fullfile(data_dir, subject_id, subject_session, sprintf('pqrst_ten_minute_means')), 'ten_minute_means');
-save(fullfile(data_dir, subject_id, subject_session, sprintf('pqrst_clean_interpolated_ecg')), 'clean_interpolated_ecg');
+ten_minute_means = struct();
+ten_minute_means.rr = rr_ten_minute_means;
+ten_minute_means.pqrst = pqrst_ten_minute_means;
+save(fullfile(data_dir, subject_id, subject_session, sprintf('ten_minute_means')), 'ten_minute_means');
+save(fullfile(data_dir, subject_id, subject_session, sprintf('clean_interpolated_ecg')), 'clean_interpolated_ecg');
 close all;
 
