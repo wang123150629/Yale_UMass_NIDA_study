@@ -1,6 +1,7 @@
 function[] = craving_driver()
 
 result_dir = get_project_settings('results');
+how_many_minutes_per_chunk = get_project_settings('how_many_minutes_per_chunk');
 
 number_of_subjects = 3;
 [subject_id, subject_session, subject_threshold] = get_subject_ids(number_of_subjects);
@@ -12,8 +13,8 @@ for s = 1:number_of_subjects
 		load(fullfile(result_dir, subject_id{s}, sprintf('preprocessed_data.mat')));
 	end
 	
-	if ~exist(fullfile(result_dir, subject_id{s}, sprintf('ten_min_chunks.mat')))
-		chunk_ecg_ten_minutes(preprocessed_data, subject_id{s});
+	if ~exist(fullfile(result_dir, subject_id{s}, sprintf('chunks_%d_min.mat', how_many_minutes_per_chunk)))
+		chunk_ecg_m_minutes(preprocessed_data, subject_id{s});
 	end
 	close all;
 end

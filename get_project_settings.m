@@ -9,6 +9,8 @@ case 'results'
 	out = fullfile(pwd, 'results');
 case 'image_format'
 	out = sprintf('-dpng');
+case 'how_many_minutes_per_chunk'
+	out = 5;
 case 'how_many_std_dev'
 	out = 3;
 case 'exp_sessions'

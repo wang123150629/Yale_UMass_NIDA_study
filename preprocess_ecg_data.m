@@ -50,6 +50,7 @@ session_data.dosage_labels = [];
 session_data.hold_start_end_indices = [];
 session_data.x_size = [];
 session_data.x_time = cell(1, length(dosage_levels));
+session_data.valid_rr_intervals = [];
 
 for d = 1:length(dosage_levels)
 	% For the d mg infusion ONLY in the first session, fetch the associated indices from the absolute time axis.
@@ -124,8 +125,7 @@ for d = 1:length(dosage_levels)
 				if max(interpol_data) <= 5 & min(interpol_data) >= 0
 					dos_interpolated_ecg = [dos_interpolated_ecg; interpol_data];
 					hold_start_end_indices = [hold_start_end_indices; rr_start_end(s, :)];
-					% valid_rr_intervals = [valid_rr_intervals; rr_start_end(s, 2) -...
-					%			rr_start_end(s, 1)];
+					valid_rr_intervals = [valid_rr_intervals; x_length];
 				else
 					disp(sprintf('Interpolated data is out of bounds!')); keyboard
 				end
@@ -146,6 +146,8 @@ for d = 1:length(dosage_levels)
 						repmat(dosage_levels(d), size(dos_interpolated_ecg, 1), 1)];
 		session_data.hold_start_end_indices = [session_data.hold_start_end_indices;...
 						hold_start_end_indices];
+		session_data.valid_rr_intervals = [session_data.valid_rr_intervals;...
+						valid_rr_intervals];
 	end
 end
 

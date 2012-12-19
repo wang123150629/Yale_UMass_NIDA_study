@@ -1,16 +1,17 @@
-function[] = chunk_ecg_ten_minutes(preprocessed_data, subject_id)
+function[] = chunk_ecg_m_minutes(preprocessed_data, subject_id)
 
 result_dir = get_project_settings('results');
 exp_sessions = get_project_settings('exp_sessions');
+how_many_minutes_per_chunk = get_project_settings('how_many_minutes_per_chunk');
 
-ten_min_chunks = cell(1, length(exp_sessions));
+chunks_m_min = cell(1, length(exp_sessions));
 for e = 1:length(exp_sessions)
-	ten_min_chunks{1, e} = make_plots(preprocessed_data{1, e}, subject_id, exp_sessions(e));
+	chunks_m_min{1, e} = make_plots(preprocessed_data{1, e}, subject_id, exp_sessions(e));
 end
-save(fullfile(result_dir, subject_id, sprintf('ten_min_chunks')), 'ten_min_chunks');
+save(fullfile(result_dir, subject_id, sprintf('chunks_%d_min', how_many_minutes_per_chunk)), 'chunks_m_min');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[chunk_ten_min_session] = make_plots(preprocessed_data, subject_id, experiment_session)
+function[chunk_m_min_session] = make_plots(preprocessed_data, subject_id, experiment_session)
 
 plot_dir = get_project_settings('plots');
 result_dir = get_project_settings('results');
@@ -18,18 +19,24 @@ image_format = get_project_settings('image_format');
 nStddev = get_project_settings('how_many_std_dev');
 nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
 dosage_levels = get_project_settings('dosage_levels');
+cut_off_heart_rate = get_project_settings('cut_off_heart_rate');
+how_many_minutes_per_chunk = get_project_settings('how_many_minutes_per_chunk');
+% This data comes from pre-processing. We do not rely on project settings here since some sessions contain only some dosage levels 
 this_sess_dosage_levels = preprocessed_data.dosage_levels;
 
-chunk_ten_min_session = struct();
-chunk_ten_min_session.rr_chunk_ten_min_session = [];
-chunk_ten_min_session.pqrst_chunk_ten_min_session = [];
+chunk_m_min_session = struct();
+chunk_m_min_session.rr_chunk_m_min_session = [];
+chunk_m_min_session.pqrst_chunk_m_min_session = [];
 for d = 1:length(this_sess_dosage_levels)
 	title_str = sprintf('%s, sess=%d, dos=%d', get_project_settings('strrep_subj_id', subject_id),...
 							experiment_session, this_sess_dosage_levels(d));
 
-	target_dosage_idx = preprocessed_data.dosage_labels == this_sess_dosage_levels(d);
-	interpolated_ecg = preprocessed_data.interpolated_ecg(target_dosage_idx, :);
-	hold_start_end_indices = preprocessed_data.hold_start_end_indices(target_dosage_idx, :);
+	target_dosage_idx = preprocessed_data.dosage_labels == this_sess_dosage_levels(d); % pick out rows
+	interpolated_ecg = preprocessed_data.interpolated_ecg(target_dosage_idx, :); % pick out corresponding features
+	hold_start_end_indices = preprocessed_data.hold_start_end_indices(target_dosage_idx, :); % start end indices
+	rr_intervals = preprocessed_data.valid_rr_intervals(target_dosage_idx, :); % start end indices
+	assert(all(hold_start_end_indices(:, 2)-hold_start_end_indices(:, 1) >= cut_off_heart_rate(1) &...
+	           hold_start_end_indices(:, 2)-hold_start_end_indices(:, 1) <= cut_off_heart_rate(2)));
 	x_size = preprocessed_data.x_size(this_sess_dosage_levels(d) == dosage_levels);
 	x_time = preprocessed_data.x_time{this_sess_dosage_levels(d) == dosage_levels};
 
@@ -73,7 +80,7 @@ for d = 1:length(this_sess_dosage_levels)
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Plot 3: Interpolated ECG but teasing apart as good and bad samples
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
+	figure('visible', 'off'); set(gcf, 'Position', [10, 10, 1200, 800]);
 	colors = jet(size(rr_std_interpolated_ecg, 1));
 
 	subplot(2, 1, 1);
@@ -98,37 +105,59 @@ for d = 1:length(this_sess_dosage_levels)
 						experiment_session, d);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 
-	% This is taking the entire, say baseline, session and breaking it into ten minute intervals
-	samples_clusters = [1:(250 * 60 * 10):x_size, x_size];
+	rr_sum = '';
+	pqrst_sum = '';
+	% This is taking the entire, say baseline, session and breaking it into m minute intervals
+	samples_clusters = [1:(250 * 60 * how_many_minutes_per_chunk):x_size, x_size];
 	% This aligns the start and end times into a matrix form like [start 1, end 1; start 2, end 2, etc]
 	samples_clusters = [samples_clusters(1:end-1); samples_clusters(2:end)-1]';
 	for s = 1:size(samples_clusters, 1)
-		% Fishing out exactly how many RR interpolated chunks are within this ten minute interval
+		% Fishing out exactly how many RR interpolated chunks are within this m minute interval
 		target_idx = find(hold_start_end_indices(:, 2) >= samples_clusters(s, 1) &...
 				  hold_start_end_indices(:, 2) <= samples_clusters(s, 2));
 		% This is the case since some of the rr's are not of valid length and the others might be
 		% 3 std dev or more from the mean. By intersecting we pick only the qualified ones
+		mean_for_this_chunk = zeros(1, size(rr_std_interpolated_ecg, 2));
+		mean_rr_intervals = 0;
 		rr_target_idx = intersect(target_idx, find(good_rr_samples));
 		if ~isempty(rr_target_idx)
-			chunk_ten_min_session.rr_chunk_ten_min_session =...
-				[chunk_ten_min_session.rr_chunk_ten_min_session;...
-				mean(rr_std_interpolated_ecg(rr_target_idx, :), 1),...
-				x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
-				x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
-				length(rr_target_idx), this_sess_dosage_levels(d)];
+			mean_for_this_chunk = mean(rr_std_interpolated_ecg(rr_target_idx, :), 1);
+			mean_rr_intervals = mean(rr_intervals(rr_target_idx, :), 1);
 		end
+		chunk_m_min_session.rr_chunk_m_min_session =...
+			[chunk_m_min_session.rr_chunk_m_min_session;...
+			mean_for_this_chunk,...
+			mean_rr_intervals,...
+			x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
+			x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
+			length(rr_target_idx), this_sess_dosage_levels(d)];
+		rr_sum = strcat(rr_sum, sprintf('%d+', length(rr_target_idx)));
 
 		% This is the case since some of the rr's are not of valid length and the others might be
 		% 3 std dev or more from the mean. By intersecting we pick only the qualified ones
+		mean_for_this_chunk = zeros(1, size(pqrst_std_interpolated_ecg, 2));
+		mean_rr_intervals = 0;
 		pqrst_target_idx = intersect(target_idx, find(good_pqrst_samples));
 		if ~isempty(pqrst_target_idx)
-			chunk_ten_min_session.pqrst_chunk_ten_min_session =...
-				[chunk_ten_min_session.pqrst_chunk_ten_min_session;...
-				mean(pqrst_std_interpolated_ecg(pqrst_target_idx, :), 1),...
-				x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
-				x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
-				length(pqrst_target_idx), this_sess_dosage_levels(d)];
+			mean_for_this_chunk = mean(pqrst_std_interpolated_ecg(pqrst_target_idx, :), 1);
+			mean_rr_intervals = mean(rr_intervals(pqrst_target_idx, :), 1);
 		end
+		chunk_m_min_session.pqrst_chunk_m_min_session =...
+			[chunk_m_min_session.pqrst_chunk_m_min_session;...
+			mean_for_this_chunk,...
+			mean_rr_intervals,...
+			x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
+			x_time(samples_clusters(s, 2), 1), x_time(samples_clusters(s, 2), 2),...
+			length(pqrst_target_idx), this_sess_dosage_levels(d)];
+		pqrst_sum = strcat(pqrst_sum, sprintf('%d+', length(pqrst_target_idx)));
 	end
+	assert(sum(good_rr_samples) == eval(rr_sum(1:end-1)));
+	disp(sprintf('No. of good rr samples=%d', sum(good_rr_samples)));
+	disp(sprintf('rr sum over %d mins %s=%d', how_many_minutes_per_chunk, rr_sum(1:end-1),...
+						eval(rr_sum(1:end-1))));
+	assert(sum(good_pqrst_samples) == eval(pqrst_sum(1:end-1)));
+	disp(sprintf('No. of good pqrst samples=%d', sum(good_pqrst_samples)));
+	disp(sprintf('pqrst sum over %d mins %s=%d', how_many_minutes_per_chunk, pqrst_sum(1:end-1),...
+						eval(pqrst_sum(1:end-1))));
 end
 
