@@ -1,5 +1,9 @@
 function[] = plot_m_minute_means(subject_id, how_many_minutes, varargin)
 
+% plot_m_minute_means('P20_040', 10, 0:4, [8, 16, 32, -3], true, true)
+
+close all;
+
 exp_sessions = get_project_settings('exp_sessions');
 dosage_levels = get_project_settings('dosage_levels');
 result_dir = get_project_settings('results');
@@ -45,10 +49,15 @@ else
 end
 
 for e = 1:length(this_subj_exp_sessions)
-	figure(e);
+	if visible_flag
+		figure(e);
+	else
+		figure('visible', 'off');
+	end
 	set(gcf, 'Position', [10, 10, 1200, 800]);
 	title(sprintf('%s, session=%d, %d minute intervals', get_project_settings('strrep_subj_id', subject_id),...
 			this_subj_exp_sessions(e), how_many_minutes));
+	hold on;
 	legend_str = {};
 	legend_cntr = 1;
 
@@ -73,7 +82,7 @@ for e = 1:length(this_subj_exp_sessions)
 						individual_chunks(s, end_mm_col),...
 						individual_chunks(s, nSamples_col));
 				if legend_cntr == 1
-					xlim([0, get_project_settings('nInterpolatedFeatures')+50]); hold on;
+					xlim([0, get_project_settings('nInterpolatedFeatures')+50]);
 					ylabel('std. millivolts'); xlabel('mean(Interpolated ECG)');
 					grid on; 
 					if strcmp(subject_id, 'P20_048'), ylim([-1, 0.5]); end
@@ -86,14 +95,6 @@ for e = 1:length(this_subj_exp_sessions)
 		end
 	end
 end
-
-%{
-if visible_flag
-	figure();
-else
-	figure('visible', 'off');
-end
-%}
 
 % file_name = sprintf('%s/subj_%s_ten_minute', get_project_settings('plots'), subject_id);
 % savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
