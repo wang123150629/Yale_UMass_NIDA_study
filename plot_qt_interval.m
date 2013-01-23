@@ -1,5 +1,9 @@
 function[] = plot_qt_interval(how_many_minutes)
 
+peak_detect_appr = 'no-checks';
+visible_flag = false;
+pqrst_flag = true;
+
 close all;
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
@@ -8,8 +12,15 @@ number_of_subjects = 3;
 [subject_id, subject_session, subject_threshold] = get_subject_ids(number_of_subjects);
 dosage_levels = get_project_settings('dosage_levels');
 for s = 1:number_of_subjects
-	qt_length{s} = fetch_qt_length(subject_id{s}, how_many_minutes, [0:4], [8, 16, 32, -3], false, true);
+	qt_length{s} = fetch_qt_length(subject_id{s}, how_many_minutes, peak_detect_appr, [0:4], [8, 16, 32, -3], visible_flag, pqrst_flag);
 end
+
+switch peak_detect_appr
+case 'no-checks', peak_det_num = 1;
+case 'mean-whole-signal', peak_det_num = 2;
+case 'mean-first-last', peak_det_num = 3;
+otherwise, error('Invalid peak detection technique');
+end	
 
 dos_marker_str = {'ro', 'bo', 'go', 'mo'};
 for s = 1:number_of_subjects
@@ -33,7 +44,7 @@ for s = 1:number_of_subjects
 	set(gca, 'XTickLabel', '');
 	legend(h1, '8mg', '16mg', '32mg', 'baseline', 'Location', 'SouthEast', 'Orientation', 'Horizontal');
 	title(sprintf('%s', get_project_settings('strrep_subj_id', subject_id{s})));
-	file_name = sprintf('%s/%s/subj_%s_qt_%d', plot_dir, subject_id{s}, subject_id{s}, how_many_minutes);
+	file_name = sprintf('%s/%s/subj_%s_peak%d_qt_%d', plot_dir, subject_id{s}, subject_id{s}, peak_det_num, how_many_minutes);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
@@ -59,12 +70,12 @@ for s = 1:number_of_subjects
 	set(gca, 'XTickLabel', '');
 	legend(h1, '8mg', '16mg', '32mg', 'baseline', 'Location', 'NorthEast', 'Orientation', 'Vertical');
 	title(sprintf('%s', get_project_settings('strrep_subj_id', subject_id{s})));
-	file_name = sprintf('%s/%s/subj_%s_qtc_%d', plot_dir, subject_id{s}, subject_id{s}, how_many_minutes);
+	file_name = sprintf('%s/%s/subj_%s_peak%d_qtc_%d', plot_dir, subject_id{s}, subject_id{s}, peak_det_num, how_many_minutes);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[info_per_chunk] = fetch_qt_length(subject_id, how_many_minutes, varargin)
+function[info_per_chunk] = fetch_qt_length(subject_id, how_many_minutes, peak_detect_appr, varargin)
 
 data_dir = get_project_settings('data');
 behav_mat = csvread(fullfile(data_dir, subject_id, sprintf('%s_behav.csv', subject_id)), 1, 0);
@@ -164,7 +175,7 @@ for e = 1:length(this_subj_exp_sessions)
 		end
 		legend_cntr = legend_cntr + 1;
 		% legend(legend_str);
-		[q_point, t_point] = find_qt_points(individual_chunks(s, ecg_col),...
+		[q_point, t_point] = find_qt_points(peak_detect_appr, individual_chunks(s, ecg_col),...
 					individual_chunks(s, nSamples_col), colors(s, :), visible_flag);
 		
 		infusion_presence = detect_event(individual_chunks(s, start_hh_col:end_mm_col),...
@@ -187,14 +198,28 @@ end
 % savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[q_point, t_point] = find_qt_points(individual_chunks, nSamples, set_colors, visible_flag)
+function[q_point, t_point] = find_qt_points(peak_detect_appr, individual_chunks, nSamples, set_colors, visible_flag)
 
 [maxtab, mintab] = peakdet(individual_chunks, 0.2);
 if size(maxtab, 1) >= 1 & size(mintab, 1) >= 1;
 	maxtab = maxtab(maxtab(:, 1) > 2, :); % leaving out the first point
 	mintab = mintab(mintab(:, 1) > maxtab(1, 1), :); % retainig the troughs only after the first peak
-	q_point = mintab(1, :);
-	t_point = maxtab(maxtab(:, 1) > 70, :);
+	switch peak_detect_appr
+	case 'no-checks'
+		q_point = mintab(1, :);
+		t_point = maxtab(maxtab(:, 1) > 70, :);
+	case 'mean-whole-signal'
+		hold_mintab = find(mintab(:, 2) < mean(individual_chunks));
+		q_point = mintab(hold_mintab(1), :);
+		hold_maxtab = find(maxtab(:, 2) > mean(individual_chunks));
+		t_point = maxtab(hold_maxtab(end), :);
+	case 'mean-first-last'
+		hold_mintab = find(mintab(:, 2) < mean([individual_chunks(1), individual_chunks(end)]));
+		q_point = mintab(hold_mintab(1), :);
+		hold_maxtab = find(maxtab(:, 2) > mean([individual_chunks(1), individual_chunks(end)]));
+		t_point = maxtab(hold_maxtab(end), :);
+	otherwise, error('Invalid peak detection technique');
+	end	
 
 	if size(q_point, 1) == 1 & size(t_point, 1) == 1;
 		h1=plot(q_point(1, 1), q_point(1, 2), '*', 'color', set_colors, 'MarkerSize', 10);
@@ -210,7 +235,7 @@ if size(maxtab, 1) >= 1 & size(mintab, 1) >= 1;
 		disp(sprintf('Missing either q or t point'));
 		q_point = [0, 0]; t_point = [0, 0];
 	end
-	if visible_flag, pause(1); end
+	if visible_flag, pause(0.5); end
 else
 	disp(sprintf('No peaks detected'));
 	q_point = [0, 0]; t_point = [0, 0];
@@ -223,6 +248,8 @@ start_hh = chunk_start_end(1);
 start_mm = chunk_start_end(2);
 end_hh = chunk_start_end(3);
 end_mm = chunk_start_end(4);
-event_presence_absence = sum(behav_event_data(:, 1) >= start_hh & behav_event_data(:, 2) >= start_mm &...
-    		   	     behav_event_data(:, 1) <= end_hh & behav_event_data(:, 2) < end_mm);
+event_presence_absence = sum((behav_event_data(:, 1) > start_hh |...
+			      behav_event_data(:, 1) == start_hh & behav_event_data(:, 2) >= start_mm) &...
+    		   	     (behav_event_data(:, 1) < end_hh |...
+			      behav_event_data(:, 1) == end_hh & behav_event_data(:, 2) < end_mm) );
 

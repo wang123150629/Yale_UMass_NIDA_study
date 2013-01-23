@@ -54,7 +54,7 @@ for e = 1:length(this_subj_exp_sessions)
 	else
 		figure('visible', 'off');
 	end
-	set(gcf, 'Position', [10, 10, 1200, 800]);
+	set(gcf, 'Position', [70, 10, 1300, 650]);
 	title(sprintf('%s, session=%d, %d minute intervals', get_project_settings('strrep_subj_id', subject_id),...
 			this_subj_exp_sessions(e), how_many_minutes));
 	hold on;
