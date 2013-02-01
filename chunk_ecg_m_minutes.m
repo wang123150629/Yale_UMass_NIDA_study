@@ -6,12 +6,12 @@ how_many_minutes_per_chunk = get_project_settings('how_many_minutes_per_chunk');
 
 chunks_m_min = cell(1, length(exp_sessions));
 for e = 1:length(exp_sessions)
-	chunks_m_min{1, e} = make_plots(preprocessed_data{1, e}, subject_id, exp_sessions(e));
+	chunks_m_min{1, e} = chunk_data_and_make_plots(preprocessed_data{1, e}, subject_id, exp_sessions(e));
 end
 save(fullfile(result_dir, subject_id, sprintf('chunks_%d_min', how_many_minutes_per_chunk)), 'chunks_m_min');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[chunk_m_min_session] = make_plots(preprocessed_data, subject_id, experiment_session)
+function[chunk_m_min_session] = chunk_data_and_make_plots(preprocessed_data, subject_id, experiment_session)
 
 plot_dir = get_project_settings('plots');
 result_dir = get_project_settings('results');
@@ -21,12 +21,12 @@ nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
 dosage_levels = get_project_settings('dosage_levels');
 cut_off_heart_rate = get_project_settings('cut_off_heart_rate');
 how_many_minutes_per_chunk = get_project_settings('how_many_minutes_per_chunk');
-% This data comes from pre-processing. We do not rely on project settings here since some sessions contain only some dosage levels 
+% This data comes from pre-processing.m We do not rely on project settings here since some sessions contain only some dosage levels 
 this_sess_dosage_levels = preprocessed_data.dosage_levels;
 
 chunk_m_min_session = struct();
-chunk_m_min_session.rr_chunk_m_min_session = [];
-chunk_m_min_session.pqrst_chunk_m_min_session = [];
+chunk_m_min_session.rr = [];
+chunk_m_min_session.pqrst = [];
 for d = 1:length(this_sess_dosage_levels)
 	title_str = sprintf('%s, sess=%d, dos=%d', get_project_settings('strrep_subj_id', subject_id),...
 							experiment_session, this_sess_dosage_levels(d));
@@ -78,7 +78,7 @@ for d = 1:length(this_sess_dosage_levels)
 				 pqrst_std_interpolated_ecg < upper, 2) == nInterpolatedFeatures;
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% Plot 3: Interpolated ECG but teasing apart as good and bad samples
+	% Plot 1: Interpolated ECG but teasing apart as good and bad samples
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	figure('visible', 'off'); set(gcf, 'Position', [10, 10, 1200, 800]);
 	colors = jet(size(rr_std_interpolated_ecg, 1));
@@ -124,8 +124,8 @@ for d = 1:length(this_sess_dosage_levels)
 			mean_for_this_chunk = mean(rr_std_interpolated_ecg(rr_target_idx, :), 1);
 			mean_rr_intervals = mean(rr_intervals(rr_target_idx, :), 1);
 		end
-		chunk_m_min_session.rr_chunk_m_min_session =...
-			[chunk_m_min_session.rr_chunk_m_min_session;...
+		chunk_m_min_session.rr =...
+			[chunk_m_min_session.rr;...
 			mean_for_this_chunk,...
 			mean_rr_intervals,...
 			x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
@@ -142,8 +142,8 @@ for d = 1:length(this_sess_dosage_levels)
 			mean_for_this_chunk = mean(pqrst_std_interpolated_ecg(pqrst_target_idx, :), 1);
 			mean_rr_intervals = mean(rr_intervals(pqrst_target_idx, :), 1);
 		end
-		chunk_m_min_session.pqrst_chunk_m_min_session =...
-			[chunk_m_min_session.pqrst_chunk_m_min_session;...
+		chunk_m_min_session.pqrst =...
+			[chunk_m_min_session.pqrst;...
 			mean_for_this_chunk,...
 			mean_rr_intervals,...
 			x_time(samples_clusters(s, 1), 1), x_time(samples_clusters(s, 1), 2),...
