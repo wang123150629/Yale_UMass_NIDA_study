@@ -1,34 +1,18 @@
-function[] = plot_time_series(data_mat_columns, summary_mat, behav_mat, index_maps, subject_id)
+function[] = plot_time_series(data_mat_columns, summary_mat, behav_mat, index_maps, subject_profile, event)
 
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
-summ_mat_time_res = get_project_settings('summ_mat_time_res');
-% length of event (infusion, clicks, etc) window in minutes. This will grab 5 x 60 = 300 samples before and after
-event_window_length = get_project_settings('event_window_length');
-dosage_levels = get_project_settings('dosage_levels');
-vas_measures = get_project_settings('vas_measures');
 
-if strcmp(subject_id, 'P20_036')
-	% Since this was the first pilot subject the files have information organized this way
-	data_mat_columns = struct();
-	data_mat_columns.HR = 7;
-	data_mat_columns.BR = 8;
-	data_mat_columns.ECG_amp = 15;
-	data_mat_columns.ECG_noise = 16;
-	data_mat_columns.activity = 11;
-	data_mat_columns.peak_acc = 12;
-	data_mat_columns.vertical = [17, 18];
-	data_mat_columns.lateral = [19, 20];
-	data_mat_columns.saggital = [21, 22];
-	% no core temperature, heart rate confidence and heart rate variance
-end
-
-click_indices = find(behav_mat(:, 7) == 1);
-infusion_indices = find(behav_mat(:, 8) == 1);
-vas_indices = find(behav_mat(:, 9) >= 0);
+subject_id =  subject_profile.subject_id;
+behav_mat_columns = subject_profile.columns.behav;
+dosage_levels = subject_profile.events{event}.dosage_levels;
+vas_measures = [behav_mat_columns.vas_high, behav_mat_columns.vas_stim]; 
+click_indices = find(behav_mat(:, behav_mat_columns.click) == 1);
+infusion_indices = find(behav_mat(:, behav_mat_columns.infusion) == 1);
+vas_indices = find(behav_mat(:, behav_mat_columns.vas_high) >= 0);
 
 %------------------------------------------------------------------------------
-figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
+figure(); set(gcf, 'Position', get_project_settings('figure_size'));
 
 max_heart_rate = 170;
 subplot(2, 1, 1);
@@ -41,7 +25,8 @@ set(ax(1), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(ax(2), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(h1, 'LineStyle', '-');
 set(h2, 'LineStyle', 'o', 'MarkerFaceColor', 'g', 'MarkerSize', 6);
-plot_behav_data_on_top(min(summary_mat(:, data_mat_columns.HR)), max_heart_rate, dosage_levels, behav_mat, click_indices, infusion_indices, index_maps.behav);
+plot_behav_data_on_top(subject_profile, min(summary_mat(:, data_mat_columns.HR)), max_heart_rate, dosage_levels,...
+							behav_mat, click_indices, infusion_indices, index_maps.behav);
 xlabel('Time(seconds)');
 title(sprintf('Subject %s', get_project_settings('strrep_subj_id', subject_id)));
 grid on; set(gca, 'Layer', 'top');
@@ -57,21 +42,24 @@ set(ax(1), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(ax(2), 'xlim', [index_maps.time_axis(1), index_maps.time_axis(end)]);
 set(h1, 'LineStyle', '-');
 set(h2, 'LineStyle', 'o', 'MarkerFaceColor', 'g', 'MarkerSize', 6);
-plot_behav_data_on_top(min(summary_mat(:, data_mat_columns.BR)), max_breathing_rate, dosage_levels, behav_mat, click_indices, infusion_indices, index_maps.behav);
+plot_behav_data_on_top(subject_profile, min(summary_mat(:, data_mat_columns.BR)), max_breathing_rate, dosage_levels,...
+							behav_mat, click_indices, infusion_indices, index_maps.behav);
 xlabel('Time(seconds)');
 grid on; set(gca, 'Layer', 'top');
 
-file_name = sprintf('%s/%s/subject_%s_summ_hr_br', plot_dir, subject_id, subject_id);
+file_name = sprintf('%s/%s/%s_summ_hr_br', plot_dir, subject_id, subject_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = plot_behav_data_on_top(min_val, max_val, dosage_levels, behav_mat, click_indices, infusion_indices, behav_indices)
+function[] = plot_behav_data_on_top(subject_profile, min_val, max_val, dosage_levels, behav_mat,...
+					click_indices, infusion_indices, behav_indices)
+behav_mat_columns = subject_profile.columns.behav;
 
 dosage_levels = sort(dosage_levels);
 chunk_size = min_val:((max_val - min_val) / 15):max_val;
 associated_entries = chunk_size(2:2+length(dosage_levels)); % Taking the second chunk and after
 for d = 1:length(dosage_levels)
-	target_idx = behav_mat(:, 6) == dosage_levels(d);
+	target_idx = behav_mat(:, behav_mat_columns.dosage) == dosage_levels(d);
 	plot(behav_indices(target_idx), associated_entries(d), 'mo');
 end
 plot(behav_indices(click_indices), chunk_size(end), 'k*');

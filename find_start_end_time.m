@@ -1,17 +1,24 @@
-function[index_maps] = find_start_end_time(summary_mat, behav_mat, resolution)
+function[index_maps] = find_start_end_time(subject_profile, summary_mat, behav_mat, resolution)
+
+summ_mat_columns = subject_profile.columns.summ;
+behav_mat_columns = subject_profile.columns.behav;
 
 % If the data from summary matrix came first then the first entry in the summary mat is the earliest_start_time else the first entry in the behavior mat is the earliest_start_time. Example 8:38:00
-if summary_mat(1, 4) <= behav_mat(1, 3) & summary_mat(1, 5) <= behav_mat(1, 4)
-	earliest_start_time = [summary_mat(1, 4), summary_mat(1, 5), summary_mat(1, 6)];
+if summary_mat(1, summ_mat_columns.actual_hh) <= behav_mat(1, behav_mat_columns.actual_hh) &...
+		  summary_mat(1, summ_mat_columns.actual_mm) <= behav_mat(1, behav_mat_columns.actual_mm)
+	earliest_start_time = [summary_mat(1, summ_mat_columns.actual_hh),...
+			       summary_mat(1, summ_mat_columns.actual_mm), summary_mat(1, summ_mat_columns.actual_ss)];
 else
-	earliest_start_time = [behav_mat(1, 3), behav_mat(1, 4), 0];
+	earliest_start_time = [behav_mat(1, behav_mat_columns.actual_hh), behav_mat(1, behav_mat_columns.actual_mm), 0];
 end
 
 % If the data from summary matrix ended first then the lst entry in the behavior mat is the latest_end_time else the last entry in the summary mat is the latest_end_time. Example 17:16:51
-if summary_mat(end, 4) <= behav_mat(end, 3) & summary_mat(end, 5) <= behav_mat(end, 4)
-	latest_end_time = [behav_mat(end, 3), behav_mat(end, 4), 59];
+if summary_mat(end, summ_mat_columns.actual_hh) <= behav_mat(end, behav_mat_columns.actual_hh) &...
+		    summary_mat(end, summ_mat_columns.actual_mm) <= behav_mat(end, behav_mat_columns.actual_mm)
+	latest_end_time = [behav_mat(end, behav_mat_columns.actual_hh), behav_mat(end, behav_mat_columns.actual_mm), 59];
 else
-	latest_end_time = round_to([summary_mat(end, 4), summary_mat(end, 5), summary_mat(end, 6)], 0);
+	latest_end_time = round_to([summary_mat(end, summ_mat_columns.actual_hh),...
+			  summary_mat(end, summ_mat_columns.actual_mm), summary_mat(end, summ_mat_columns.actual_ss)], 0);
 end
 
 % This step rounds of the time. Example 8:38:00 to 8:00:00
@@ -34,12 +41,16 @@ index_maps = struct();
 index_maps.time_axis = 1:how_many_seconds_have_elapsed(earliest_start_time, latest_end_time);
 
 % This tells you how far along is the summary data in the absolute time axis. For example 8155 seconds from 8:0:0 and ends at 33411 seconds from the 8:0:0. This data is in 1 second resolution
-index_maps.summary = [how_many_seconds_have_elapsed(earliest_start_time, summary_mat(1, 4:6)):...
-		      how_many_seconds_have_elapsed(earliest_start_time, summary_mat(end, 4:6))];
+index_maps.summary = [how_many_seconds_have_elapsed(earliest_start_time,...
+		      summary_mat(1, summ_mat_columns.actual_hh:summ_mat_columns.actual_ss)):...
+	  	      how_many_seconds_have_elapsed(earliest_start_time,...
+		      summary_mat(end, summ_mat_columns.actual_hh:summ_mat_columns.actual_ss))];
 
 % This tells you how far along is the behavior data in the absolute time axis. For example 2280 seconds from 8:0:0 and ends at 32819 seconds from the 8:0:0. This data is in 1 minute (60 seconds) resolution
-index_maps.behav = [how_many_seconds_have_elapsed(earliest_start_time, [behav_mat(1, 3:4), 0]):...
-     		    60:how_many_seconds_have_elapsed(earliest_start_time, [behav_mat(end, 3:4), 59])];
+index_maps.behav = [how_many_seconds_have_elapsed(earliest_start_time,...
+		   [behav_mat(1, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm), 0]):60:...
+		   how_many_seconds_have_elapsed(earliest_start_time,...
+		   [behav_mat(end, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm), 59])];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[total_elapsed_seconds] = how_many_seconds_have_elapsed(time1_vect, time2_vect)

@@ -1,17 +1,11 @@
-function[mean_over_runs, errorbars_over_runs, chance_baseline] = classify_data(nClasses, data,...
-									subject_id, feature_set_flag)
+function[mean_over_runs, errorbars_over_runs, chance_baseline] = classify_data(subject_id, nClasses, data)
 
 switch nClasses
 case 2
-	nRuns = 10;
+	nRuns = 2;
 	tr_percent = 80; % training data size in percentage
 	classifierList = {@two_class_logreg, @two_class_svm};
-	% classes: 1 - baseline, 2 - 8mg, 3 - 16mg, 4 - 32mg
-	classes_to_compare = [1, 2; 1, 3; 1, 4; 2, 3; 2, 4; 3, 4; 1, 5];
-case 4
-	nRuns = 1;
-	tr_percent = 80; % training data size in percentage
-	keyboard
+	classes_to_compare = {[-3], [1], [8], [2]; [-3], [1], [16], [2]; [-3], [1], [32], [2]; [-3], [1:5], [8, 16, 32], [1:5]};
 otherwise
 	error('Invalid call!');
 end
@@ -26,8 +20,7 @@ for c = 1:nComparisons
 		[complete_train_set, complete_test_set, chance_baseline(r, c)] =...
 				partition_and_relabel(classes_to_compare(c, :), data, tr_percent);
 		for k = 1:numel(classifierList)
-			accuracies(r, c, k) = classifierList{k}(complete_train_set, complete_test_set,...
-					      subject_id, feature_set_flag, classes_to_compare(c, :));
+			accuracies(r, c, k) = classifierList{k}(complete_train_set, complete_test_set, subject_id);
 			close all;
 		end
 	end
@@ -37,8 +30,7 @@ mean_over_runs = reshape(mean(accuracies), nComparisons, numel(classifierList))'
 errorbars_over_runs = reshape(std(accuracies), nComparisons, numel(classifierList))' ./ sqrt(nRuns);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [accuracy] = two_class_logreg(complete_train_set, complete_test_set, subject_id,...
-					feature_set_flag, classes_to_compare)
+function [accuracy] = two_class_logreg(complete_train_set, complete_test_set, subject_id)
 
 % Fitting betas using glmfit
 % betas = glmfit(complete_train_set(:, 1:end-1), complete_train_set(:, end), 'binomial')';
@@ -62,67 +54,40 @@ class_guessed = ones(size(intercept_added_test_set, 2), 1);
 class_guessed(find(likelihood_ratio > 1)) = 0;
 accuracy = sum(class_guessed == complete_test_set(:, end)) * 100 / size(complete_test_set, 1);
 
+%{
 [lower, upper, title_str] = plot_ten_minute_means(subject_id, classes_to_compare, false);
 scaled_betas = scale_data(betas, lower, upper);
 hold on;
 plot(scaled_betas, 'k-');
 title(sprintf('%s\noverloaded with lbfgs betas', title_str));
-file_name = sprintf('%s/subj_%s_feat%d_logreg_%s', get_project_settings('plots'), subject_id, feature_set_flag,...
-						 strrep(num2str(classes_to_compare), ' ', ''));
+file_name = sprintf('%s/subj_%s_feat%d_logreg_%s', get_project_settings('plots'), subject_id,...
+							strrep(num2str(classes_to_compare), ' ', ''));
 savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [accuracy] = two_class_svm(complete_train_set, complete_test_set, subject_id,...
-					feature_set_flag, classes_to_compare)
+function [accuracy] = two_class_svm(complete_train_set, complete_test_set, subject_id)
 
 svmStruct = svmtrain(complete_train_set(:, 1:end-1), complete_train_set(:, end), 'kernel_function',...
 						'quadratic', 'method', 'LS', 'autoscale', false);
 class_guessed = svmclassify(svmStruct, complete_test_set(:, 1:end-1));
 accuracy = sum(class_guessed == complete_test_set(:, end)) * 100 / size(complete_test_set, 1);
 
-%{
-top_how_many = 50;
-
-zero_idx = find(svmStruct.Alpha > 0);
-zero_support_vectors = svmStruct.SupportVectors(zero_idx, :);
-zero_alpha_weights = svmStruct.Alpha(zero_idx);
-[sorted_val_zero, sort_idx_zero] = sort(zero_alpha_weights, 'descend');
-% zero_weighted = svmStruct.Alpha(zero_idx)' * zero_support_vectors;
-% zero_weighted = mean(zero_support_vectors(sort_idx_zero(1:top_how_many), :));
-zero_weighted = sorted_val_zero(1:top_how_many)' * zero_support_vectors(sort_idx_zero(1:top_how_many), :);
-
-one_idx = find(svmStruct.Alpha < 0);
-one_support_vectors = svmStruct.SupportVectors(one_idx, :);
-one_alpha_weights = svmStruct.Alpha(one_idx);
-[sorted_val_one, sort_idx_one] = sort(one_alpha_weights);
-% one_weighted = abs(svmStruct.Alpha(one_idx))' * one_support_vectors;
-% one_weighted = mean(one_support_vectors(sort_idx_one(1:top_how_many), :));
-one_weighted = abs(sorted_val_one(1:top_how_many))' * one_support_vectors(sort_idx_one(1:top_how_many), :);
-
-[lower, upper, title_str] = plot_ten_minute_means(subject_id, classes_to_compare, false);
-hold on;
-zero_weighted = scale_data(zero_weighted, lower, upper);
-plot(zero_weighted, 'k-'); hold on;
-one_weighted = scale_data(one_weighted, lower, upper);
-plot(one_weighted, 'k--');
-title(sprintf('%s\noverloaded with mean of top %d support vectors', title_str, top_how_many));
-
-file_name = sprintf('%s/subj_%s_feat%d_svm_%s', get_project_settings('plots'), subject_id, feature_set_flag,...
-						 strrep(num2str(classes_to_compare), ' ', ''));
-savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
-%}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[complete_train_set, complete_test_set, chance_baseline] = partition_and_relabel(classes_to_compare,...
-									data, tr_percent)
+function[complete_train_set, complete_test_set, chance_baseline] = partition_and_relabel(classes_to_compare, data, tr_percent)
+
 assert(size(classes_to_compare, 1) == 1);
+assert(size(classes_to_compare, 2) == 4);
+actual_classes = {classes_to_compare{1}, classes_to_compare{3}};
+exp_sessions = {classes_to_compare{2}, classes_to_compare{4}};
+assert(isequal(numel(actual_classes), numel(exp_sessions)));
 assert(tr_percent > 0 & tr_percent < 100);
 
 complete_train_set = [];
 complete_test_set = [];
 chance_baseline = [];
-for c = 1:length(classes_to_compare)
-	[train_set, test_set] = fetch_training_instances(classes_to_compare(c), data, tr_percent);
+for c = 1:numel(actual_classes)
+	[train_set, test_set] = fetch_training_instances(actual_classes{c}, exp_sessions{c}, data, tr_percent);
 	complete_train_set = [complete_train_set; train_set];
 	complete_test_set = [complete_test_set; test_set];
 	chance_baseline = [chance_baseline, size(test_set, 1)];
@@ -131,30 +96,46 @@ chance_baseline = max(chance_baseline) / sum(chance_baseline) * 100;
 
 % change labels
 unique_labels = unique(complete_train_set(:, end));
-% Reassigning the labels to 0 and 1 for logistic regression
+% Reassigning the labels to 0 and 1 for two-class classification
 if length(unique_labels) == 2
 	complete_train_set(find(unique_labels(1) == complete_train_set(:, end)), end) = 0;
 	complete_train_set(find(unique_labels(2) == complete_train_set(:, end)), end) = 1;
 	complete_test_set(find(unique_labels(1) == complete_test_set(:, end)), end) = 0;
 	complete_test_set(find(unique_labels(2) == complete_test_set(:, end)), end) = 1;
+elseif length(unique_labels) == 4
+	complete_train_set(find(complete_train_set(:, end) < 0), end) = 0;
+	complete_train_set(find(complete_train_set(:, end) > 0), end) = 1;
+	complete_test_set(find(complete_test_set(:, end) < 0), end) = 0;
+	complete_test_set(find(complete_test_set(:, end) > 0), end) = 1;
+else
+	error('Invalid classes to compare!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[train_set, test_set] = fetch_training_instances(class, data, tr_percent)
+function[train_set, test_set] = fetch_training_instances(target_class, exp_sessions, data, tr_percent)
 
-target_idx = find(data(:, end) == class);
+temp1 = repmat(data(:, end), 1, length(target_class));
+temp2 = repmat(target_class, size(data, 1), 1);
+dosage_idx = find(sum(temp1 == temp2, 2));
+
+temp1 = repmat(data(:, end-1), 1, length(exp_sessions));
+temp2 = repmat(exp_sessions, size(data, 1), 1);
+exp_sess_idx = find(sum(temp1 == temp2, 2));
+
+target_idx = intersect(dosage_idx, exp_sess_idx);
+
 all_samples = target_idx(randperm(length(target_idx)));
 tr_percent = round_to(tr_percent * length(all_samples) / 100, 0);
 train_samples = all_samples(1:tr_percent);
 test_samples = setdiff(all_samples, train_samples);
 assert(isempty(intersect(train_samples, test_samples)));
-train_set = data(train_samples, :);
-test_set = data(test_samples, :);
-% dispf(sprintf('class=%d no. of train samples=%d', class, size(train_set, 1)));
-% dispf(sprintf('class=%d no. of test samples=%d', class, size(test_set, 1)));
+train_set = data(train_samples, [1:end-2, end]);
+test_set = data(test_samples, [1:end-2, end]);
+
+% dispf(sprintf('class=%d no. of train samples=%d', target_class, size(train_set, 1)));
+% dispf(sprintf('class=%d no. of test samples=%d', target_class, size(test_set, 1)));
 
 %{
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [] = multi_class_comparisons(nRuns, tr_percent, interpolated_ecg, subject_id)
 
@@ -258,6 +239,38 @@ title(sprintf('%s-Two class, avg(%d runs)\n%s', strrep(subject_id, '_', '-'), nR
 legend('log. reg', 'svm(2)', 'chance', 'Location', 'SouthWest', 'Orientation', 'Horizontal');
 set(gca, 'XTickLabel', {'base vs. 8mg', 'base vs. 16mg', 'base vs. 32mg', '8mg vs. 16mg', '8mg vs. 32mg', '16mg vs. 32mg', 'base vs. all'});
 file_name = sprintf('%s/subj_%s_feat%d_class2_perf', get_project_settings('plots'), subject_id, feature_set_flag);
+savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+%}
+
+%{
+top_how_many = 50;
+
+zero_idx = find(svmStruct.Alpha > 0);
+zero_support_vectors = svmStruct.SupportVectors(zero_idx, :);
+zero_alpha_weights = svmStruct.Alpha(zero_idx);
+[sorted_val_zero, sort_idx_zero] = sort(zero_alpha_weights, 'descend');
+% zero_weighted = svmStruct.Alpha(zero_idx)' * zero_support_vectors;
+% zero_weighted = mean(zero_support_vectors(sort_idx_zero(1:top_how_many), :));
+zero_weighted = sorted_val_zero(1:top_how_many)' * zero_support_vectors(sort_idx_zero(1:top_how_many), :);
+
+one_idx = find(svmStruct.Alpha < 0);
+one_support_vectors = svmStruct.SupportVectors(one_idx, :);
+one_alpha_weights = svmStruct.Alpha(one_idx);
+[sorted_val_one, sort_idx_one] = sort(one_alpha_weights);
+% one_weighted = abs(svmStruct.Alpha(one_idx))' * one_support_vectors;
+% one_weighted = mean(one_support_vectors(sort_idx_one(1:top_how_many), :));
+one_weighted = abs(sorted_val_one(1:top_how_many))' * one_support_vectors(sort_idx_one(1:top_how_many), :);
+
+[lower, upper, title_str] = plot_ten_minute_means(subject_id, classes_to_compare, false);
+hold on;
+zero_weighted = scale_data(zero_weighted, lower, upper);
+plot(zero_weighted, 'k-'); hold on;
+one_weighted = scale_data(one_weighted, lower, upper);
+plot(one_weighted, 'k--');
+title(sprintf('%s\noverloaded with mean of top %d support vectors', title_str, top_how_many));
+
+file_name = sprintf('%s/subj_%s_feat%d_svm_%s', get_project_settings('plots'), subject_id, feature_set_flag,...
+						 strrep(num2str(classes_to_compare), ' ', ''));
 savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 %}
 
