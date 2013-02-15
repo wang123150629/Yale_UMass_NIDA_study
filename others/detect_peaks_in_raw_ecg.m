@@ -6,4 +6,3 @@ ecg_mat = csvread(sprintf('/home/anataraj/NIH-craving/data/P20_040/Sensor_1/2012
 x = ecg_mat .* 0.001220703125;
 [rr, rs] = rrextract(x, raw_ecg_mat_time_res, subject_threshold);
 
-

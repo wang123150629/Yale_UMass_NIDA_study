@@ -25,11 +25,10 @@ for s = 1:number_of_subjects
 	switch slide_or_chunk
 	case 'chunk'
 		time_window = get_project_settings('how_many_minutes_per_chunk');
-		keyboard
-		% chunk_ecg_m_minutes(subject_profile);
+		% subject_profile = chunk_ecg_m_minutes(subject_profile);
 	case 'slide'
 		time_window = get_project_settings('how_many_sec_per_win');
-		subject_profile = sliding_window_ecg(subject_profile);
+		subject_profile = slide_ecg_k_seconds(subject_profile);
 	otherwise, error('Invalid windowing strategy!');
 	end
 

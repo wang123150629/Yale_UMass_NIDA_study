@@ -12,7 +12,7 @@ infusion_indices = find(behav_mat(:, behav_mat_columns.infusion) == 1);
 vas_indices = find(behav_mat(:, behav_mat_columns.vas_high) >= 0);
 
 %------------------------------------------------------------------------------
-figure(); set(gcf, 'Position', get_project_settings('figure_size'));
+figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
 
 max_heart_rate = 170;
 subplot(2, 1, 1);
@@ -47,7 +47,7 @@ plot_behav_data_on_top(subject_profile, min(summary_mat(:, data_mat_columns.BR))
 xlabel('Time(seconds)');
 grid on; set(gca, 'Layer', 'top');
 
-file_name = sprintf('%s/%s/%s_summ_hr_br', plot_dir, subject_id, subject_id);
+file_name = sprintf('%s/%s/summ_hr_br', plot_dir, subject_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

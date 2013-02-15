@@ -3,11 +3,11 @@ function[subject_profile] = detect_peaks(subject_profile, slide_or_chunk, time_w
 subject_id =  subject_profile.subject_id;
 
 for v = 1:subject_profile.nEvents
-	if ~isfield(subject_profile.events{v}, sprintf('pqrst_peaks_%d_%s', time_window, slide_or_chunk))
+	if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
 		mat_path = detect_peaks_within_events(subject_profile, slide_or_chunk, time_window,...
 						peak_detect_appr, pqrst_flag, v);
 		subject_profile.events{v} = setfield(subject_profile.events{v},...
-					sprintf('pqrst_peaks_%d_%s', time_window, slide_or_chunk), mat_path);
+					sprintf('peaks_%s%d', slide_or_chunk, time_window), mat_path);
 	end
 end
 
@@ -26,18 +26,17 @@ behav_mat = csvread(fullfile(data_dir, subject_id, sprintf('%s_behav.csv', subje
 behav_mat_columns = subject_profile.columns.behav;
 infusion_indices = find(behav_mat(:, behav_mat_columns.infusion) == 1);
 click_indices = find(behav_mat(:, behav_mat_columns.click) == 1);
+window_data = load(getfield(subject_profile.events{event}, sprintf('%s%d_win_mat_path', slide_or_chunk, time_window)));
 switch slide_or_chunk
-case 'chunk'
-	window_data = load(getfield(subject_profile.events{event}, sprintf('chunking_%dwin_mat_path', time_window)));
-	sl_ch_str = 'minute window';
-case 'slide'
-	window_data = load(getfield(subject_profile.events{event}, sprintf('sliding_%dwin_mat_path', time_window)));
-	sl_ch_str = 'sec sliding window';
+case 'chunk', sl_ch_str = 'minute window';
+case 'slide', sl_ch_str = 'sec sliding window';
 end
 if pqrst_flag
 	window_data = window_data.pqrst_mat;
+	pqrst_rr_peaks_str = 'pqrst';
 else
 	window_data = window_data.rr_mat;
+	pqrst_rr_peaks_str = 'rr';
 end
 
 nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
@@ -51,8 +50,9 @@ nSamples_col = nInterpolatedFeatures + 6;
 dosage_col = nInterpolatedFeatures + 7;
 exp_session_col = nInterpolatedFeatures + 8;
 
-figure(); set(gcf, 'Position', get_project_settings('figure_size'));
-title(sprintf('%s, all sessions, %d %s', get_project_settings('strrep_subj_id', subject_id), time_window, sl_ch_str));
+figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
+title(sprintf('%s, %s, %d %s', get_project_settings('strrep_subj_id', subject_id), subject_profile.events{1, event}.label,...
+									time_window, sl_ch_str));
 hold on; grid on;
 xlim([0, get_project_settings('nInterpolatedFeatures')]);
 ylim(subject_profile.ylim);
@@ -81,9 +81,11 @@ for e = 1:length(exp_sessions)
 		end
 		
 		infusion_presence = detect_event(individual_chunks(s, start_hh_col:end_mm_col),...
-				behav_mat(infusion_indices, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm), slide_or_chunk);
+				behav_mat(infusion_indices, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm),...
+				sprintf('%s%d', slide_or_chunk, time_window));
 		click_presence = detect_event(individual_chunks(s, start_hh_col:end_mm_col),...
-				behav_mat(click_indices, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm), slide_or_chunk);
+				behav_mat(click_indices, behav_mat_columns.actual_hh:behav_mat_columns.actual_mm),...
+				sprintf('%s%d', slide_or_chunk, time_window));
 
 		info_per_chunk.p_point = [info_per_chunk.p_point; p_point];
 		info_per_chunk.q_point = [info_per_chunk.q_point; q_point];
@@ -97,12 +99,12 @@ for e = 1:length(exp_sessions)
 	end
 end
 
-file_name = sprintf('%s/%s/%s_%s%d_peak%d_detection', get_project_settings('plots'), subject_id, subject_id,...
-							slide_or_chunk, time_window, peak_detect_appr);
+file_name = sprintf('%s/%s/%s_%s%d_peak%d_detection', get_project_settings('plots'), subject_id,...
+		subject_profile.events{event}.file_name, slide_or_chunk, time_window, peak_detect_appr);
 savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
-mat_path = fullfile(result_dir, subject_id, sprintf('%s_pqrst_peaks_%d_%s', subject_profile.events{event}.file_name,...
-						time_window, slide_or_chunk));
+mat_path = fullfile(result_dir, subject_id, sprintf('%s_%s_peaks_%s%d', subject_profile.events{event}.file_name,...
+				pqrst_rr_peaks_str, slide_or_chunk, time_window));
 save(mat_path, '-struct', 'info_per_chunk');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -152,56 +154,26 @@ else
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[event_presence_absence] = detect_event(chunk_start_end, behav_event_data, slide_or_chunk)
+function[event_presence_absence] = detect_event(chunk_start_end, behav_event_data, win_plus_time)
 
 start_hh = chunk_start_end(1);
 start_mm = chunk_start_end(2);
 end_hh = chunk_start_end(3);
 end_mm = chunk_start_end(4);
-switch slide_or_chunk
-case 'chunk'
+switch win_plus_time
+case 'chunk5'
 	event_presence_absence = sum((behav_event_data(:, 1) > start_hh |...
 				      behav_event_data(:, 1) == start_hh & behav_event_data(:, 2) >= start_mm) &...
 	    		   	     (behav_event_data(:, 1) < end_hh |...
 				      behav_event_data(:, 1) == end_hh & behav_event_data(:, 2) < end_mm) );
-case 'slide'
+case 'slide30'
 	event_presence_absence = sum(behav_event_data(:, 1) == start_hh & behav_event_data(:, 2) == start_mm &...
 	    		   	     behav_event_data(:, 1) == end_hh & behav_event_data(:, 2) == end_mm);
+case 'slide180'
+	event_presence_absence = sum((behav_event_data(:, 1) > start_hh |...
+				      behav_event_data(:, 1) == start_hh & behav_event_data(:, 2) >= start_mm) &...
+	    		   	     (behav_event_data(:, 1) < end_hh |...
+				      behav_event_data(:, 1) == end_hh & behav_event_data(:, 2) < end_mm) );
 otherwise, error('Invlid windowing technique!');
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% old code
-%{
-%legend_str{legend_cntr} = sprintf('%d|%02d:%02d-%02d:%02d,%d samples',...
-%		individual_chunks(s, dosage_col),...
-%		individual_chunks(s, start_hh_col), individual_chunks(s, start_mm_col),...
-%		individual_chunks(s, end_hh_col), individual_chunks(s, end_mm_col),...
-%		individual_chunks(s, nSamples_col));
-% legend(legend_str);
-
-case 'no-checks'
-	q_point = mintab(1, :);
-	t_point = maxtab(maxtab(:, 1) > 70, :);
-case 'mean-whole-signal' % thresholding by the mean of the whole signal
-	hold_mintab = find(mintab(:, 2) < mean(individual_chunks));
-	q_point = mintab(hold_mintab(1), :);
-	hold_maxtab = find(maxtab(:, 2) > mean(individual_chunks));
-	t_point = maxtab(hold_maxtab(end), :);
-case 'mean-first-last' % thresholding the mean of the first and last point
-	hold_mintab = find(mintab(:, 2) < mean([individual_chunks(1), individual_chunks(end)]));
-	q_point = mintab(hold_mintab(1), :);
-	hold_maxtab = find(maxtab(:, 2) > mean([individual_chunks(1), individual_chunks(end)]));
-	t_point = maxtab(hold_maxtab(end), :);
-
-h1=plot(q_point(1, 1), q_point(1, 2), '*', 'color', set_colors, 'MarkerSize', 10);
-hAnnotation = get(h1, 'Annotation');
-hLegendEntry = get(hAnnotation', 'LegendInformation');
-set(hLegendEntry, 'IconDisplayStyle', 'off');
-
-h2=plot(t_point(1, 1), t_point(1, 2), 's', 'color', set_colors, 'MarkerSize', 10);
-hAnnotation = get(h2, 'Annotation');
-hLegendEntry = get(hAnnotation', 'LegendInformation');
-set(hLegendEntry, 'IconDisplayStyle', 'off');
-%}
 

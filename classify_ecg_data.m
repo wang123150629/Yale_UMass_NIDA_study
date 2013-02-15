@@ -48,7 +48,9 @@ rt_peak_col = nInterpolatedFeatures + 3;
 qt_peak_col = nInterpolatedFeatures + 4;
 qtc_peak_col = nInterpolatedFeatures + 5;
 pr_peak_col = nInterpolatedFeatures + 6;
-label_col = nInterpolatedFeatures + 7;
+dosage_col = nInterpolatedFeatures + 7;
+expsess_col = nInterpolatedFeatures + 8;
+label_col = nInterpolatedFeatures + 9;
 
 switch feature_set_flag
 case 1
@@ -56,34 +58,41 @@ case 1
 	feature_extracted_data = loaded_data(:, ecg_col);
 	title_str = 'Standardized features';
 case 2
+	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, rr_col)];
+	title_str = 'std. feat+RR';
+case 3
 	feature_extracted_data = loaded_data(:, pt_peak_col);
 	title_str = 'PT length';
-case 3
+case 4
 	feature_extracted_data = loaded_data(:, rt_peak_col);
 	title_str = 'RT length';
-case 4
+case 5
 	feature_extracted_data = loaded_data(:, qt_peak_col);
 	title_str = 'QT length';
-case 5
+case 6
 	feature_extracted_data = loaded_data(:, qtc_peak_col);
 	title_str = 'QT_c length';
-case 6
+case 7
 	feature_extracted_data = loaded_data(:, pr_peak_col);
 	title_str = 'PR length';
-case 7
+case 8
 	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
 				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col)];
 	title_str = 'All peaks';
-case 8
+case 9
+	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
+				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, rr_col)];
+	title_str = 'All peaks+RR';
+case 10
 	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, pt_peak_col),...
 				  loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
-				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col)];
+				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, rr_col)];
 	title_str = 'All features';
 otherwise
 	error('Invalid feature set flag!');
 end
 
-feature_extracted_data = [feature_extracted_data, loaded_data(:, label_col)];
+feature_extracted_data = [feature_extracted_data, loaded_data(:, dosage_col), loaded_data(:, expsess_col), loaded_data(:, label_col)];
 disp(sprintf('%s', title_str));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -98,19 +107,14 @@ slide_or_chunk = class_information{1, 1}.slide_or_chunk;
 target_dosage = class_information{1, 1}.dosage;
 target_exp_sess = class_information{1, 1}.exp_session;
 
-peaks_data = load(fullfile(result_dir, subject_id, sprintf('%s_pqrst_peaks_%d_%s.mat', event, time_window, slide_or_chunk)));
-
-switch slide_or_chunk
-case 'chunk'
-	window_data = load(fullfile(result_dir, subject_id, sprintf('%s_chunking_%dmin_win.mat', event, time_window)));
-case 'slide'
-	window_data = load(fullfile(result_dir, subject_id, sprintf('%s_sliding_%dsec_win.mat', event, time_window)));
-end
+peaks_data = load(fullfile(result_dir, subject_id, sprintf('%s_pqrst_peaks_%s%d.mat', event, slide_or_chunk, time_window)));
+window_data = load(fullfile(result_dir, subject_id, sprintf('%s_%s%d_win.mat', event, slide_or_chunk, time_window)));
 if pqrst_flag
 	window_data = window_data.pqrst_mat;
 else
 	window_data = window_data.rr_mat;
 end
+
 assert(size(window_data, 1) == size(peaks_data.p_point, 1));
 nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
 rr_length_col = nInterpolatedFeatures + 1;
@@ -133,5 +137,6 @@ for e = 1:length(target_exp_sess)
 end
 
 target_samples = find(peaks_data.q_point(:, 1) > 0 & sum(temp_dosage_mat, 2) & sum(temp_exp_sess_mat, 2));
-loaded_data = [loaded_data(target_samples, :), repmat(class_label, length(target_samples), 1)];
+loaded_data = [loaded_data(target_samples, :), window_data(target_samples, dos_col),...
+	       window_data(target_samples, exp_sess_col), repmat(class_label, length(target_samples), 1)];
 

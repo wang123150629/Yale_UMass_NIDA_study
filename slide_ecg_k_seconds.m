@@ -1,11 +1,11 @@
-function[subject_profile] = sliding_window_ecg(subject_profile)
+function[subject_profile] = slide_ecg_k_seconds(subject_profile)
 
 how_many_sec_per_win = get_project_settings('how_many_sec_per_win');
 result_dir = get_project_settings('results');
 subject_id =  subject_profile.subject_id;
 
 for v = 1:subject_profile.nEvents
-	if ~isfield(subject_profile.events{v}, sprintf('sliding_%dwin_mat_path', how_many_sec_per_win))
+	if ~isfield(subject_profile.events{v}, sprintf('slide%d_win_mat_path', how_many_sec_per_win))
 		load(sprintf('%s.mat', subject_profile.events{v}.preprocessed_mat_path));
 		exp_sessions = subject_profile.events{v}.exp_sessions;
 		sliding_ksec_win = struct();
@@ -18,11 +18,11 @@ for v = 1:subject_profile.nEvents
 			sliding_ksec_win.pqrst_mat = [sliding_ksec_win.pqrst_mat;...
 							[pqrst_mat, repmat(exp_sessions(e), size(rr_mat, 1), 1)]];
 		end
-		mat_path = fullfile(result_dir, subject_id, sprintf('%s_sliding_%dsec_win',...
+		mat_path = fullfile(result_dir, subject_id, sprintf('%s_slide%d_win',...
 					subject_profile.events{v}.file_name, how_many_sec_per_win));
 		save(mat_path, '-struct', 'sliding_ksec_win');
 		subject_profile.events{v} = setfield(subject_profile.events{v},...
-					sprintf('sliding_%dwin_mat_path', how_many_sec_per_win), mat_path);
+					sprintf('slide%d_win_mat_path', how_many_sec_per_win), mat_path);
 	end
 end
 
@@ -35,6 +35,7 @@ image_format = get_project_settings('image_format');
 cut_off_heart_rate = get_project_settings('cut_off_heart_rate');
 raw_ecg_mat_time_res = get_project_settings('raw_ecg_mat_time_res');
 how_many_sec_per_win = get_project_settings('how_many_sec_per_win');
+nFeatures = get_project_settings('nInterpolatedFeatures');
 
 dosage_levels = subject_profile.events{event}.dosage_levels;
 
@@ -80,10 +81,9 @@ for d = 1:length(dosage_levels)
 			% PQRST:
 			%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 			% First convert the RR samples into PQRST samples
-			nFeatures = get_project_settings('nInterpolatedFeatures');
-		
 			pqrst_interpolated_ecg_within_win = [interpolated_ecg_within_win(1:end-1, (nFeatures/2)+1:nFeatures),...
 		   					     interpolated_ecg_within_win(2:end, 1:nFeatures/2)];
+
 			% Passing in only those four samples i.e. 2, 3, 4, 5
 			[mean_for_this_chunk, mean_rr_intervals, good_samples] =...
 						find_samples_that_qualify(pqrst_interpolated_ecg_within_win, rr_intervals);

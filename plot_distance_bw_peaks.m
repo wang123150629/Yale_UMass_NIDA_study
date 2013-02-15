@@ -1,24 +1,23 @@
 function[] = plot_distance_bw_peaks(subject_id, event, slide_or_chunk, time_window, peak_detect_appr, pqrst_flag)
 
-% plot_distance_bw_peaks('P20_040', 'cocn', 'chunk', 5, 4, true)
 % plot_distance_bw_peaks('P20_040', 'cocn', 'slide', 30, 4, true)
+% plot_distance_bw_peaks('P20_040', 'cocn', 'chunk', 5, 4, true)
 
 close all;
 
 result_dir = get_project_settings('results');
 
-peaks_data = load(fullfile(result_dir, subject_id, sprintf('%s_pqrst_peaks_%d_%s.mat', event, time_window, slide_or_chunk)));
-switch slide_or_chunk
-case 'chunk'
-	window_data = load(fullfile(result_dir, subject_id, sprintf('%s_chunking_%dmin_win.mat', event, time_window)));
-case 'slide'
-	window_data = load(fullfile(result_dir, subject_id, sprintf('%s_sliding_%dsec_win.mat', event, time_window)));
-end
+window_data = load(fullfile(result_dir, subject_id, sprintf('%s_%s%d_win.mat', event, slide_or_chunk, time_window)));
 if pqrst_flag
 	window_data = window_data.pqrst_mat;
+	pqrst_rr_peaks_str = 'pqrst';
 else
 	window_data = window_data.rr_mat;
+	pqrst_rr_peaks_str = 'rr';
 end
+peaks_data = load(fullfile(result_dir, subject_id, sprintf('%s_%s_peaks_%s%d.mat', event, pqrst_rr_peaks_str,...
+									slide_or_chunk, time_window)));
+
 assert(size(window_data, 1) == size(peaks_data.p_point, 1));
 nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
 rr_length_col = nInterpolatedFeatures + 1;
@@ -70,7 +69,7 @@ end
 set(gca, 'XTickLabel', '');
 legend(h1, '8mg', '16mg', '32mg', 'baseline', 'Location', 'SouthEast', 'Orientation', 'Horizontal');
 title(sprintf('%s', get_project_settings('strrep_subj_id', subject_id)));
-file_name = sprintf('%s/%s/%s_%s%d_peak%d_%s', plot_dir, subject_id, subject_id, slide_or_chunk,...
+file_name = sprintf('%s/%s/%s%d_peak%d_%s', plot_dir, subject_id, slide_or_chunk,...
 						time_window, peak_detect_appr, feature_name);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
