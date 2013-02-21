@@ -23,10 +23,10 @@ start_idx = [(1:100:length(target_idx))', ([100:100:length(target_idx), length(t
 colors = jet(size(start_idx, 1));
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
 title(sprintf('%s, all sessions', get_project_settings('strrep_subj_id', subject_id))); hold on;
-xlim([0, nInterpolatedFeatures]);
-ylabel('std. millivolts'); xlabel('mean(Interpolated ECG)');
+xlim([0, nInterpolatedFeatures]); ylim([-4, 5.5]);
+ylabel('std. millivolts'); xlabel('Interpolated ECG features');
 grid on;
-for s = 1:size(start_idx, 1)
+for s = 35:size(start_idx, 1)
 	avgd_data = mean(window_data(start_idx(s, 1):start_idx(s, 2), ecg_col));
 	plot(avgd_data, 'color', colors(s, :));
 	%{
@@ -41,6 +41,4 @@ for s = 1:size(start_idx, 1)
 	file_name = sprintf('/home/anataraj/Dropbox/temp_hold/plot_%d', s);
 	savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 end
-
-keyboard
 

@@ -146,10 +146,11 @@ for d = 1:length(dosage_levels)
 		behav_start_end_times = intersect(index_maps.behav(dosg_start_end), index_maps.behav(sess_start_end));
 
 		% Now this subtracts 11100 - 8154 which gives 2946. This is telling us that the 2946th time point in the
-		% summary file corresponds to the start of the d mg, first session.
+		% summary file corresponds to the start of the d mg in the target session.
 		summ_start_time = behav_start_end_times(1) - (index_maps.summary(1)-1);
 		% Similarly for the end time point it is 12720 - 8155 = 4565th time point
 		summ_end_time = behav_start_end_times(end)+summ_mat_time_res - index_maps.summary(1);
+
 		disp(sprintf('Summ: %d:%d:%0.3f -- %d:%d:%0.3f',...
 			summary_mat(summ_start_time, summ_mat_columns.actual_hh),...
 			summary_mat(summ_start_time, summ_mat_columns.actual_mm),...
@@ -194,6 +195,7 @@ subject_sensor = subject_profile.events{event}.sensor;
 subject_timestamp = subject_profile.events{event}.timestamp;
 raw_ecg_mat_columns = subject_profile.columns.raw_ecg;
 subject_threshold = subject_profile.events{event}.rr_thresholds;
+scaling_factor = subject_profile.scaling_factor;
 
 dos_interpolated_ecg = [];
 hold_start_end_indices = [];
@@ -208,7 +210,7 @@ ecg_mat(raw_start_time, raw_ecg_mat_columns.actual_hh),...
 	ecg_mat(raw_end_time, raw_ecg_mat_columns.actual_ss)));
 
 % converting the bioharness numbers into millivolts
-x = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.ecg) .* 0.001220703125;
+x = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.ecg) .* scaling_factor;
 length_x = length(x);
 x_time = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.actual_hh:raw_ecg_mat_columns.actual_ss);
 

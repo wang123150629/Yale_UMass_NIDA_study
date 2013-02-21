@@ -42,7 +42,33 @@ raw_ecg.actual_ss = 6;
 raw_ecg.ecg = 7;
 
 switch subject_id
+case 'P20_036'
+	subject_profile.ylim = [-4, 5];
+	subject_profile.scaling_factor = 0.004882812500000;
+	subject_profile.events = cell(1, 1);
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_1');
+	subject_profile.events{1, 1}.timestamp = sprintf('2012_05_30-10_13_20');
+	subject_profile.events{1, 1}.rr_thresholds = 0.05;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = 0:4;
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+case 'P20_039'
+	subject_profile.ylim = [-4, 5];
+	subject_profile.scaling_factor = 0.004882812500000;
+	subject_profile.events = cell(1, 1);
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_1');
+	subject_profile.events{1, 1}.timestamp = sprintf('2012_06_14-09_25_42');
+	subject_profile.events{1, 1}.rr_thresholds = 0.05;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = 0:3;
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_040'
+	subject_profile.ylim = [-4, 5];
+	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
 	subject_profile.events{1, 1}.label = sprintf('cocaine');
@@ -52,8 +78,9 @@ case 'P20_040'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = 0:3;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
-	subject_profile.ylim = [-4, 5];
 case 'P20_048'
+	subject_profile.ylim = [-1, 0.5];
+	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
 	subject_profile.events{1, 1}.label = sprintf('cocaine');
@@ -63,8 +90,9 @@ case 'P20_048'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
-	subject_profile.ylim = [-1, 0.5];
 case 'P20_053'
+	subject_profile.ylim = [-2, 2];
+	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
 	subject_profile.events{1, 1}.label = sprintf('cocaine');
@@ -74,8 +102,9 @@ case 'P20_053'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
-	subject_profile.ylim = [-2, 2];
 case 'P20_058'
+	subject_profile.ylim = [-2, 2];
+	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
 	subject_profile.events{1, 1}.label = sprintf('cocaine');
@@ -85,9 +114,9 @@ case 'P20_058'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
-	subject_profile.ylim = [-2, 2];
 case 'P20_060'
 	subject_profile.ylim = [-2, 2];
+	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = {};
 
 	subject_profile.events{1, 1} = struct();
@@ -121,18 +150,27 @@ case 'P20_060'
 	subject_profile.events{1, 3}.start_time = [09, 30];
 	subject_profile.events{1, 3}.end_time = [12, 30];
 	
-	%{
 	subject_profile.events{1, 4} = struct();
-	subject_profile.events{1, 4}.label = sprintf('Night time 12/6-12/7');
+	subject_profile.events{1, 4}.label = sprintf('habituation day');
 	subject_profile.events{1, 4}.sensor = sprintf('Sensor_1');
-	subject_profile.events{1, 4}.timestamp = sprintf('2012_12_06-18_04_10');
+	subject_profile.events{1, 4}.timestamp = sprintf('2012_12_05-11_09_22');
 	subject_profile.events{1, 4}.rr_thresholds = 0.05;
-	subject_profile.events{1, 4}.file_name = 'nta';
+	subject_profile.events{1, 4}.file_name = 'hab';
 	subject_profile.events{1, 4}.exp_sessions = 1;
 	subject_profile.events{1, 4}.dosage_levels = [0];
-	subject_profile.events{1, 4}.start_time = [23, 00];
-	subject_profile.events{1, 4}.end_time = [04, 00];
-	%}
+	subject_profile.events{1, 4}.start_time = [11, 30];
+	subject_profile.events{1, 4}.end_time = [14, 30];
+	
+	subject_profile.events{1, 5} = struct();
+	subject_profile.events{1, 5}.label = sprintf('Night time 12/6-12/7');
+	subject_profile.events{1, 5}.sensor = sprintf('Sensor_1');
+	subject_profile.events{1, 5}.timestamp = sprintf('2012_12_06-18_04_10');
+	subject_profile.events{1, 5}.rr_thresholds = 0.05;
+	subject_profile.events{1, 5}.file_name = 'nta';
+	subject_profile.events{1, 5}.exp_sessions = 1;
+	subject_profile.events{1, 5}.dosage_levels = [0];
+	subject_profile.events{1, 5}.start_time = [23, 00];
+	subject_profile.events{1, 5}.end_time = [04, 00];
 
 case 'P20_061'
 	subject_profile.ylim = [-2, 2];

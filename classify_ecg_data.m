@@ -1,4 +1,4 @@
-function[mean_over_runs, errorbars_over_runs, title_str, class_label, chance_baseline] =...
+function[mean_over_runs, errorbars_over_runs, title_str, class_label, chance_baseline, tpr_over_runs, fpr_over_runs, auc_over_runs] =...
 			classify_ecg_data(subject_id, classes_to_classify, set_of_features_to_try, nRuns, tr_percent, classifierList)
 
 nFeatures = length(set_of_features_to_try);
@@ -13,6 +13,9 @@ title_str = cell(1, nFeatures);
 chance_baseline = NaN(nFeatures, nRuns);
 mean_over_runs = NaN(nFeatures, nClassifiers);
 errorbars_over_runs = NaN(nFeatures, nClassifiers);
+tpr_over_runs = NaN(nFeatures, nClassifiers);
+fpr_over_runs = NaN(nFeatures, nClassifiers);
+auc_over_runs = NaN(nFeatures, nClassifiers);
 
 for c = 1:nAnalysis
 	loaded_data = [loaded_data; massage_data(subject_id, classes_to_classify(c))];
@@ -22,16 +25,23 @@ end
 
 for f = 1:length(set_of_features_to_try)
 	accuracies = NaN(nRuns, nClassifiers);
-	[feature_extracted_data, title_str{1, f}] = setup_features(loaded_data, f);
+	true_pos_rate = NaN(nRuns, nClassifiers);
+	false_pos_rate = NaN(nRuns, nClassifiers);
+	auc = NaN(nRuns, nClassifiers);
+	[feature_extracted_data, title_str{1, f}] = setup_features(loaded_data, set_of_features_to_try(f));
 	for r = 1:nRuns
 		[complete_train_set, complete_test_set, chance_baseline(f, r)] =...
 					partition_and_relabel(feature_extracted_data, tr_percent);
 		for k = 1:nClassifiers
-			accuracies(r, k) = classifierList{k}(complete_train_set, complete_test_set, subject_id);
+			[accuracies(r, k), true_pos_rate(r, k), false_pos_rate(r, k), auc(r, k)] =...
+			classifierList{k}(complete_train_set, complete_test_set);
 		end
 	end
-	mean_over_runs(f, :) = mean(accuracies);
-	errorbars_over_runs(f, :) = std(accuracies) ./ nRuns;
+	mean_over_runs(f, :) = mean(accuracies, 1);
+	errorbars_over_runs(f, :) = std(accuracies, [], 1) ./ nRuns;
+	tpr_over_runs(f, :) = mean(true_pos_rate, 1);
+	fpr_over_runs(f, :) = mean(false_pos_rate, 1);
+	auc_over_runs(f, :) = mean(auc, 1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,45 +58,65 @@ rt_peak_col = nInterpolatedFeatures + 3;
 qt_peak_col = nInterpolatedFeatures + 4;
 qtc_peak_col = nInterpolatedFeatures + 5;
 pr_peak_col = nInterpolatedFeatures + 6;
-dosage_col = nInterpolatedFeatures + 7;
-expsess_col = nInterpolatedFeatures + 8;
-label_col = nInterpolatedFeatures + 9;
+p_height_col = nInterpolatedFeatures + 7;
+q_height_col = nInterpolatedFeatures + 8;
+r_height_col = nInterpolatedFeatures + 9;
+s_height_col = nInterpolatedFeatures + 10;
+t_height_col = nInterpolatedFeatures + 11;
+dosage_col = nInterpolatedFeatures + 12;
+expsess_col = nInterpolatedFeatures + 13;
+label_col = nInterpolatedFeatures + 14;
 
 switch feature_set_flag
 case 1
 	% Returning only the averaged (within windows) standardized features with labels
 	feature_extracted_data = loaded_data(:, ecg_col);
-	title_str = 'Standardized features';
+	title_str = 'Std. feat';
 case 2
+	feature_extracted_data = loaded_data(:, rr_col);
+	title_str = 'RR length';
+case 3
 	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, rr_col)];
 	title_str = 'std. feat+RR';
-case 3
-	feature_extracted_data = loaded_data(:, pt_peak_col);
-	title_str = 'PT length';
 case 4
-	feature_extracted_data = loaded_data(:, rt_peak_col);
-	title_str = 'RT length';
+	feature_extracted_data = loaded_data(:, pt_peak_col);
+	title_str = 'PT';
 case 5
-	feature_extracted_data = loaded_data(:, qt_peak_col);
-	title_str = 'QT length';
+	feature_extracted_data = loaded_data(:, rt_peak_col);
+	title_str = 'RT';
 case 6
-	feature_extracted_data = loaded_data(:, qtc_peak_col);
-	title_str = 'QT_c length';
+	feature_extracted_data = loaded_data(:, qt_peak_col);
+	title_str = 'QT';
 case 7
-	feature_extracted_data = loaded_data(:, pr_peak_col);
-	title_str = 'PR length';
+	feature_extracted_data = loaded_data(:, qtc_peak_col);
+	title_str = 'QT_c';
 case 8
-	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
-				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col)];
-	title_str = 'All peaks';
+	feature_extracted_data = loaded_data(:, pr_peak_col);
+	title_str = 'PR';
 case 9
 	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
-				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, rr_col)];
-	title_str = 'All peaks+RR';
+				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col)];
+	title_str = 'All dist';
 case 10
-	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, pt_peak_col),...
-				  loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
+	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
 				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, rr_col)];
+	title_str = 'All dist+RR';
+case 11
+	feature_extracted_data = [loaded_data(:, p_height_col), loaded_data(:, q_height_col), loaded_data(:, r_height_col),...
+				  loaded_data(:, s_height_col), loaded_data(:, t_height_col)];
+	title_str = 'All heights';
+case 12
+	feature_extracted_data = [loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
+				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, p_height_col),...
+				  loaded_data(:, q_height_col), loaded_data(:, r_height_col), loaded_data(:, s_height_col),...
+				  loaded_data(:, t_height_col)];
+	title_str = 'All dist+heights';
+case 13
+	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, pt_peak_col),...
+				  loaded_data(:, pt_peak_col), loaded_data(:, rt_peak_col), loaded_data(:, qt_peak_col),...
+				  loaded_data(:, qtc_peak_col), loaded_data(:, pr_peak_col), loaded_data(:, p_height_col),...
+				  loaded_data(:, q_height_col), loaded_data(:, r_height_col), loaded_data(:, s_height_col),...
+				  loaded_data(:, t_height_col), loaded_data(:, rr_col)];
 	title_str = 'All features';
 otherwise
 	error('Invalid feature set flag!');
@@ -126,6 +156,11 @@ loaded_data = [loaded_data, (peaks_data.t_point(:, 1) - peaks_data.r_point(:, 1)
 loaded_data = [loaded_data, (peaks_data.t_point(:, 1) - peaks_data.q_point(:, 1))];
 loaded_data = [loaded_data, ((peaks_data.t_point(:, 1) - peaks_data.q_point(:, 1)) .* sqrt(window_data(:, rr_length_col)))];
 loaded_data = [loaded_data, (peaks_data.r_point(:, 1) - peaks_data.p_point(:, 1))];
+loaded_data = [loaded_data, peaks_data.p_point(:, 2)];
+loaded_data = [loaded_data, peaks_data.q_point(:, 2)];
+loaded_data = [loaded_data, peaks_data.r_point(:, 2)];
+loaded_data = [loaded_data, peaks_data.s_point(:, 2)];
+loaded_data = [loaded_data, peaks_data.t_point(:, 2)];
 
 temp_dosage_mat = NaN(size(loaded_data, 1), length(target_dosage));
 for d = 1:length(target_dosage)

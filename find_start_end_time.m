@@ -12,7 +12,7 @@ else
 	earliest_start_time = [behav_mat(1, behav_mat_columns.actual_hh), behav_mat(1, behav_mat_columns.actual_mm), 0];
 end
 
-% If the data from summary matrix ended first then the lst entry in the behavior mat is the latest_end_time else the last entry in the summary mat is the latest_end_time. Example 17:16:51
+% If the data from summary matrix ended first then the last entry in the behavior mat is the latest_end_time else the last entry in the summary mat is the latest_end_time. Example 17:16:51
 if summary_mat(end, summ_mat_columns.actual_hh) <= behav_mat(end, behav_mat_columns.actual_hh) &...
 		    summary_mat(end, summ_mat_columns.actual_mm) <= behav_mat(end, behav_mat_columns.actual_mm)
 	latest_end_time = [behav_mat(end, behav_mat_columns.actual_hh), behav_mat(end, behav_mat_columns.actual_mm), 59];

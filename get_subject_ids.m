@@ -12,9 +12,12 @@ case 3
 case 4
 	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060'};
 case 5
-	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061'};
+	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_036'};
 case 6
+	subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060'};
+case 8
 	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061', 'P20_053'};
 otherwise
 	error('Invalid number of subjects!');
 end
+

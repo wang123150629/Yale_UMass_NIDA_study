@@ -222,3 +222,33 @@ title('Single-Sided Amplitude Spectrum of y(t)')
 xlabel('Frequency (Hz)')
 ylabel('|Y(f)|')
 
+
+%{
+col_mark = {'r', 'g', 'b', 'm'};
+mark_loc = {0.3, 0.25, 0.2, 0.15};
+mark_str = {'red', 'blue', 'green', 'magenta'};
+letter = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'};
+feat_label = classifier_results.feature_str{1};
+figure(); set(gcf, 'Position', get_project_settings('figure_size'));
+tpr = [classifier_results.tpr_over_runs{:}];
+fpr = [classifier_results.fpr_over_runs{:}];
+legend_str = {};
+for a = 1:nAnalysis
+subplot(2, 2, a);
+for f = 1:nFeatures
+	plot(fpr(f, a), tpr(f, a), sprintf('%s.', col_mark{a}), 'Marker', 'none'); hold on;
+	text(fpr(f, a), tpr(f, a), letter{f}, 'FontWeight', 'bold', 'color', col_mark{a}, 'FontSize', 20);
+	if a == 1
+		legend_str{f} = sprintf('%s-%s', letter{f}, feat_label{f});
+	end	
+end
+%text(1, mark_loc{a}, sprintf('%s-%s vs %s', mark_str{a}, classifier_results.class_label{a}{1},...
+%	classifier_results.class_label{a}{2}), 'FontWeight', 'bold', 'color', col_mark{a});    
+end
+grid on; xlim([-0.02, 1.3]); ylim([-0.02, 1.02]); xlabel('false positive rate'); ylabel('true positive rate');
+plot([0, 1], [0, 1], 'k--');
+legend(legend_str, 'Location', 'NorthEast'); legend boxoff;
+title(sprintf('%s, Log reg, AUROC', get_project_settings('strrep_subj_id', subject_ids{s})));
+keyboard
+%}
+
