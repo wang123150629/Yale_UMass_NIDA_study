@@ -16,7 +16,7 @@ for i in /home/anataraj/NIH-craving/data/${subject_id}/* ; do
 				echo `tail -1 $j/*${file_name}.csv`
 				sed -i 's/:/,/g' *${file_name}.csv
 				sed -i 's:/:,:g' *${file_name}.csv
-				sed -i 's:-:,:g' *${file_name}.csv
+				#sed -i 's:-:,:g' *${file_name}.csv
 				sed -i 's/ /,/g' *${file_name}.csv
 				echo `head -2 $j/*${file_name}.csv`
 				echo `tail -1 $j/*${file_name}.csv`

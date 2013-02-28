@@ -5,7 +5,7 @@ close all;
 slide_or_chunk = 'slide';
 peak_detect_appr = 4;
 pqrst_flag = true;
-number_of_subjects = 6;
+number_of_subjects = 7;
 
 subject_ids = get_subject_ids(number_of_subjects);
 result_dir = get_project_settings('results');
@@ -28,7 +28,7 @@ for s = 1:number_of_subjects
 		% subject_profile = chunk_ecg_m_minutes(subject_profile);
 	case 'slide'
 		time_window = get_project_settings('how_many_sec_per_win');
-		% subject_profile = slide_ecg_k_seconds(subject_profile);
+		subject_profile = slide_ecg_k_seconds(subject_profile);
 	otherwise, error('Invalid windowing strategy!');
 	end
 

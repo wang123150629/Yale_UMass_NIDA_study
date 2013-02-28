@@ -19,14 +19,14 @@ chance_baseline = max(chance_baseline) / sum(chance_baseline) * 100;
 unique_labels = unique(complete_train_set(:, end));
 % Reassigning the labels to 0 and 1 for two-class classification
 if length(unique_labels) == 2
-	complete_train_set(find(unique_labels(1) == complete_train_set(:, end)), end) = 0;
+	complete_train_set(find(unique_labels(1) == complete_train_set(:, end)), end) = -1;
 	complete_train_set(find(unique_labels(2) == complete_train_set(:, end)), end) = 1;
-	complete_test_set(find(unique_labels(1) == complete_test_set(:, end)), end) = 0;
+	complete_test_set(find(unique_labels(1) == complete_test_set(:, end)), end) = -1;
 	complete_test_set(find(unique_labels(2) == complete_test_set(:, end)), end) = 1;
 elseif length(unique_labels) == 4
-	complete_train_set(find(complete_train_set(:, end) < 0), end) = 0;
+	complete_train_set(find(complete_train_set(:, end) < 0), end) = -1;
 	complete_train_set(find(complete_train_set(:, end) > 0), end) = 1;
-	complete_test_set(find(complete_test_set(:, end) < 0), end) = 0;
+	complete_test_set(find(complete_test_set(:, end) < 0), end) = -1;
 	complete_test_set(find(complete_test_set(:, end) > 0), end) = 1;
 else
 	error('Invalid classes to compare!');

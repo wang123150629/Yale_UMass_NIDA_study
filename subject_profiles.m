@@ -150,6 +150,7 @@ case 'P20_060'
 	subject_profile.events{1, 3}.start_time = [09, 30];
 	subject_profile.events{1, 3}.end_time = [12, 30];
 	
+	%{
 	subject_profile.events{1, 4} = struct();
 	subject_profile.events{1, 4}.label = sprintf('habituation day');
 	subject_profile.events{1, 4}.sensor = sprintf('Sensor_1');
@@ -171,18 +172,20 @@ case 'P20_060'
 	subject_profile.events{1, 5}.dosage_levels = [0];
 	subject_profile.events{1, 5}.start_time = [23, 00];
 	subject_profile.events{1, 5}.end_time = [04, 00];
+	%}
 
 case 'P20_061'
 	subject_profile.ylim = [-2, 2];
-	subject_profile.events = cell(1, 1);
+	subject_profile.scaling_factor = 0.001220703125;
+	subject_profile.events = {};
 
 	subject_profile.events{1, 1} = struct();
 	subject_profile.events{1, 1}.label = sprintf('cocaine');
-	subject_profile.events{1, 1}.sensor = sprintf('Sensor_');
-	subject_profile.events{1, 1}.timestamp = sprintf('');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_1');
+	subject_profile.events{1, 1}.timestamp = sprintf('2013_01_18-00_01_01');
 	subject_profile.events{1, 1}.rr_thresholds = 0.05;
 	subject_profile.events{1, 1}.file_name = 'cocn';
-	subject_profile.events{1, 1}.exp_sessions = 0:4;
+	subject_profile.events{1, 1}.exp_sessions = [0:3];
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 otherwise
 	error(sprintf('Invalid subject id=%s!', subject_id));
@@ -192,16 +195,4 @@ subject_profile.columns.summ = summ;
 subject_profile.columns.behav = behav;
 subject_profile.columns.raw_ecg = raw_ecg;
 subject_profile.nEvents = length(subject_profile.events);
-
-%{
-subject_profile.events.mph1 = struct();
-subject_profile.events.mph1.label = sprintf('%s, mph1 day', subject_id);
-subject_profile.events.mph2 = struct();
-subject_profile.events.mph2.label = sprintf('%s, mph2 day', subject_id);
-subject_profile.events.exercise = struct();
-subject_profile.events.exercise.label = sprintf('%s, exercise session', subject_id);
-subject_profile.events.nighttime = struct();
-subject_profile.events.nighttime.label = sprintf('%s, nighttime activity', subject_id);
-subject_profile.events.others = struct();
-%}
 
