@@ -49,11 +49,39 @@ for yy = 1:length(y_vals)
 end
 legend([h1, h2, h3], 'Raw ECG', 'RR peaks', 'Sliding windows');
 file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/raw_ecg');
-savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+% savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
 peak_exists = find(peak_data.p_point(:, 1) > 0);
 samples_exist = find(window_data(:, nSamples_per_window_col) > 0);
 target_idx = intersect(peak_exists, samples_exist);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure(); set(gcf, 'Position', get_project_settings('figure_size'));
+title(sprintf('All windows + peak detection'), 'fontweight', 'bold', 'fontsize', 12);
+hold on; grid on;
+set(gca, 'box', 'on');
+xlim([0, nInterpolatedFeatures]); ylim([-4, 5.5]);
+ylabel('Standardized millivolts', 'fontweight', 'bold', 'fontsize', 15);
+xlabel('Interpolated ECG features', 'fontweight', 'bold', 'fontsize', 15);
+interleave_samples = 1:151:length(target_idx);
+colors = gray(length(interleave_samples)+25);
+for s = 1:length(interleave_samples)
+	tt = target_idx(interleave_samples(s));
+	plot(window_data(tt, ecg_col), 'color', colors(s, :), 'LineWidth', 2);
+	hold on;
+	h1 = plot(peak_data.p_point(tt, 1), peak_data.p_point(tt, 2), 'kd', 'MarkerSize', 10);
+	h2 = plot(peak_data.q_point(tt, 1), peak_data.q_point(tt, 2), 'ko', 'MarkerSize', 10);
+	h3 = plot(peak_data.r_point(tt, 1), peak_data.r_point(tt, 2), 'ks', 'MarkerSize', 10);
+	h4 = plot(peak_data.s_point(tt, 1), peak_data.s_point(tt, 2), 'k^', 'MarkerSize', 10);
+	h5 = plot(peak_data.t_point(tt, 1), peak_data.t_point(tt, 2), 'k*', 'MarkerSize', 10);
+end
+legend([h1, h2, h3, h4, h5], 'P peak', 'Q trough', 'R peak', 'S trough', 'T peak');
+
+file_name = sprintf('/home/anataraj/Dropbox/NIH plots/AMIA_poster/peaks');
+% savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+print(gcf, '-dpdf', '-painters', file_name);
+
+keyboard
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 colors = jet(size(target_idx, 1));
@@ -66,15 +94,9 @@ xlabel('Interpolated ECG features', 'fontweight', 'bold', 'fontsize', 10);
 for s = 1:size(target_idx, 1)
 	plot(window_data(target_idx(s), ecg_col), 'color', colors(s, :));
 	hold on;
-	h1 = plot(peak_data.p_point(target_idx(s), 1), peak_data.p_point(target_idx(s), 2), 'b*', 'MarkerSize', 10);
-	h2 = plot(peak_data.q_point(target_idx(s), 1), peak_data.q_point(target_idx(s), 2), 'g*', 'MarkerSize', 10);
-	h3 = plot(peak_data.r_point(target_idx(s), 1), peak_data.r_point(target_idx(s), 2), 'y*', 'MarkerSize', 10);
-	h4 = plot(peak_data.s_point(target_idx(s), 1), peak_data.s_point(target_idx(s), 2), 'k*', 'MarkerSize', 10);
-	h5 = plot(peak_data.t_point(target_idx(s), 1), peak_data.t_point(target_idx(s), 2), 'm*', 'MarkerSize', 10);
 end
-legend([h1, h2, h3, h4, h5], 'P peak', 'Q trough', 'R peak', 'S trough', 'T peak');
-file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/peaks');
-savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/window_data');
+% savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
@@ -97,7 +119,7 @@ set(gca, 'XTickLabel', feature_str);
 xlim([0.5, nFeatures+0.5]); grid on;
 title(sprintf('Logistic reg., Area under ROC'), 'fontweight', 'bold', 'fontsize', 12);
 file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/auroc');
-savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
+% savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 
 keyboard
 

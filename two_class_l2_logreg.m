@@ -1,4 +1,4 @@
-function[accuracy, tpr, fpr, AUC] = two_class_l2_logreg(train_set, test_set, lambda)
+function[accuracy, tpr, fpr, AUC] = two_class_l2_logreg(train_set, test_set, lambda, save_betas)
 
 interested_class = 1;
 
@@ -11,6 +11,14 @@ funObj = @(w)LogisticLoss(w, X, y);
 lambda = lambda .* ones(nVars, 1);
 lambda(1) = 0; % Don't penalize bias
 betas = minFunc(@penalizedL2, zeros(nVars, 1), options, funObj, lambda)';
+
+if ~isempty(save_betas)
+	weight_analysis = struct();
+	weight_analysis.betas = betas;
+	weight_analysis.train_setm1 = mean(train_set(train_set(:, end) == -1, 1:end-1), 1);
+	weight_analysis.train_set1 = mean(train_set(train_set(:, end) == 1, 1:end-1), 1);
+	save(sprintf('%s/results/l2_betas/%s_weight_analysis.mat', pwd, save_betas), '-struct', 'weight_analysis');
+end
 
 % Adding ones to the test set since there is an intercept term
 intercept_added_test_set = test_set(:, 1:end-1)';
@@ -30,5 +38,7 @@ class_m1_idx = find(test_set(:, end) == -1);
 assert(isempty(intersect(class_1_idx, class_m1_idx)));
 tpr = length(find(class_guessed(class_1_idx) == interested_class)) / length(class_1_idx);
 fpr = length(find(class_guessed(class_m1_idx) == interested_class)) / length(class_m1_idx);
+assert(sum(class_guessed(class_1_idx) == interested_class) + sum(class_guessed(class_m1_idx) == interested_class) ==...
+       sum(class_guessed == interested_class));
 [x_val, y_val, T, AUC] = perfcurve(test_set(:, end), class_guessed, interested_class);
 

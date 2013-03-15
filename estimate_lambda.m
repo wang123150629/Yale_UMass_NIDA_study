@@ -58,7 +58,8 @@ plot(max_idx:nLambda, repmat(l_interval(max_idx), 1, length([max_idx:nLambda])),
 plot(lambda_x_location, mean_auc(lambda_x_location), 'm*', 'MarkerSize', 10);
 text(2, 0.05, sprintf('* chosen lambda=%0.4f', chosen_lambda), 'color', 'm', 'fontWeight', 'bold');
 title(sprintf('Choice of lambda, %s vs %s, %s, %d fold cross validation', class_label{1}, class_label{2}, feature_str{1}, nSubjects));
-file_name = sprintf('%s/%s/crossval_lambda_feat%d', plot_dir, test_subject_ids{1}, feature_to_try);
+file_name = sprintf('%s/%s/crossval_%dvs%d_lambda_feat%d', plot_dir, test_subject_ids{1},...
+							classes_to_classify(1), classes_to_classify(2), feature_to_try);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %{

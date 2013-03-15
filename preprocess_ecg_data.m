@@ -215,6 +215,7 @@ length_x = length(x);
 x_time = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.actual_hh:raw_ecg_mat_columns.actual_ss);
 
 [rr, rs] = rrextract(x, raw_ecg_mat_time_res, subject_threshold);
+
 rr_start_end = [rr(1:end-1); rr(2:end)-1]';
 for s = 1:size(rr_start_end, 1)
 	if (rr_start_end(s, 2) - rr_start_end(s, 1)) > cut_off_heart_rate(1) &...

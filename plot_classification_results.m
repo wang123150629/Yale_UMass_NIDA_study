@@ -8,7 +8,7 @@ result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
 
-for s = 7:number_of_subjects
+for s = 1:number_of_subjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('classifier_results_tr%d.mat', tr_percent)));
 	nAnalysis = length(classifier_results.mean_over_runs);
 	legend_str = {};
@@ -42,5 +42,17 @@ for s = 7:number_of_subjects
 	title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
 	file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = list_as_latex_table(A, feature_str, subject_ids)
+
+for i = 1:size(A, 1)
+	temp = '';
+	for j = 1:size(A, 2)
+		temp = strcat(temp, sprintf('%0.4f &', A(i, j)));	
+	end
+	temp = temp(1:end-1);
+	disp(sprintf('%s & %s & %s \\\\\\hline', get_project_settings('strrep_subj_id', subject_ids), feature_str{1, i}, temp));
 end
 

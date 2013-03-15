@@ -43,7 +43,7 @@ raw_ecg.ecg = 7;
 
 switch subject_id
 case 'P20_036'
-	subject_profile.ylim = [-4, 5];
+	subject_profile.ylim = [-3, 6];
 	subject_profile.scaling_factor = 0.004882812500000;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
@@ -55,7 +55,7 @@ case 'P20_036'
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_039'
-	subject_profile.ylim = [-4, 5];
+	subject_profile.ylim = [-3, 6];
 	subject_profile.scaling_factor = 0.004882812500000;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
@@ -67,7 +67,7 @@ case 'P20_039'
 	subject_profile.events{1, 1}.exp_sessions = 0:3;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_040'
-	subject_profile.ylim = [-4, 5];
+	subject_profile.ylim = [-4.5, 6];
 	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
@@ -79,7 +79,7 @@ case 'P20_040'
 	subject_profile.events{1, 1}.exp_sessions = 0:3;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_048'
-	subject_profile.ylim = [-1, 0.5];
+	subject_profile.ylim = [-2, 0.5];
 	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
@@ -103,7 +103,7 @@ case 'P20_053'
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_058'
-	subject_profile.ylim = [-2, 2];
+	subject_profile.ylim = [-2.5, 2];
 	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = cell(1, 1);
 	subject_profile.events{1, 1} = struct();
@@ -175,7 +175,7 @@ case 'P20_060'
 	%}
 
 case 'P20_061'
-	subject_profile.ylim = [-2, 2];
+	subject_profile.ylim = [-5, 6];
 	subject_profile.scaling_factor = 0.001220703125;
 	subject_profile.events = {};
 
@@ -185,7 +185,7 @@ case 'P20_061'
 	subject_profile.events{1, 1}.timestamp = sprintf('2013_01_18-00_01_01');
 	subject_profile.events{1, 1}.rr_thresholds = 0.05;
 	subject_profile.events{1, 1}.file_name = 'cocn';
-	subject_profile.events{1, 1}.exp_sessions = [0:3];
+	subject_profile.events{1, 1}.exp_sessions = [0:2];
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 otherwise
 	error(sprintf('Invalid subject id=%s!', subject_id));

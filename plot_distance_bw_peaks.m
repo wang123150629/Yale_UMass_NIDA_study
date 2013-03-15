@@ -1,8 +1,5 @@
 function[] = plot_distance_bw_peaks(subject_profile, event, slide_or_chunk, time_window, peak_detect_appr, pqrst_flag)
 
-% plot_distance_bw_peaks('P20_040', 'cocn', 'slide', 30, 4, true)
-% plot_distance_bw_peaks('P20_040', 'cocn', 'chunk', 5, 4, true)
-
 close all;
 
 subject_id = subject_profile.subject_id;

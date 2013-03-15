@@ -122,7 +122,7 @@ if ~isempty(interpolated_ecg_within_win)
 	upper = repmat(mean_features + nStddev*std_features, size(std_interpolated_ecg, 1), 1);
 	good_samples = find(sum(std_interpolated_ecg >= lower &...
 			        std_interpolated_ecg <= upper, 2) == nInterpolatedFeatures);
-
+	
 	% Only those samples that qualify. If this results in [2, 3] then mean_for_this_chunk will be
 	% mean over samples [3, 4] since 3 qnd 4 are in positions 2 and 3
 	if ~isempty(good_samples)

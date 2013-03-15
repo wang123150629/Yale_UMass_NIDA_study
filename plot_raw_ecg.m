@@ -1,5 +1,7 @@
 function[] = plot_raw_ecg(subject_id, event, varargin)
 
+% plot_raw_ecg('P20_040', 'cocn')
+
 switch event
 case 'cocn', event = 1;
 case 'exer', event = 2;
@@ -24,7 +26,9 @@ else
 end
 
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
-plot(ecg_mat(start_time:end_time, end), 'b-');
-title(sprintf('%s, %s', get_project_settings('strrep_subj_id', subject_id), event_label));
-xlabel('Time(milliseconds)'); ylabel('Zephyr range');
+plot(ecg_mat(start_time:end_time, end) .* 0.004882812500000, 'b-');
+title(sprintf('%s, %s session', get_project_settings('strrep_subj_id', subject_id), event_label));
+xlabel('Time(milliseconds)'); ylabel('Millivolts');
+% file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/raw_ecg_cocn');
+% savesamesize(gcf, 'file', file_name, 'format', get_project_settings('image_format'));
 

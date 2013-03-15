@@ -15,6 +15,8 @@ case 'how_many_sec_per_win'
 	out = 30;
 case 'figure_size'
 	out = [70, 10, 1300, 650];
+case 'peak_thresholds'
+	out = [0.1:0.05:0.9];
 case 'how_many_std_dev'
 	out = 3;
 case 'raw_ecg_mat_time_res'

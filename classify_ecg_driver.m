@@ -12,13 +12,9 @@ result_dir = get_project_settings('results');
 % Looping over each subject and performing classification
 for s = 1:number_of_subjects
 	switch subject_ids{s}
-	case 'P20_036', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
-	case 'P20_039', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
-	case 'P20_040', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
-	case 'P20_048', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
-	case 'P20_058', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	case 'P20_060', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5; 5, 9; 5, 10; 9, 10];
-	case 'P20_061', classes_to_classify = [1, 5];
+	case 'P20_061', classes_to_classify = [1, 3; 1, 4; 1, 5];
+	otherwise, classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	end
 	nAnalysis = size(classes_to_classify, 1);
 	mean_over_runs = cell(1, nAnalysis);
