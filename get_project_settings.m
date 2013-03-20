@@ -7,10 +7,16 @@ case 'data'
 	out = fullfile(pwd, 'data');
 case 'results'
 	out = fullfile(pwd, 'results');
+case 'pdf_result_location'
+	out = '/home/anataraj/NIH-craving/plots/paper_quality_plots';
 case 'image_format'
 	out = sprintf('-dpng');
 case 'how_many_minutes_per_chunk'
 	out = 5;
+case 'font_size'
+	% le_fs, xl_fs, yl_fs, xt_fs, yt_fs, tl_fs
+	% out = [12, 15, 15, 12, 12, 15];
+	out = [12, 20, 20, 12, 12, 20];
 case 'how_many_sec_per_win'
 	out = 30;
 case 'figure_size'

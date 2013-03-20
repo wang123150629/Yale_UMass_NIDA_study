@@ -1,4 +1,4 @@
-function [accuracy, tpr, fpr, AUC] = two_class_logreg(train_set, test_set)
+function [accuracy, tpr, fpr, AUC] = two_class_logreg(train_set, test_set, save_betas)
 
 interested_class = 1;
 
@@ -7,6 +7,14 @@ options.Display = 0;
 X = [ones(size(train_set, 1), 1), train_set(:, 1:end-1)];
 Y = train_set(:, end);
 betas = minFunc(@LogisticLoss, zeros(size(X, 2), 1), options, X, Y)';
+
+if ~isempty(save_betas)
+	weight_analysis = struct();
+	weight_analysis.betas = betas;
+	weight_analysis.train_setm1 = mean(train_set(train_set(:, end) == -1, 1:end-1), 1);
+	weight_analysis.train_set1 = mean(train_set(train_set(:, end) == 1, 1:end-1), 1);
+	save(sprintf('%s/results/l2_betas/%s_weight_analysis.mat', pwd, save_betas), '-struct', 'weight_analysis');
+end
 
 % Adding ones to the test set since there is an intercept term
 intercept_added_test_set = test_set(:, 1:end-1)';

@@ -1,7 +1,7 @@
 function[mean_over_runs, errorbars_over_runs,...
 	 tpr_over_runs, fpr_over_runs,...
 	 auc_over_runs, feature_str,...
-	 class_label, chance_baseline] = cross_validation_over_subjects(train_subject_ids, test_subject_ids,...
+	 class_label, chance_baseline] = pairwise_cross_val(train_subject_ids, test_subject_ids,...
 					 classes_to_classify, set_of_features_to_try, nRuns, classifierList, varargin)
 
 nFeatures = length(set_of_features_to_try);
@@ -17,8 +17,17 @@ tpr_over_runs = NaN(nFeatures, nClassifiers);
 fpr_over_runs = NaN(nFeatures, nClassifiers);
 auc_over_runs = NaN(nFeatures, nClassifiers);
 
-[complete_train_set, complete_test_set, class_label, chance_baseline] = gather_train_test_data_relabel(train_subject_ids,...
-									test_subject_ids, classes_to_classify);
+if isempty(varargin) & ~isempty(train_subject_ids) & ~isempty(test_subject_ids)
+	[complete_train_set, complete_test_set, class_label, chance_baseline] = gather_train_test_data_relabel(train_subject_ids,...
+										test_subject_ids, classes_to_classify);
+else
+	assert(length(varargin) == 5);
+	lambda = varargin{1};
+	complete_train_set = varargin{2};
+	complete_test_set = varargin{3};
+	class_label = varargin{4};
+	chance_baseline = varargin{5};
+end
 
 % Loop over all features to try while trimming off irrelevant columns
 for f = 1:length(set_of_features_to_try)
@@ -32,15 +41,16 @@ for f = 1:length(set_of_features_to_try)
 	for r = 1:nRuns
 		for k = 1:nClassifiers
 			if isempty(varargin)
-				lambda = estimate_lambda(train_subject_ids, test_subject_ids, classes_to_classify,...
-					       [set_of_features_to_try(f)], nRuns, {classifierList{k}});
-				save_betas = sprintf('crossval_%s_feat%d_%d_vs_%d', test_subject_ids{1},...
+				lambda = pairwise_est_lambda(complete_train_set, train_subject_ids, test_subject_ids,...
+					 classes_to_classify, [set_of_features_to_try(f)], nRuns, {classifierList{k}},...
+					 class_label, chance_baseline);
+				save_betas = sprintf('pairwise_%s_vs_%s_feat%d_%d_vs_%d', train_subject_ids{1}, test_subject_ids{1},...
 					set_of_features_to_try(f), classes_to_classify(1), classes_to_classify(2));
+				fprintf('\tChosen: f=%d, k=%d, lambda=%0.6f\n', set_of_features_to_try(f), k, lambda);
 			else
-				lambda = varargin{1};
 				save_betas = '';
+				fprintf('\tExp: f=%d, k=%d, lambda=%0.6f\n', set_of_features_to_try(f), k, lambda);
 			end
-			fprintf('\tf=%d, k=%d, lambda=%0.6f\n', set_of_features_to_try(f), k, lambda);
 			[accuracies(r, k), true_pos_rate(r, k), false_pos_rate(r, k), auc(r, k)] =...
 							classifierList{k}(train_set, test_set, lambda, save_betas);
 		end

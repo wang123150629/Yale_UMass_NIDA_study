@@ -187,6 +187,20 @@ case 'P20_061'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = [0:2];
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+
+	subject_profile.events{1, 2} = struct();
+	subject_profile.events{1, 2}.label = sprintf('activity');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_2');
+	subject_profile.events{1, 2}.timestamp = sprintf('2013_01_11-08_55_25');
+	subject_profile.events{1, 2}.rr_thresholds = 0.05;
+	subject_profile.events{1, 2}.file_name = 'acti';
+	subject_profile.events{1, 2}.exp_sessions = 1;
+	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.start_time = [15, 00];
+	subject_profile.events{1, 2}.end_time = [19, 00];
+
+	% MPH for this guys is sitting in 2013_01_06-21_23_07. Need to clean it up
+
 otherwise
 	error(sprintf('Invalid subject id=%s!', subject_id));
 end

@@ -1,17 +1,17 @@
 function[] = cross_val_driver()
 
-number_of_subjects = 6;
-set_of_features_to_try = [1, 9, 12, 13];
+nSubjects = 6;
+set_of_features_to_try = [7, 8, 9];
 nRuns = 1;
 classifierList = {@two_class_l2_logreg};
 classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 
 nAnalysis = size(classes_to_classify, 1);
-subject_ids = get_subject_ids(number_of_subjects);
+subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 
-for s = 1:number_of_subjects
-	train_subjects = setdiff(1:number_of_subjects, s);
+for s = 1:nSubjects
+	train_subjects = setdiff(1:nSubjects, s);
 	test_subjects = [s];
 	fprintf('fold=%d\n', s);
 	fprintf('train subjects=[%s]\n', strtrim(sprintf('%d ', train_subjects)));
@@ -39,6 +39,6 @@ for s = 1:number_of_subjects
 	classifier_results.feature_str = feature_str;
 	classifier_results.class_label = class_label;
 	classifier_results.chance_baseline = chance_baseline;
-	save(fullfile(result_dir, subject_ids{s}, sprintf('cross_val_results')), '-struct', 'classifier_results');
+	save(fullfile(result_dir, subject_ids{s}, sprintf('%s_cross_val_results', subject_ids{s})), '-struct', 'classifier_results');
 end
 

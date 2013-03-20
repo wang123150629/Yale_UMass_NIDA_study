@@ -3,14 +3,14 @@ function[subject_profile] = detect_peaks(subject_profile, slide_or_chunk, time_w
 subject_id =  subject_profile.subject_id;
 
 for v = 1:subject_profile.nEvents
-	if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
+	% if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
 		mat_path = detect_peaks_within_events(subject_profile, slide_or_chunk, time_window,...
 						peak_detect_appr, pqrst_flag, v);
 		subject_profile.events{v} = setfield(subject_profile.events{v},...
 					sprintf('peaks_%s%d', slide_or_chunk, time_window), mat_path);
 		plot_distance_bw_peaks(subject_profile, v, slide_or_chunk,...
 			time_window, peak_detect_appr, pqrst_flag);
-	end
+	% end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

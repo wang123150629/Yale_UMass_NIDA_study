@@ -21,8 +21,6 @@ for s = 7:number_of_subjects
 	% pre-process the data and update the subject profile
 	subject_profile = preprocess_ecg_data(subject_profile);
 
-	keyboard
-
 	% Create data samples from averaging over individual samples within a sliding or a blocked window
 	switch slide_or_chunk
 	case 'chunk'

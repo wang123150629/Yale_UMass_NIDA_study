@@ -1,4 +1,4 @@
-function[] = examine_weights()
+function[] = examine_classifier_wgts(subject_number, feature, class_1, class_2)
 
 close all;
 
