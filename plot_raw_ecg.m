@@ -26,7 +26,7 @@ else
 end
 
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
-plot(ecg_mat(start_time:end_time, end) .* 0.004882812500000, 'b-');
+plot(ecg_mat(start_time:end_time, end) .* 0.001220703125, 'b-');
 title(sprintf('%s, %s session', get_project_settings('strrep_subj_id', subject_id), event_label));
 xlabel('Time(milliseconds)'); ylabel('Millivolts');
 % file_name = sprintf('/home/anataraj/NIH-craving/poster_plots/raw_ecg_cocn');

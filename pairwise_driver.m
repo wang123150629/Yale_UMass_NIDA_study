@@ -1,7 +1,7 @@
 function[] = pairwise_driver()
 
 nSubjects = 6;
-set_of_features_to_try = [8];
+set_of_features_to_try = [7, 8, 9];
 nRuns = 1;
 classifierList = {@two_class_l2_logreg};
 classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];

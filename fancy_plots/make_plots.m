@@ -1,4 +1,4 @@
-function[] = make_plots(which_plot)
+function[] = make_plots(which_plot, varargin)
 
 close all;
 
@@ -76,26 +76,71 @@ case 2
 	saveas(gcf, file_name, 'pdf') % Save figure
 
 case 3
+	subject_id = 'P20_040';
+	tt = 40;
+	file_name = 'junk_heart_rate';
+	label_pos = [650, 3200, 4700, 6627, 17203]; % for 3rd subject
+	% label_pos = [450, 1010, 1110, 1600, 6627]; % for 6th subject
+
 	cocn_preprocessed_data = load(fullfile(result_dir, subject_id, 'cocn_preprocessed_data.mat'));
+	% baseline session
 	heart_rate = cocn_preprocessed_data.preprocessed_data{1}.valid_rr_intervals';
+	% fixed session
 	heart_rate = [heart_rate, cocn_preprocessed_data.preprocessed_data{2}.valid_rr_intervals'];
+	% first blinded session
 	heart_rate = [heart_rate, cocn_preprocessed_data.preprocessed_data{3}.valid_rr_intervals'];
+	% second blinded session
 	heart_rate = [heart_rate, cocn_preprocessed_data.preprocessed_data{4}.valid_rr_intervals'];
+	% session_boundaries = [session_boundaries, length(heart_rate)];
+
 	heart_rate = (1000 * 60) ./ (4 .* heart_rate);
 
 	figure();
 	set(gcf, 'PaperPosition', [0 0 6 4]);
 	set(gcf, 'PaperSize', [6 4]);
-	plot(heart_rate, 'k-');
-	ylim([50, 150]); xlim([1, length(heart_rate)]);
+	plot(heart_rate, 'k-'); hold on;
+
+	x1 = repmat(session_boundaries, length(tt-5:1:150), 1);
+	y1 = repmat((tt-5:1:150)', 1, length(session_boundaries));
+	plot(x1, y1, 'color', [108, 123, 139]./255, 'LineStyle', '.', 'LineWidth', 3);
+
+	ylim([tt-10, 150]); xlim([1, length(heart_rate)]);
 	set(gca, 'XTickLabel', '');
 	xlabel('Duration of Experiment(~6.5 hours)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	ylabel('Heart rate(bpm)', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	y_ticks = get(gca, 'YTick');
 	set(gca, 'YTick', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
-	file_name = sprintf('%s/heart_rate', plot_dir);
+	text(label_pos(1), tt, 'B', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+	text(label_pos(2), tt, '8', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+	text(label_pos(3), tt-7, '16', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+	text(label_pos(4), tt, '32', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+	text(label_pos(5), tt, 'SA', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+
+	file_name = sprintf('%s/%s', plot_dir, file_name);
 	saveas(gcf, file_name, 'pdf') % Save figure
+
+	%{
+	tmp = round_to(diff(session_boundaries) / 2, 0);
+	label_pos = session_boundaries(1:3) - tmp;
+	label_pos = [label_pos, session_boundaries(3) + tmp(end)];
+	label_pos = [label_pos, session_boundaries(end)+round_to((length(heart_rate) - session_boundaries(end)) / 2, 0)];
+	label_pos(2) = 3100;
+	label_pos(3) = label_pos(3) - 70;
+	label_pos(4) = label_pos(4) - 500;
+	label_pos = [100, session_boundaries + 100];
+	label_pos = [100, 1200, 11300, 11400, 11500];
+	%}
+	% session_boundaries = [];
+	% session_boundaries = [session_boundaries, length(heart_rate)];
+	% session_boundaries = [session_boundaries, session_boundaries(length(session_boundaries))+...
+	% 			length(find(cocn_preprocessed_data.preprocessed_data{2}.dosage_labels == 8))];
+	% session_boundaries = [session_boundaries, session_boundaries(length(session_boundaries))+...
+	% 			length(find(cocn_preprocessed_data.preprocessed_data{2}.dosage_labels == 16))];
+	% session_boundaries = [session_boundaries, session_boundaries(length(session_boundaries))+...
+	% 			length(find(cocn_preprocessed_data.preprocessed_data{2}.dosage_labels == 32))];
+	%session_boundaries = [session_boundaries, session_boundaries(length(session_boundaries))+...
+	%			length(find(cocn_preprocessed_data.preprocessed_data{2}.dosage_labels == -3))];
 
 case 4
 	ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
@@ -130,6 +175,7 @@ case 4
 	set(gca, 'XTickLabel', x_ticks, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	xlabel('Time(milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	title(sprintf('Noisy ECG'), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	file_name = sprintf('%s/noisy_ecg', plot_dir);
 	saveas(gcf, file_name, 'pdf') % Save figure
 
@@ -143,8 +189,10 @@ case 4
 	x_ticks = get(gca, 'XTick');
 	x_ticks(1) = 1;
 	set(gca, 'XTick', x_ticks, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-	xlabel('Waveform features', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	% xlabel('Waveform features', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	xlabel('Time (std. units)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	title(sprintf('ECG Sample'), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	file_name = sprintf('%s/window_ecg', plot_dir);
 	saveas(gcf, file_name, 'pdf') % Save figure
 
@@ -165,6 +213,7 @@ case 5
 	set(gca, 'XTickLabel', x_ticks, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	xlabel('Time(milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	title(sprintf('Baseline Drift'), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	file_name = sprintf('%s/baseline_shift', plot_dir);
 	saveas(gcf, file_name, 'pdf') % Save figure
 	
@@ -177,8 +226,6 @@ case 5
 		avg_ecg_val(1, s) = mean(y(y_start_end(s, 1):y_start_end(s, 2)));
 	end
 	%}
-
-	keyboard
 case 6
 	figure();
 	set(gcf, 'PaperPosition', [0 0 6 4]);
@@ -201,6 +248,114 @@ case 6
 	title(sprintf('All windows + peak detection'), 'fontweight', 'bold', 'fontsize', 12);
 	legend([h1, h2, h3, h4, h5], 'P peak', 'Q trough', 'R peak', 'S trough', 'T peak');
 	
+case 7
+	exer_preprocessed_data = load(fullfile(result_dir, 'P20_060', 'exer_preprocessed_data.mat'));
+	heart_rate = exer_preprocessed_data.preprocessed_data{1}.valid_rr_intervals';
+	heart_rate = (1000 * 60) ./ (4 .* heart_rate);
+
+	figure();
+	set(gcf, 'PaperPosition', [0 0 6 4]);
+	set(gcf, 'PaperSize', [6 4]);
+	plot(heart_rate, 'k-'); hold on;
+	ylim([50, 150]); xlim([1, length(heart_rate)]);
+	set(gca, 'XTickLabel', '');
+	xlabel('Duration of Experiment(~15 mins)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	ylabel('Heart rate(bpm)', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	y_ticks = get(gca, 'YTick');
+	set(gca, 'YTick', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+
+	file_name = sprintf('%s/subj6_exer_heart_rate', plot_dir);
+	saveas(gcf, file_name, 'pdf') % Save figure
+
+case 8
+	peaks_data = load(fullfile(result_dir, subject_id, 'cocn_pqrst_peaks_slide30.mat'));
+	window_data = load(fullfile(result_dir, subject_id, 'cocn_slide30_win.mat'));
+	window_data = window_data.pqrst_mat;
+	assert(size(window_data, 1) == size(peaks_data.p_point, 1));
+	nInterpolatedFeatures = get_project_settings('nInterpolatedFeatures');
+	rr_length_col = nInterpolatedFeatures + 1;
+	pt_dist_col = nInterpolatedFeatures + 2;
+	dos_col = size(window_data, 2) - 1;
+	exp_sess_col = size(window_data, 2);
+	loaded_data = [window_data(:, 1:rr_length_col),...
+			(peaks_data.t_point(:, 1) - peaks_data.p_point(:, 1)),...
+			(peaks_data.t_point(:, 1) - peaks_data.r_point(:, 1)),...
+			(peaks_data.t_point(:, 1) - peaks_data.q_point(:, 1)),...
+			((peaks_data.t_point(:, 1) - peaks_data.q_point(:, 1)) .* sqrt(window_data(:, rr_length_col))),...
+			(peaks_data.r_point(:, 1) - peaks_data.p_point(:, 1)),...
+			(peaks_data.s_point(:, 1) - peaks_data.q_point(:, 1)),...
+			peaks_data.p_point(:, 2),...
+			peaks_data.q_point(:, 2),...
+			peaks_data.r_point(:, 2),...
+			peaks_data.s_point(:, 2),...
+			peaks_data.t_point(:, 2)];
+
+	% RR, T, QS, PR, QT, QTc
+	target_feats = [nInterpolatedFeatures + 1, nInterpolatedFeatures + 12, nInterpolatedFeatures + 7, nInterpolatedFeatures + 6,...
+			nInterpolatedFeatures + 4, nInterpolatedFeatures + 5];
+	title_str = {'RR', 'T', 'QS', 'PR', 'QT', 'QTc'};
+	figure();
+	set(gcf, 'PaperPosition', [0 0 8 4]);
+	set(gcf, 'PaperSize', [8 4]);
+	for t = 1:length(target_feats)
+		y_vals = [];
+		switch t
+		case 2,	nDigits = 2; nBins = 20;
+		case 3, y_vals = unique(loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t))); nBins = length(y_vals);
+		case 4, y_vals = unique(loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t))); nBins = length(y_vals);
+		case 5, y_vals = unique(loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t))); nBins = length(y_vals);
+		otherwise, nDigits = 0; nBins = 20;
+		end
+		counts = NaN(nBins, 5);
+
+		if isempty(varargin), varargin{1} = 1; end
+		if isempty(y_vals)
+			switch varargin{1}
+			case 1
+				y_vals = round_to(linspace(min(loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t))),...
+				 	 max(loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t))), nBins), nDigits);
+			case 2
+				y_vals = round_to(linspace(quantile(loaded_data(loaded_data(:, pt_dist_col) > 0,...
+					target_feats(t)), 0.05), quantile(loaded_data(loaded_data(:, pt_dist_col) > 0,...
+					target_feats(t)), 0.95), nBins), nDigits);
+			case 3
+				data = loaded_data(loaded_data(:, pt_dist_col) > 0, target_feats(t));
+				a = mean(data) - 4*std(data);
+				b = mean(data) + 4*std(data);
+				y_vals = round_to(linspace(a, b, nBins), nDigits);
+			end
+		end
+
+		for d = 1:5
+			switch d
+			case 1, target_idx = find(window_data(:, exp_sess_col) == 0);
+			case 2, target_idx = intersect(find(window_data(:, exp_sess_col) == 1),...
+					               find(window_data(:, dos_col) == 8));
+			case 3, target_idx = intersect(find(window_data(:, exp_sess_col) == 1),...
+					               find(window_data(:, dos_col) == 16));
+			case 4, target_idx = intersect(find(window_data(:, exp_sess_col) == 1),...
+					               find(window_data(:, dos_col) == 32));
+			case 5, target_idx = find(window_data(:, exp_sess_col) == 0);
+				target_idx = setdiff(1:size(window_data, 1), target_idx);
+			end
+			target_idx = intersect(target_idx, find(loaded_data(:, pt_dist_col) > 0));
+			% counts(:, d) = hist(loaded_data(target_idx, target_feats(t)), nBins);
+			counts(:, d) = hist(loaded_data(target_idx, target_feats(t)), y_vals);
+			counts(:, d) = counts(:, d) ./ sum(counts(:, d));
+		end
+
+		subplot(2, 3, t); imagesc(1 - counts); colormap bone
+		y_ticks = get(gca, 'YTick');
+		set(gca, 'YTick', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		set(gca, 'YTickLabel', y_vals(y_ticks), 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		% x_ticks = get(gca, 'XTick');
+		% set(gca, 'XTick', x_ticks, 'FontSize', 8, 'FontWeight', 'b', 'FontName', 'Times');
+		set(gca, 'XTickLabel', {'B', '8', '16', '32', 'A'}, 'FontSize', 8, 'FontWeight', 'b', 'FontName', 'Times');
+		title(title_str{t}, 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');		
+	end
+
+	file_name = sprintf('%s/know_feat_heatmap', plot_dir);
+	saveas(gcf, file_name, 'pdf') % Save figure
 
 otherwise, error('Invalid plot number!');
 

@@ -57,6 +57,7 @@ else
 	lambda_x_location = max_idx;
 end
 
+%{
 figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
 plot(mean(auc_over_runs), 'b-', 'LineWidth', 2);
 hold on; grid on;
@@ -73,6 +74,7 @@ title(sprintf('Choice of lambda, %s vs %s, %s, %d fold cross validation', class_
 file_name = sprintf('%s/%s/pairwise_%s_vs_%s_%dvs%d_lambda_feat%d', plot_dir, test_subject_ids{1},...
 		train_subject_ids{1}, test_subject_ids{1}, classes_to_classify(1), classes_to_classify(2), feature_to_try);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
+%}
 
 %{
 resolution = 1e-4;

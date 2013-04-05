@@ -3,6 +3,7 @@ function [accuracy, tpr, fpr, AUC] = two_class_logreg(train_set, test_set, save_
 interested_class = 1;
 
 options.Display = 0;
+% options.Display = 'iter';
 % adding ones for the intercept term
 X = [ones(size(train_set, 1), 1), train_set(:, 1:end-1)];
 Y = train_set(:, end);
@@ -33,7 +34,7 @@ class_1_idx = find(test_set(:, end) == 1);
 class_m1_idx = find(test_set(:, end) == -1);
 tpr = length(find(class_guessed(class_1_idx) == interested_class)) / length(class_1_idx);
 fpr = length(find(class_guessed(class_m1_idx) == interested_class)) / length(class_m1_idx);
-[x_val, y_val, T, AUC] = perfcurve(test_set(:, end), class_guessed, interested_class);
+[x_val, y_val, T, AUC] = perfcurve(test_set(:, end), pos_class_prob, interested_class);
 
 % fprintf('tpr=%0.4f, fpr=%0.4f, AUC=%0.4f\n', tpr, fpr, AUC);
 % tnr = length(find(class_guessed(class_m1_idx) == 0)) / length(class_m1_idx);

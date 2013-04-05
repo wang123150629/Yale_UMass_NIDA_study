@@ -1,4 +1,4 @@
-function[] = plot_pairwise_results(varargin)
+function[] = plot_pairwise_results(feature, varargin)
 
 close all;
 
@@ -13,9 +13,10 @@ subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
-temp = load(fullfile(result_dir, 'P20_036', sprintf('pairwise_1_vs_2_results.mat')));
+temp = load(fullfile(result_dir, 'P20_036', sprintf('P20_036_pairwise_1_vs_2_results.mat')));
 nAnalysis = length(temp.auc_over_runs);
-pairwise_auc = zeros(nSubjects, nSubjects, nAnalysis);
+best_pairwise_auc = zeros(nSubjects, nSubjects, nAnalysis);
+worst_pairwise_auc = ones(nSubjects, nSubjects, nAnalysis);
 
 for s = 1:nSubjects
 	train_subject = [s];
@@ -23,12 +24,24 @@ for s = 1:nSubjects
 	for o = 1:length(other_subjects)
 		test_subject = [other_subjects(o)];
 		classifier_results = load(fullfile(result_dir, subject_ids{s},...
-				     sprintf('pairwise_%d_vs_%d_results.mat', train_subject, test_subject)));
+			     sprintf('%s_pairwise_%d_vs_%d_results.mat', subject_ids{s}, train_subject, test_subject)));
 		for a = 1:nAnalysis
-			pairwise_auc(train_subject, test_subject, a) = classifier_results.auc_over_runs{a};
+			best_pairwise_auc(train_subject, test_subject, a) = classifier_results.auc_over_runs{a};
+			worst_pairwise_auc(train_subject, test_subject, a) = classifier_results.auc_over_runs{a};
 		end
 	end
 end
+
+pairwise_worst = NaN(nSubjects, nAnalysis);
+pairwise_best = NaN(nSubjects, nAnalysis);
+for a = 1:size(worst_pairwise_auc, 3)
+	[min_val, min_idx] = min(worst_pairwise_auc(:, :, a), [], 1);
+	pairwise_worst(:, a) = min_val';
+	[max_val, max_idx] = min(best_pairwise_auc(:, :, a), [], 1);
+	pairwise_best(:, a) = max_val';
+end
+
+keyboard
 
 if paper_quality
 	figure('visible', 'off'); 
@@ -46,7 +59,7 @@ end
 for a = 1:size(pairwise_auc, 3)
 	subplot(2, 2, a); imagesc(pairwise_auc(:, :, a));
 	if paper_quality
-		title(sprintf('AUC, std. feat, %s vs %s', temp.class_label{a}{1}, temp.class_label{a}{2}),...
+		title(sprintf('AUC, W features, %s vs %s', temp.class_label{a}{1}, temp.class_label{a}{2}),...
 							'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 		set(gca, 'XTickLabel', subject_ids, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 		set(gca, 'YTickLabel', subject_ids, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');

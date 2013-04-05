@@ -56,7 +56,7 @@ for s = 1:nSubjects
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 	tmp = [classifier_results.auc_over_runs{:}];
-	auroc_over_subjects(:, :, s) = tmp(target_feat_rows, 1:4);
+	auroc_over_subjects(:, :, s) = tmp(target_feat_rows, target_ana_cols);
 end
 
 if paper_quality

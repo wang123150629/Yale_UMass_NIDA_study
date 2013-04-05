@@ -8,15 +8,16 @@ function [nll,g,H,T] = LogisticLoss(w,X,y)
 Xw = X*w;
 yXw = y.*Xw;
 
-nll = sum(mylogsumexp([zeros(n,1) -yXw])) +0.5*10* w(:)'*w(:);
+nll = sum(mylogsumexp([zeros(n,1) -yXw])) ;
 
 if nargout > 1
     if nargout > 2
         sig = 1./(1+exp(-yXw));
-        g = -X.'*(y.*(1-sig)) + 10*w;
+        g = -X.'*(y.*(1-sig));
+        % g = -X.'*(y.*(1-sig)) + 10*w;
     else
-        %g = -X.'*(y./(1+exp(yXw)));
-        g = -(X.'*(y./(1+exp(yXw)))) + 10*w;
+        g = -X.'*(y./(1+exp(yXw)));
+        %g = -(X.'*(y./(1+exp(yXw)))) + 10*w;
     end
 end
 

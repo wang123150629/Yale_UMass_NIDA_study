@@ -40,5 +40,5 @@ tpr = length(find(class_guessed(class_1_idx) == interested_class)) / length(clas
 fpr = length(find(class_guessed(class_m1_idx) == interested_class)) / length(class_m1_idx);
 assert(sum(class_guessed(class_1_idx) == interested_class) + sum(class_guessed(class_m1_idx) == interested_class) ==...
        sum(class_guessed == interested_class));
-[x_val, y_val, T, AUC] = perfcurve(test_set(:, end), class_guessed, interested_class);
+[x_val, y_val, T, AUC] = perfcurve(test_set(:, end), pos_class_prob, interested_class);
 

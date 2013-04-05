@@ -13,7 +13,7 @@ result_dir = get_project_settings('results');
 for s = 1:nSubjects
 	switch subject_ids{s}
 	case 'P20_060', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5; 5, 9; 5, 10];
-	case 'P20_061', classes_to_classify = [1, 3; 1, 4; 1, 5; 5, 12];
+	case 'P20_061', classes_to_classify = [1, 4; 1, 5; 5, 12];
 	otherwise, classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	end
 	nAnalysis = size(classes_to_classify, 1);
@@ -42,8 +42,8 @@ for s = 1:nSubjects
 	classifier_results.feature_str = feature_str;
 	classifier_results.class_label = class_label;
 	classifier_results.chance_baseline = chance_baseline;
-	save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d', subject_ids{s}, tr_percent)),...
-							'-struct', 'classifier_results');
+	% save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d', subject_ids{s}, tr_percent)),...
+	%						'-struct', 'classifier_results');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,6 +73,22 @@ for c = 1:nClasses
 	class_label{1, c} = class_information{1, 1}.label;
 end
 
+switch classes_to_classify(2)
+case 2
+	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
+						  classes_to_classify(2), sum(loaded_data(:, end) == 2));
+case 3
+	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
+						  classes_to_classify(2), sum(loaded_data(:, end) == 3));
+case 4
+	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
+						  classes_to_classify(2), sum(loaded_data(:, end) == 4));
+case 5
+	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
+						  classes_to_classify(2), sum(loaded_data(:, end) == 5));
+end
+
+%{
 % For each feature to try we trim the data matrix by removing irrelevant columns
 for f = 1:length(set_of_features_to_try)
 	accuracies = NaN(nRuns, nClassifiers);
@@ -102,4 +118,5 @@ for f = 1:length(set_of_features_to_try)
 	fpr_over_runs(f, :) = mean(false_pos_rate, 1);
 	auc_over_runs(f, :) = mean(auc, 1);
 end
+%}
 
