@@ -70,7 +70,7 @@ while LSiter < maxLS
     end
 
 
-    if f_new > f + c1*t*gtd || (LSiter > 1 && f_new >= f_prev)
+    if f_new > f + c1*t*gtd | (LSiter > 1 & f_new >= f_prev)
         bracket = [t_prev t];
         bracketFval = [f_prev f_new];
         bracketGval = [g_prev g_new];

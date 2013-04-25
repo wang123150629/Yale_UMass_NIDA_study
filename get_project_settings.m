@@ -4,7 +4,7 @@ switch request
 case 'plots'
 	out = fullfile(pwd, 'plots');
 case 'data'
-	out = fullfile(pwd, 'data');
+	out = fullfile(pwd, 'ecg_data');
 case 'results'
 	out = fullfile(pwd, 'results');
 case 'pdf_result_location'

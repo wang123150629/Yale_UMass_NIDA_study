@@ -11,7 +11,7 @@ if ~exist(fullfile(result_dir, subject_id))
 end
 
 for v = 1:subject_profile.nEvents
-	if ~isfield(subject_profile.events{v}, 'preprocessed_mat_path')
+	%if ~isfield(subject_profile.events{v}, 'preprocessed_mat_path')
 		switch subject_profile.events{v}.label
 		case 'cocaine'
 			mat_path = preprocess_cocaine_day_data(subject_profile, v);
@@ -19,7 +19,7 @@ for v = 1:subject_profile.nEvents
 			mat_path = preprocess_other_events_data(subject_profile, v);
 		end
 		subject_profile.events{v}.preprocessed_mat_path = mat_path;
-	end
+	%end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -167,6 +167,8 @@ for d = 1:length(dosage_levels)
 		raw_start_time = (summ_start_time - 1) * raw_ecg_mat_time_res + 1;
 		raw_end_time = (summ_end_time - 1) * raw_ecg_mat_time_res + 1;
 
+		keyboard
+
 		[length_x, x_time, dos_interpolated_ecg, hold_start_end_indices, valid_rr_intervals] =...
 						break_up_trace(event, ecg_mat, subject_profile, raw_start_time, raw_end_time);
 
@@ -202,7 +204,7 @@ hold_start_end_indices = [];
 valid_rr_intervals = [];
 
 disp(sprintf('Raw ECG: %d:%d:%0.3f -- %d:%d:%0.3f',...
-ecg_mat(raw_start_time, raw_ecg_mat_columns.actual_hh),...
+	ecg_mat(raw_start_time, raw_ecg_mat_columns.actual_hh),...
 	ecg_mat(raw_start_time, raw_ecg_mat_columns.actual_mm),...
 	ecg_mat(raw_start_time, raw_ecg_mat_columns.actual_ss),...
 	ecg_mat(raw_end_time, raw_ecg_mat_columns.actual_hh),...
