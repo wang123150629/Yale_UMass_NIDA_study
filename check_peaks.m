@@ -1,5 +1,7 @@
 function[] = check_peaks(varargin)
 
+% check_peaks('P20_040_new_labels');
+
 close all;
 
 subject_id = 'P20_040';

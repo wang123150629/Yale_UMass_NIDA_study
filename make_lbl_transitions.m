@@ -1,4 +1,4 @@
-function[trans_comb_indicator] = make_transitions(label_comb_indicator)
+function[trans_comb_indicator] = make_lbl_transitions(label_comb_indicator)
 
 % Converts [1, 2, 3, 1] to
 % [1, 2
