@@ -1,4 +1,4 @@
-function[rr, rr_intervals, heart_rate, trend] = compute_heart_rate(subject_id, ecg_mat, peak_thres)
+function[rr, rr_intervals, heart_rate, trend] = rr_based_heart_rate(subject_id, ecg_mat, peak_thres)
 
 result_dir = get_project_settings('results');
 raw_ecg_mat_time_res = get_project_settings('raw_ecg_mat_time_res');

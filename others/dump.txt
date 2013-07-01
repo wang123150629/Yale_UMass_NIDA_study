@@ -158,8 +158,6 @@ f=fft(ecg_mat(9100*250:9200*250, 7));
 plot(abs(f(2:end))')  
 [foo,freq]=max(abs(f(2:end))); rate = freq/100*60
 
-
-
 MATLABMathematicsFourier Analysis and Filtering
 fft
 

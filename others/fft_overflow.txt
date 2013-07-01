@@ -1,0 +1,108 @@
+if plot_fig
+	figure(); set(gcf, 'Position', [10, 10, 1200, 800]);
+	for i = 1:6
+		idx1 = find(varargin{1} == i & heart_rates >= 80 & heart_rates < 100);
+		idx2 = find(varargin{1} == i & heart_rates >= 100 & heart_rates < 120);
+		idx3 = find(varargin{1} == i & heart_rates >= 120);
+		subplot(2, 3, i);
+		plot(ecg_samples(:, idx1), 'r'); hold on;
+		plot(ecg_samples(:, idx2), 'g');
+		plot(ecg_samples(:, idx3), 'b');
+	end
+end
+
+% Example when length(ecg_data) = 10500, window_size = 7500, slide_by = 1250
+% wins will hold
+% 1        1251       2501        3751
+% 7500     8750       10000       10500
+wins = [1:slide_by:length(ecg_data)-window_size];
+wins = [wins, wins(end)+slide_by];
+wins = [wins; [window_size:slide_by:length(ecg_data), length(ecg_data)]];
+
+for w = 1:size(wins, 2)
+	win_data = ecg_data(wins(1, w):wins(2, w));
+	Mdata = win_data - conv(win_data, h, 'same');
+	Mdata = Mdata(filter_size/2:end-filter_size/2);
+	Y = fft(double(Mdata), NFFT) / length(Mdata);
+	amplitudes = 2 * abs(Y(1:(NFFT / 2))); % Vector containing corresponding amplitudes
+	[max_a, max_frequency] = max(amplitudes(2:end)); % fetching the index of the maximum amplitude
+	[max_r, max_freq_range] = max(amplitudes.*idx');
+	if max_r/max_a > 0.5
+		heart_rate = frequencies(max_freq_range + 1) * 60;
+	else
+		heart_rate = frequencies(max_frequency + 1) * 60;
+	end
+	assigned_hr(find(peak_idx >= wins(1, w) & peak_idx < wins(2, w))) = heart_rate;
+end
+
+assert(~any(isnan(assigned_hr(:))));
+
+filter_size = 5000;
+h = fspecial('gaussian', [1, filter_size], 750);
+trend = conv(assigned_hr, h, 'same');
+trend(1:2000) = trend(2001);
+trend(end-2000:end) = trend(end-2001);
+
+
+% figure();
+% subplot(2, 1, 1); plot(ecg_data); title('original data');
+% subplot(2, 1, 2); plot(Mdata); title('Gaussian filter shifted data');
+
+%{
+temp = zeros(size(ecg_data));
+temp(labeled_idx) = 1;
+idx = find(~isnan(hr_orig_pos));
+temp(idx) = temp(idx) .* hr_orig_pos(idx);
+plot(hr_orig_pos(idx));
+hold on; plot(temp(idx), 'r*');
+plot(1:length(idx), repmat(100, 1, length(idx)), 'k-');
+plot(1:length(idx), repmat(120, 1, length(idx)), 'k-');
+ylim([70, 150]);
+xlim([0, length(idx)]);
+plot_dir = get_project_settings('plots');
+image_format = get_project_settings('image_format');
+file_name = sprintf('%s/sparse_coding/lab_pks_hr', plot_dir);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+saveas(gcf, file_name, 'pdf') % Save figure
+%}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[assigned_hr] = FFT_based_hr(ecg_data, peak_idx)
+
+raw_ecg_mat_time_res = get_project_settings('raw_ecg_mat_time_res');
+assigned_hr = NaN(size(peak_idx));
+filter_size = 1000;
+window_size = 7500;
+
+% h = fspecial('average', [1, filter_size]);
+h = fspecial('gaussian', [1, filter_size], 150);
+
+Mdata = ecg_data - conv(ecg_data, h, 'same');
+Mdata = Mdata(filter_size/2:end-filter_size/2);
+wins = floor(length(Mdata) / window_size);
+NFFT = 2 ^ nextpow2(window_size);
+frequencies = (double(raw_ecg_mat_time_res) / 2 * linspace(0, 1, NFFT / 2)); % Vector containing frequencies in Hz
+
+for w = 1:wins
+	win_data = Mdata((w-1)*window_size+1:w*window_size);
+	Y = fft(double(win_data), NFFT) / length(win_data);
+	amplitudes = 2 * abs(Y(1:(NFFT / 2))); % Vector containing corresponding amplitudes
+	[junk, max_frequency] = max(amplitudes(2:end)); % fetching the index of the maximum amplitude
+	heart_rate = frequencies(max_frequency + 1) * 60;
+	if heart_rate > 150 | heart_rate < 50
+		heart_rate = prev_heart_rate;
+	end
+	assigned_hr(find(peak_idx >= (w-1)*window_size+501 & peak_idx < w*window_size+501)) = heart_rate;
+
+	if w == 1
+		assigned_hr(find(peak_idx < (w-1)*window_size+501)) = heart_rate;
+	elseif w == wins
+		assigned_hr(find(peak_idx >= w*window_size+501)) = heart_rate;
+	end
+	prev_heart_rate = heart_rate;
+end
+
+assert(~any(isnan(assigned_hr(:))));
+
+

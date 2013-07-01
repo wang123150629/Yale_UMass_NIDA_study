@@ -34,7 +34,7 @@ for p = 1:nCliques
 	end
 end
 
-% Compute the messages from left to right and then right to left
+% Compute the messages from left to right (rep by 1) and then right to left (rep by 2)
 % 1 2 3 2
 % 1 1 2 2
 msg_dir = [1:nCliques-1, nCliques:-1:2; repmat(1, 1, nCliques-1), repmat(2, 1, nCliques-1)];
@@ -76,6 +76,7 @@ pairwise_marginal{p+1} = exp(clique_information{p+1}.log_beliefs - repmat(z, nLa
 unary_marginal{p+1} = sum(pairwise_marginal{p+1}, 1)'; % y2 survives
 
 log_likelihood = compute_negative_energy(data_X, data_Y, feature_params, trans_params) - z;
+log_likelihood = log_likelihood / length(data_Y);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[neg_energy] = compute_negative_energy(data_X, data_Y, feature_params, trans_params)

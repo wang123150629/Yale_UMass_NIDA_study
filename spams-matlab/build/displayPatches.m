@@ -63,6 +63,4 @@ end
 colormap('bone');
 imagesc(tmp);
 
-% 	fprintf('Fetching %d column and storing it in %d,%d\n', (io-1)*nBins+jo, (ii-1)*(sizeEdge+1)+2:ii*(sizeEdge+1),...
-%							(jj-1)*(sizeEdge+1)+2:jj*(sizeEdge+1));
 

@@ -1,9 +1,22 @@
-function[] = sparse_coding()
+function[] = sparse_coding(sparse_coding, variable_window, normalize, add_height, first_baseline_subtract)
 
 close all;
 
 data_dir = get_project_settings('data');
 results_dir = get_project_settings('results');
+
+global label_str
+global D
+window_size = 25;
+tr_partition = 50;
+uniform_split = true;
+nDictionayElements = 100;
+nIterations = 1000;
+lambda = 0.15;
+
+filter_size = 10000;
+h = fspecial('gaussian', [1, filter_size], 150);
+h = h / sum(h);
 
 subject_id = 'P20_040';
 event = 1;
@@ -17,144 +30,206 @@ subject_timestamp = subject_profile.events{event}.timestamp;
 % New file : Six labels P, Q, R, S, T, U - Unknown
 load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
 
-global label_str
-window_size = 50;
-tr_partition = 50;
-% hr_bins = [0, 80; 80, 100; 100, 120; 120, 1000];
-hr_bins = [80, 100; 100, 120; 120, 1000];
-
 % Reading off data from the interface file
-ecg_data = labeled_peaks(1, :);
-% Picking out the peaks
-peak_idx = find(labeled_peaks(2, :) > 0);
-% Making sure a window can be drawn around the first and last peak
-peak_idx = peak_idx(peak_idx > window_size/2 & peak_idx <= size(labeled_peaks, 2)-window_size/2);
-% Picking out the labelled peaks
-labeled_idx = find(labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100);
-% Making sure a window can be drawn around the first and last labelled peak
-labeled_idx = labeled_idx(labeled_idx > window_size/2 & labeled_idx <= size(labeled_peaks, 2)-window_size/2);
+ecg_raw = labeled_peaks(1, :);
+
+if first_baseline_subtract
+	% Performing baseline correction
+	ecg_data = ecg_raw - conv(ecg_raw, h, 'same');
+	ecg_data = ecg_data(filter_size/2:end-filter_size/2);
+
+	peak_idx = labeled_peaks(2, :) > 0;
+	peak_idx = peak_idx(filter_size/2:end-filter_size/2);
+	peak_idx(1:window_size) = 0;
+	peak_idx(end-window_size:end) = 0;
+
+	labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
+	labeled_idx = labeled_idx(filter_size/2:end-filter_size/2);
+	labeled_idx(1:window_size) = 0;
+	labeled_idx(end-window_size:end) = 0;
+
+	peak_labels = labeled_peaks(3, :);
+	peak_labels = peak_labels(filter_size/2:end-filter_size/2);
+
+	estimated_hr = ones(size(ecg_data)) * -1;
+	load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_sgram_062113.mat');
+	estimated_hr(peak_idx) = assigned_hr;
+else
+	ecg_data = ecg_raw;
+
+	peak_idx = labeled_peaks(2, :) > 0;
+	peak_idx(1:window_size) = 0;
+	peak_idx(end-window_size:end) = 0;
+
+	labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
+	labeled_idx(1:window_size) = 0;
+	labeled_idx(end-window_size:end) = 0;
+
+	peak_labels = labeled_peaks(3, :);
+
+	estimated_hr = ones(size(ecg_data)) * -1;
+	load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_big_sgram_061313.mat');
+	estimated_hr(peak_idx) = assigned_hr;
+end
+
+% Finding which of those peaks are in fact hand labelled
+labeled_peaks_idx = peak_idx & labeled_idx;
 
 % Computing the HR for each of the peaks (NOTE: Now all peaks are associated with a HR; NOT just labelled peaks)
-assigned_hr = assign_hr(ecg_data', peak_idx, subject_profile.events{event}.rr_thresholds);
-% Finding which of those peaks are in fact hand labelled
-[junk, labeled_peaks_idx, junk] = intersect(peak_idx, labeled_idx);
+% estimated_hr(peak_idx) = compute_hr('rr', ecg_data, peak_idx, subject_profile.events{event}.rr_thresholds);
+% estimated_hr(peak_idx) = compute_hr('fft', ecg_data, peak_idx);
+% load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_fft_053013.mat');
+% estimated_hr(peak_idx) = assigned_hr;
+% load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_sgram_061013.mat');
+% estimated_hr = compute_hr('sgram', ecg_data, peak_idx);
+
+if uniform_split
+	nBins = 3;
+	tmp_valid_hr = estimated_hr(estimated_hr > 0);
+	binned_hr = ntile_split(tmp_valid_hr, nBins);
+	for b = 1:nBins
+		hr_bins(b, :) = [min(tmp_valid_hr(binned_hr{b})), max(tmp_valid_hr(binned_hr{b}))];
+		new_hr_str{b} = sprintf('%d--%d', floor(min(tmp_valid_hr(binned_hr{b}))), floor(max(tmp_valid_hr(binned_hr{b}))));
+	end
+else
+	hr_bins = [50, 99; 100, 119; 120, 1000];
+	new_hr_str = {'80--100', '100--120', '>120'};
+end
+
+param = struct();
+if sparse_coding
+	unlabeled_idx = find(peak_idx - labeled_idx);
+	assert(~isempty(unlabeled_idx));
+	unlabeled_idx = [unlabeled_idx - window_size; unlabeled_idx + window_size];
+	unlabeled_idx = floor(linspaceNDim(unlabeled_idx(1, :), unlabeled_idx(2, :), window_size*2+1));
+	ecg_learn = ecg_data(unlabeled_idx)';
+	if variable_window
+		ecg_learn = window_and_interpolate(ecg_learn, floor(estimated_hr(find(peak_idx - labeled_idx))), window_size);
+	end
+	peak_heights = ecg_learn(window_size+1, :);
+	if normalize
+		ecg_learn = bsxfun(@minus, ecg_learn, mean(ecg_learn, 2));
+	end
+	if add_height
+		ecg_learn = [bsxfun(@minus, ecg_learn, mean(ecg_learn, 2)); peak_heights];
+	end
+	param.K = nDictionayElements;  % learns a dictionary with 100 elements
+	param.iter = nIterations;  % let us see what happens after 1000 iterations
+	param.lambda = lambda;
+	param.numThreads = 4; % number of threads
+	param.batchsize = 400;
+	param.approx = 0;
+	param.verbose = false;
+
+	D = mexTrainDL(ecg_learn, param);
+end
 
 mul_accuracy = NaN(size(hr_bins, 1), size(hr_bins, 1));
 crf_accuracy = NaN(size(hr_bins, 1), size(hr_bins, 1));
-
+avg_crf_log_likelihood = NaN(size(hr_bins, 1), size(hr_bins, 1));
 for hr1 = 1:size(hr_bins, 1)
+	% Training instances. Finding which of the hand labelled peaks fall within the valid HR range
+	valid_tr_idx = estimated_hr >= hr_bins(hr1, 1) & estimated_hr <= hr_bins(hr1, 2);
+	valid_tr_idx = find(valid_tr_idx & labeled_peaks_idx);
+	% No permutation
+	tr_idx = valid_tr_idx(1:floor(length(valid_tr_idx) * tr_partition / 100));
 	for hr2 = 1:size(hr_bins, 1)
-		if hr1 == hr2, tr_partition = 50;
-		else, tr_partition = 100;
-		end
-
 		init_option = str2num(sprintf('%d%d', hr1, hr2));
 
-		% Training instances
-		% Finding which of the hand labelled peaks fall within the valid HR range
-		valid_tr_idx = assigned_hr(labeled_peaks_idx) >= hr_bins(hr1, 1) & assigned_hr(labeled_peaks_idx) < hr_bins(hr1, 2);
-		% Retaining only those labelled peaks
-		labeled_tr_idx = labeled_idx(labeled_peaks_idx & valid_tr_idx);
+		% Testing instances. Finding which of the hand labelled peaks fall within the valid HR range
+		valid_ts_idx = estimated_hr >= hr_bins(hr2, 1) & estimated_hr <= hr_bins(hr2, 2);
+		valid_ts_idx = find(valid_ts_idx & labeled_peaks_idx);
 		% No permutation
-		tr_idx = labeled_tr_idx(1:floor(length(labeled_tr_idx) * tr_partition / 100));
-
-		% Testing instances
-		% Finding which of the hand labelled peaks fall within the valid HR range
-		valid_ts_idx = assigned_hr(labeled_peaks_idx) >= hr_bins(hr2, 1) & assigned_hr(labeled_peaks_idx) < hr_bins(hr2, 2);
-		% Retaining only those labelled peaks
-		labeled_ts_idx = labeled_idx(labeled_peaks_idx & valid_ts_idx);
-		% No permutation
-		ts_idx = setdiff(labeled_ts_idx, tr_idx);
+		ts_idx = valid_ts_idx(floor(length(valid_ts_idx) * tr_partition / 100)+1:end);
 
 		assert(isempty(intersect(tr_idx, ts_idx)));
 
-		fprintf('tr=%d, ts=%d, tr length=%d, actual=%d, ts length=%d, actual=%d\n', hr1, hr2, length(labeled_tr_idx),...
-			length(tr_idx), length(labeled_ts_idx), length(ts_idx));
+		fprintf('tr=%d, ts=%d, tr length=%d, actual=%d, ts length=%d, actual=%d\n', hr1, hr2, length(valid_tr_idx),...
+			length(tr_idx), length(valid_ts_idx), length(ts_idx));
 
-		[mul_accuracy(hr1, hr2), crf_accuracy(hr1, hr2)] = analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
-						labeled_idx, window_size, labeled_peaks, ecg_data, init_option);
+		[mul_accuracy(hr1, hr2), crf_accuracy(hr1, hr2), avg_crf_log_likelihood(hr1, hr2)] =...
+					analyze_based_on_HR(tr_idx, ts_idx, peak_idx, labeled_idx, window_size,...
+					peak_labels, ecg_data, init_option, estimated_hr, param,...
+					variable_window, sparse_coding, first_baseline_subtract, normalize, add_height);
 	end
 end
 
-label_str = {'80--100', '100--120', '>120'};
-plot_confusion_matrices(mul_accuracy, crf_accuracy, 000);
+label_str = new_hr_str;
+sparse_coding_plots(9, mul_accuracy, crf_accuracy, avg_crf_log_likelihood, 0, label_str, variable_window, sparse_coding);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[mul_accuracy, crf_accuracy] = analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
-					labeled_idx, window_size, labeled_peaks, ecg_data, init_option)
+function[mul_accuracy, crf_accuracy, avg_crf_log_likelihood] = analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
+								labeled_idx, window_size, peak_labels, ecg_data, init_option,...
+								estimated_hr, param, variable_window,...
+								sparse_coding, first_baseline_subtract, normalize, add_height)
 
-plot_fig = false;
-global D
+assert(all(estimated_hr(peak_idx) > 50));
+assert(~isempty(tr_idx));
+assert(~isempty(ts_idx));
+
+global D;
 global label_str
 label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 
-nDictionayElements = 100;
-nIterations = 1000;
-lambda = 0.15;
-
-train_win_idx = [tr_idx - window_size/2; tr_idx + window_size/2-1];
-train_win_idx = floor(linspaceNDim(train_win_idx(1, :), train_win_idx(2, :), window_size));
+train_win_idx = [tr_idx - window_size; tr_idx + window_size];
+train_win_idx = floor(linspaceNDim(train_win_idx(1, :), train_win_idx(2, :), window_size*2+1));
 ecg_train = ecg_data(train_win_idx)';
-ecg_train_Y = labeled_peaks(3, tr_idx);
+ecg_train_Y = peak_labels(tr_idx);
+assert(~any(ecg_train_Y <= 0 | ecg_train_Y >= 100));
+if variable_window
+	ecg_train = window_and_interpolate(ecg_train, floor(estimated_hr(tr_idx)), window_size);
+end
+peak_heights = ecg_train(window_size+1, :);
+if normalize
+	ecg_train = bsxfun(@minus, ecg_train, mean(ecg_train, 2));
+end
+if add_height
+	ecg_train = [bsxfun(@minus, ecg_train, mean(ecg_train, 2)); peak_heights];
+end
 
-test_win_idx = [ts_idx - window_size/2; ts_idx + window_size/2-1];
-test_win_idx = floor(linspaceNDim(test_win_idx(1, :), test_win_idx(2, :), window_size));
+test_win_idx = [ts_idx - window_size; ts_idx + window_size];
+test_win_idx = floor(linspaceNDim(test_win_idx(1, :), test_win_idx(2, :), window_size*2+1));
 ecg_test = ecg_data(test_win_idx)';
-ecg_test_Y = labeled_peaks(3, ts_idx);
+ecg_test_Y = peak_labels(ts_idx);
+assert(~any(ecg_test_Y <= 0 | ecg_test_Y >= 100));
+if variable_window
+	ecg_test = window_and_interpolate(ecg_test, floor(estimated_hr(ts_idx)), window_size);
+end
+peak_heights = ecg_test(window_size+1, :);
+if normalize
+	ecg_test = bsxfun(@minus, ecg_test, mean(ecg_test, 2));
+end
+if add_height
+	ecg_test = [bsxfun(@minus, ecg_test, mean(ecg_test, 2)); peak_heights];
+end
 
-unlabeled_idx = setdiff(peak_idx, labeled_idx);
-unlabeled_idx = [unlabeled_idx - window_size/2; unlabeled_idx + window_size/2-1];
-unlabeled_idx = floor(linspaceNDim(unlabeled_idx(1, :), unlabeled_idx(2, :), window_size));
-ecg_learn = ecg_data(unlabeled_idx)';
-
-param.K = nDictionayElements;  % learns a dictionary with 100 elements
-param.iter = nIterations;  % let us see what happens after 1000 iterations.
-param.lambda = lambda;
-param.numThreads = 4; % number of threads
-param.batchsize = 400;
-param.approx = 0;
-
-D = mexTrainDL(ecg_learn, param);
-param.mode = 2;
-train_alpha = mexLasso(ecg_train, D, param);
-test_alpha = mexLasso(ecg_test, D, param);
-% R = mean(0.5*sum((ecg_train-D * train_alpha) .^ 2) + param.lambda * sum(abs(train_alpha)));
-
-if plot_fig
-	plot_dir = get_project_settings('plots');
-	image_format = get_project_settings('image_format');
-
-	rs = 10; rc = 10;
-	figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-	for d = 1:param.K
-		subaxis(rs, rc, d, 'Spacing', 0.01, 'Padding', 0.01, 'Margin', 0.01);
-		plot(D(:, d), 'LineWidth', 2); hold on;
-		axis tight; grid on;
-		set(gca, 'XTick', []);
-		set(gca, 'YTick', []);
-	end
-	file_name = sprintf('%s/sparse_coding/sparse_dict_elements', plot_dir);
-	savesamesize(gcf, 'file', file_name, 'format', image_format);
-
-	% Display only ten train and test samples
-	plot_labelled_peaks(ecg_train(:, 1:10), labeled_peaks(3, :), train_alpha, D, tr_idx, 'tr');
-	plot_labelled_peaks(ecg_test(:, 1:10), labeled_peaks(3, :), test_alpha, D, ts_idx, 'ts');
+if sparse_coding
+	param.mode = 2;
+	train_alpha = mexLasso(ecg_train, D, param);
+	test_alpha = mexLasso(ecg_test, D, param);
+else
+	train_alpha = ecg_train;
+	test_alpha = ecg_test;
 end
 
 % perform six class classification using multinomial logistic regression
-mul_confusion_mat = multinomial_log_reg(train_alpha', ecg_train_Y', test_alpha', ecg_test_Y');
-mul_confusion_mat = bsxfun(@rdivide, mul_confusion_mat, sum(mul_confusion_mat, 2));
-mul_accuracy = sum(diag(mul_confusion_mat));
+[mul_confusion_mat, mul_predicted_label] = multinomial_log_reg(train_alpha', ecg_train_Y', test_alpha', ecg_test_Y');
+% mul_confusion_mat = bsxfun(@rdivide, mul_confusion_mat, sum(mul_confusion_mat, 2));
+mul_accuracy = sum(diag(mul_confusion_mat)) / sum(mul_confusion_mat(:));
 
-% perform classification using basic CRF's 
-crf_confusion_mat = basic_crf_classification(tr_idx, ts_idx, train_alpha', ecg_train_Y', test_alpha', ecg_test_Y', plot_fig, init_option);
-crf_confusion_mat = bsxfun(@rdivide, crf_confusion_mat, sum(crf_confusion_mat, 2));
-crf_accuracy = sum(diag(crf_confusion_mat));
+% perform classification using basic CRF's
+[crf_confusion_mat, avg_crf_log_likelihood, crf_predicted_label] = basic_crf_classification(tr_idx, ts_idx, train_alpha',...
+							ecg_train_Y', test_alpha', ecg_test_Y', init_option);
+% crf_confusion_mat = bsxfun(@rdivide, crf_confusion_mat, sum(crf_confusion_mat, 2));
+crf_accuracy = sum(diag(crf_confusion_mat)) / sum(crf_confusion_mat(:));
 
-plot_confusion_matrices(mul_confusion_mat, crf_confusion_mat, init_option);
+sparse_coding_plots(4, mul_confusion_mat, crf_confusion_mat, init_option, label_str, variable_window, sparse_coding);
+sparse_coding_plots(10, ecg_train, ecg_train_Y, ecg_test, ecg_test_Y, crf_predicted_label', mul_predicted_label',...
+			init_option, variable_window, sparse_coding, first_baseline_subtract);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[confusion_mat] = basic_crf_classification(tr_idx, ts_idx, ecg_train_X, ecg_train_Y, ecg_test_X, ecg_test_Y, plot_fig, init_option)
+function[confusion_mat, avg_crf_log_likelihood, predicted_label] = basic_crf_classification(tr_idx, ts_idx, ecg_train_X,...
+									ecg_train_Y, ecg_test_X, ecg_test_Y, init_option)
 
 % The next two lines converts [1, 24, 31 ...] into [1, 25, 32, ... ; 24, 31, 45,...]
 train_clusters = find(diff(tr_idx) > 100);
@@ -167,7 +242,7 @@ labels = unique(ecg_train_Y);
 % optimize featue and transition parameters
 [feature_params, trans_params] = optimize_feat_trans_params(train_clusters, ecg_train_X, ecg_train_Y, labels);
 
-plot_learned_features(exp(feature_params), exp(trans_params), init_option);
+% sparse_coding_plots(5, exp(feature_params), exp(trans_params), init_option, D, label_str);
 
 % These tell you where a cluster ends
 test_clusters = find(diff(ts_idx) > 100);
@@ -191,9 +266,10 @@ for t = 1:nTestSamples
 end
 
 confusion_mat = confusionmat(ecg_test_Y, predicted_label);
+avg_crf_log_likelihood = mean(log_likelihood);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[confusion_mat] = multinomial_log_reg(ecg_train_X, ecg_train_Y, ecg_test_X, ecg_test_Y)
+function[confusion_mat, yhatt] = multinomial_log_reg(ecg_train_X, ecg_train_Y, ecg_test_X, ecg_test_Y)
 
 labels = unique(ecg_train_Y);
 nClasses = length(labels);
@@ -211,171 +287,79 @@ wSoftmax = minFunc(@penalizedL2, zeros((nVars+1) * (nClasses-1), 1), options, fu
 wSoftmax = reshape(wSoftmax, [nVars+1, nClasses-1]);
 wSoftmax = [wSoftmax, zeros(nVars+1, 1)];
 
-[junk, yhat] = max(ecg_train_X * wSoftmax, [], 2);
-trainErr = sum(yhat ~= ecg_train_Y) / length(ecg_train_Y);
-
 [junk, yhatt] = max(ecg_test_X * wSoftmax, [], 2);
-testErr = sum(yhatt ~= ecg_test_Y) / length(ecg_test_Y);
+
 confusion_mat = confusionmat(ecg_test_Y, yhatt);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = plot_labelled_peaks(ecg_sparse_feats, peak_labels, alpha, D, actual_idx, varargin)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[ecg_samples] = window_and_interpolate(ecg_samples, hr_to_resize, window_size)
 
 global label_str;
-
+results_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
 
-for tr = 1:size(ecg_sparse_feats, 2)
-	top_dict_elements_plot = 10;
+% The lower bound 30.3237 comes from taking the slope of the within RT distance
+varying_windows = floor(linspace(50, 30.3237, 151));
+hr_range = floor(linspace(50, 200, 151));
+mid_point = floor(window_size+1);
+assert(isequal(size(ecg_samples, 2), size(hr_to_resize, 2)));
 
-	title_str = sprintf('%s wave', label_str{peak_labels(actual_idx(tr))});
+for i = 1:size(hr_to_resize, 2)
+	varying_window_entry = varying_windows(find(hr_range == hr_to_resize(i)));
+	assert(~isempty(varying_window_entry));
+	one_half = floor(varying_window_entry/2);
+	new_window = mid_point-one_half:mid_point+one_half;
+	new_wini = linspace(1, length(new_window), window_size*2+1);
+	ecg_samples(:, i) = interp1(1:length(new_window), ecg_samples(new_window, i), new_wini, 'pchip');
+end
 
-	target_dict_elements = find(alpha(:, tr));
-	[junk, sorted_idx] = sort(alpha(target_dict_elements, tr), 'descend');
-	target_dict_elements = target_dict_elements(sorted_idx);
-	top_dict_elements_plot = min(top_dict_elements_plot, length(target_dict_elements));
-	target_dict_elements = target_dict_elements(1:top_dict_elements_plot);
+% ecg_samples = bsxfun(@minus, ecg_samples, mean(ecg_samples, 2));
 
-	figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-	for d = 1:length(target_dict_elements)
-		subplot(4, 5, d);
-		plot(D(:, target_dict_elements(d)), 'g-', 'LineWidth', 2); hold on;
-		xlim([1, length(D(:, target_dict_elements(d)))]);
-		set(gca, 'XTick', []);
-		set(gca, 'YTick', []);
-		[junk, junk, val] = find(alpha(target_dict_elements(d), tr));
-		title(sprintf('alpha=%0.4f', val));
-	end
-
-	subplot(4, 5, [11, 12, 16, 17]);
-	plot(ecg_sparse_feats(:, tr), 'r-', 'LineWidth', 2); hold on;
-	plot(D(:, target_dict_elements) * alpha(target_dict_elements, tr), 'g-');
-	y_lim = get(gca, 'ylim');
-	title(sprintf('Top 10 feats; %s', title_str));
-	legend('Original', 'Sparse', 'Location', 'NorthWest');
-	grid on;
-
-	subplot(4, 5, [14, 15, 19, 20]);
-	plot(ecg_sparse_feats(:, tr), 'r-', 'LineWidth', 2); hold on;
-	plot(D * alpha(:, tr), 'g-');
-	ylim([y_lim]);
-	title(sprintf('All feats (%d); %s', length(find(alpha(:, tr))), title_str));
-	grid on;
-
-	file_name = sprintf('%s/sparse_coding/%s_lab%d', plot_dir, varargin{1}, tr);
+%{
+if i <= 5 & plot_fig
+	figure('visible', 'off');
+	set(gcf, 'Position', [100, 500, 1200, 600]);
+	subplot(1, 2, 1); plot(ecg_samples(:, i)); title(sprintf('Before %s peak, win length=%d, hr=%d',...
+		label_str{varargin{1}(i)}, window_size*2+1, hr_to_resize(i)));
+	hold on; plot(new_window, ecg_samples(new_window, i), 'r');
+	grid on; xlim([1, window_size*2+1]);
+	plot(mid_point, ecg_samples(mid_point, i), 'k*');
+end
+if i <= 5 & plot_fig
+	subplot(1, 2, 2); plot(ecg_samples(:, i)); title(sprintf('After, win length=%d', varying_window_entry));
+	grid on; xlim([1, window_size*2+1]);
+	file_name = sprintf('%s/sparse_coding/new_win_effect_hr%d_%d', plot_dir, hr_to_resize(i), i);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
-
-close all;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = plot_confusion_matrices(mul_confusion_mat, crf_confusion_mat, init_option)
-
-global label_str;
-
-plot_dir = get_project_settings('plots');
-image_format = get_project_settings('image_format');
-
-[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
-figure('visible', 'off'); set(gcf, 'Position', [70, 10, 1200, 500]);
-set(gcf, 'PaperPosition', [0 0 6 4]);
-set(gcf, 'PaperSize', [6 4]);
-colormap bone;
-
-subplot(1, 2, 1);
-imagesc(mul_confusion_mat);
-textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(mul_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title('Multinomial Log. regression');
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-
-subplot(1, 2, 2);
-imagesc(crf_confusion_mat);
-textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(crf_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title('Basic CRF');
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-
-file_name = sprintf('%s/sparse_coding/confusion_mat_init_%d', plot_dir, init_option);
-% savesamesize(gcf, 'file', file_name, 'format', image_format);
-saveas(gcf, file_name, 'pdf') % Save figure
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = plot_learned_features(feature_params, trans_params, init_option)
-
-global D;
-global label_str;
-
-plot_dir = get_project_settings('plots');
-image_format = get_project_settings('image_format');
-
-% feature_params = bsxfun(@rdivide, feature_params, sum(feature_params, 2));
-figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-set(gcf, 'PaperPosition', [0 0 6 4]);
-set(gcf, 'PaperSize', [6 4]);
-for f = 1:size(feature_params, 1)
-	subplot(2, 3, f); plot(D * feature_params(f, :)', 'b-', 'LineWidth', 2);
-	title(sprintf('Learned %s wave', label_str{f}));
-	grid on;
-end
-file_name = sprintf('%s/sparse_coding/feat_pot_init_%d', plot_dir, init_option);
-% savesamesize(gcf, 'file', file_name, 'format', image_format);
-saveas(gcf, file_name, 'pdf') % Save figure
-
-figure('visible', 'off'); set(gcf, 'Position', [70, 50, 600, 500]);
-set(gcf, 'PaperPosition', [0 0 4 4]);
-set(gcf, 'PaperSize', [4 4]);
-colormap bone;
-imagesc(trans_params);
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTickLabel', label_str);
-colorbar
-file_name = sprintf('%s/sparse_coding/trans_pot_init_%d', plot_dir, init_option);
-% savesamesize(gcf, 'file', file_name, 'format', image_format);
-saveas(gcf, file_name, 'pdf') % Save figure
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[assigned_hr] = assign_hr(ecg_data, peak_idx, rr_thresholds)
-
-raw_ecg_mat_time_res = get_project_settings('raw_ecg_mat_time_res');
-
-assigned_hr = NaN(size(peak_idx));
-
-[rr, rs] = rrextract(ecg_data, raw_ecg_mat_time_res, rr_thresholds);
-rr_start_end = [rr(1:end-1); rr(2:end)-1]';
-
-% Assigning HR for the first chunk prior to the first R peak
-rr_intervals = length(rr_start_end(1, 1):rr_start_end(1, 2));
-heart_rate = (1000 * 60) ./ (4 .* rr_intervals);
-assigned_hr(find(peak_idx < rr_start_end(1, 1))) = heart_rate;
-% Assigning HR for all valid chunks
-for r = 1:size(rr_start_end, 1)
-	rr_intervals = length(rr_start_end(r, 1):rr_start_end(r, 2));
-	% If valid RR interval then compute HR; if not then assign previous HR
-	if rr_intervals >= 100 & rr_intervals <= 300
-		heart_rate = (1000 * 60) ./ (4 .* rr_intervals);
+if ~isempty(varargin)
+	reinterpolated = struct();
+	for i = 1:length(label_str)
+		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
+		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
+		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
+		reinterpolated.before_ecg_low_hr{i} = ecg_samples(:, idx1);
+		reinterpolated.before_ecg_med_hr{i} = ecg_samples(:, idx2);
+		reinterpolated.before_ecg_hig_hr{i} = ecg_samples(:, idx3);
 	end
-	assigned_hr(find(peak_idx >= rr_start_end(r, 1) & peak_idx < rr_start_end(r, 2))) = heart_rate;
 end
-% Assigning HR for the last chunk after the last R peak
-assigned_hr(find(peak_idx >= rr_start_end(end, 2))) = heart_rate;
 
-assert(~any(isnan(assigned_hr(:))));
+if ~isempty(varargin)
+	for i = 1:6
+		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
+		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
+		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
+		reinterpolated.after_ecg_low_hr{i} = ecg_samples(:, idx1);
+		reinterpolated.after_ecg_med_hr{i} = ecg_samples(:, idx2);
+		reinterpolated.after_ecg_hig_hr{i} = ecg_samples(:, idx3);
+	end
+	save(sprintf('%s/sparse_coding/reinterpolated_hr%d', results_dir, max(hr_to_resize)), '-struct', 'reinterpolated');
+end
+if plot_fig
+	sparse_coding_plots(2, param, D);
+	sparse_coding_plots(3, ecg_train(:, 1:10), labeled_peaks(3, :), train_alpha, D, tr_idx, label_str, 'tr');
+	sparse_coding_plots(3, ecg_test(:, 1:10), labeled_peaks(3, :), test_alpha, D, ts_idx, label_str, 'ts');
+end
+
+%}
 

@@ -1,11 +1,11 @@
 function[] = heart_rate()
 
 root_dir = pwd;
-data_dir = fullfile(root_dir, 'data');
+data_dir = fullfile(root_dir, 'ecg_data');
 subject_id = 'P20_048';
 subject_session = '2012_08_17-10_15_55';
 
-ecg_mat = csvread(fullfile(data_dir, subject_id, subject_session, sprintf('%s_ECG_clean.csv', subject_session)), 1, 0);
+ecg_mat = csvread(fullfile(data_dir, subject_id, 'Sensor_1', subject_session, sprintf('%s_ECG_clean.csv', subject_session)), 1, 0);
 range_x = 2*10e4:2*10e4+10000;
 x = ecg_mat(range_x, 7);
 
@@ -27,10 +27,10 @@ xlabel('Time(milliseconds)')
 ylabel('bpm');
 
 % Loading the summary data
-summary_mat = csvread(fullfile(data_dir, subject_id, subject_session, sprintf('%s_summary_clean.csv', subject_session)), 1, 0);
+summary_mat = csvread(fullfile(data_dir, subject_id, 'Sensor_1', subject_session, sprintf('%s_summary_clean.csv', subject_session)), 1, 0);
 
 % Loading the RR data
-rr_mat = csvread(fullfile(data_dir, subject_id, subject_session, sprintf('%s_RR_clean.csv', subject_session)), 1, 0);
+rr_mat = csvread(fullfile(data_dir, subject_id, 'Sensor_1', subject_session, sprintf('%s_RR_clean.csv', subject_session)), 1, 0);
 hr_from_rr = 60000 ./ rr_mat;
 % hr_from_rr(hr_from_rr < 50) = 0;
 hr_from_rr(hr_from_rr > 240) = 0;
