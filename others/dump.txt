@@ -250,3 +250,72 @@ title(sprintf('%s, Log reg, AUROC', get_project_settings('strrep_subj_id', subje
 keyboard
 %}
 
+
+% ecg_samples = bsxfun(@minus, ecg_samples, mean(ecg_samples, 2));
+
+%{
+if i <= 5 & plot_fig
+	figure('visible', 'off');
+	set(gcf, 'Position', [100, 500, 1200, 600]);
+	subplot(1, 2, 1); plot(ecg_samples(:, i)); title(sprintf('Before %s peak, win length=%d, hr=%d',...
+		label_str{varargin{1}(i)}, window_size*2+1, hr_to_resize(i)));
+	hold on; plot(new_window, ecg_samples(new_window, i), 'r');
+	grid on; xlim([1, window_size*2+1]);
+	plot(mid_point, ecg_samples(mid_point, i), 'k*');
+end
+if i <= 5 & plot_fig
+	subplot(1, 2, 2); plot(ecg_samples(:, i)); title(sprintf('After, win length=%d', varying_window_entry));
+	grid on; xlim([1, window_size*2+1]);
+	file_name = sprintf('%s/sparse_coding/new_win_effect_hr%d_%d', plot_dir, hr_to_resize(i), i);
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
+end
+if ~isempty(varargin)
+	reinterpolated = struct();
+	for i = 1:length(label_str)
+		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
+		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
+		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
+		reinterpolated.before_ecg_low_hr{i} = ecg_samples(:, idx1);
+		reinterpolated.before_ecg_med_hr{i} = ecg_samples(:, idx2);
+		reinterpolated.before_ecg_hig_hr{i} = ecg_samples(:, idx3);
+	end
+end
+
+if ~isempty(varargin)
+	for i = 1:6
+		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
+		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
+		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
+		reinterpolated.after_ecg_low_hr{i} = ecg_samples(:, idx1);
+		reinterpolated.after_ecg_med_hr{i} = ecg_samples(:, idx2);
+		reinterpolated.after_ecg_hig_hr{i} = ecg_samples(:, idx3);
+	end
+	save(sprintf('%s/sparse_coding/reinterpolated_hr%d', results_dir, max(hr_to_resize)), '-struct', 'reinterpolated');
+end
+if plot_fig
+	sparse_coding_plots(2, param, D);
+	sparse_coding_plots(3, ecg_train(:, 1:10), labeled_peaks(3, :), train_alpha, D, tr_idx, label_str, 'tr');
+	sparse_coding_plots(3, ecg_test(:, 1:10), labeled_peaks(3, :), test_alpha, D, ts_idx, label_str, 'ts');
+end
+
+mul_accuracy = 0; crf_accuracy = 0; avg_crf_log_likelihood = 0;
+tmp = [ecg_train; ecg_train_Y]';
+save(sprintf('ecg_train_%d.mat', init_option), 'tmp');
+tmp = [ecg_test; ecg_test_Y]';
+save(sprintf('ecg_test_%d.mat', init_option), 'tmp');
+
+atrain = ecg_train_Y == 1;
+atest = ecg_test_Y == 1;
+aunknown = ecg_train_Y == 6;
+b = [mean(train_alpha(:, atrain), 2)'];
+b = [b; mean(test_alpha(:, atest), 2)'];
+b = [b; mean(train_alpha(:, aunknown), 2)'];
+figure(); imagesc(b);
+
+figure(); plot(mean(ecg_train(:, atrain), 2));
+hold on; plot(mean(ecg_test(:, atest), 2), 'r')
+
+keyboard
+
+%}
+

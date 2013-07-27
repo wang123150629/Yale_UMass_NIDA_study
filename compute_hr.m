@@ -14,6 +14,9 @@ case 'sgram'
 	assert(length(varargin) == 1);
 	peak_idx = varargin{1};
 	hr = spectogram_hr(ecg_data, peak_idx);
+case 'wavelet'
+	hr = wavelet_based_HR(ecg_data);
+	keyboard
 otherwise
 	error('Invalid aproach');
 end
@@ -163,6 +166,78 @@ matlabpool close
 plot(assigned_hr, 'b');
 a = load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_sgram_061013.mat');
 hold on; plot(a.estimated_hr(valid_peak_idx), 'r');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [beat_rate] = wavelet_based_HR(ecg_data)
+
+baseline_smooth = 250; % 250 samples/sec
+sampling_rate = 250; % 250Hz.
+window_size = 2^11;
+
+for i=1:floor(length(ecg_data)/window_size)-1
+    %%Eliminate baseline drift by smoothing over 5 second windows
+    s1=ecg_data(window_size*(i-1)+1:window_size*i)';
+    s2=smooth(s1,baseline_smooth);
+    ecgsmooth=s1-s2;
+    
+    %%Wavelet Transform
+    [C,L]=wavedec(ecgsmooth,8,'db4');
+    [d1,d2,d3,d4,d5,d6,d7,d8]=detcoef(C,L,[1,2,3,4,5,6,7,8]);
+    
+    %%Denoise
+    [thr,sorh,keepapp]=ddencmp('den','wv',ecgsmooth);
+    cleanecg=wdencmp('gbl',C,L,'db4',8,thr,sorh,keepapp);
+    
+    %%Re-construct signal with level 5 approx coeff and a few other detail
+    %%coeffs
+%     a5=appcoef(C,L,'db4',5);
+%     C1=[a5;d5;d4;d3];
+%     L1=[length(a5);length(d5);length(d4);length(d3);length(cleanecg)];
+%     R_detect_signal=waverec(C1,L1,'db4');
+%     R_scale = 4; % re-scale by this after you get the RR interval
+
+    R_detect_signal = cleanecg; % uncomment above if cleaner signal needed
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%
+    % extract highest peaks - seems to get R and T. If more peaks are
+    % detected, need to fix the code below.
+    RTpeakidx = peakfinder(R_detect_signal);
+    RTpeaks = R_detect_signal(RTpeakidx);
+    
+    % partition into two clusters (R and T)
+    [RTidx2,RTmeans2] = kmeans(RTpeaks,2,'dist','sqeuclidean');
+
+    % Find R-T-R combos        
+    [Rmean, RT_max_idx] = max(RTmeans2);    
+    Rpeakidx = RTpeakidx(find(RTidx2==RT_max_idx));
+    if RT_max_idx==1 pattern=[1; 2; 1];
+    else pattern=[2; 1; 2]; end
+        
+    RR=[]; RTRidx=[]; RTRval=[];
+    for k=1:length(RTidx2)-2
+        if (isequal(RTidx2(k:k+2),pattern))
+            RTRidx = [RTRidx RTpeakidx(k:k+2)];
+            RR = [RR; RTpeakidx(k+2)-RTpeakidx(k)];
+        end
+    end
+    
+    RRmed = median(RR);
+    
+    beat_rate(i,1) = window_size*(i-1)+1;
+    beat_rate(i,2) = sampling_rate*60/RRmed;    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    clf; hold on;
+    plot(R_detect_signal);
+    plot(RTRidx,R_detect_signal(RTRidx),'kx','MarkerSize',10);
+
+    %%%Plot the Orginal Signal and Eliminating Baseline Drift signal
+    % subplot(411);plot(s1);title('Orginal Signal');
+    % subplot(412);plot(s1-s2);title('Baseline drift Elimination');
+    % subplot(413);plot(cleanecg);title('Main Signal');
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end
+plot(beat_rate(:,1),beat_rate(:,2));
 
 %{
 if mod(p, 100) == 0

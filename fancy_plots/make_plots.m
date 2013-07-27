@@ -8,7 +8,8 @@ xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
 
 data_dir = get_project_settings('data');
 result_dir = get_project_settings('results');
-plot_dir = get_project_settings('pdf_result_location');
+% plot_dir = get_project_settings('pdf_result_location');
+plot_dir = '/home/anataraj/Desktop';
 subject_id = 'P20_040';
 subject_sensor = 'Sensor_1';
 subject_timestamp = '2012_06_27-09_21_36';
@@ -26,7 +27,7 @@ case 1
 	figure();
 	set(gcf, 'PaperPosition', [0 0 6 4]);
 	set(gcf, 'PaperSize', [6 4]);
-	plot(x, y, 'k-');
+	plot(x, y, 'b-');
 	xlabel('Time(seconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	% xlabel('Time(milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 	ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');

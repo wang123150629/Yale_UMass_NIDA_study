@@ -1,4 +1,4 @@
-function[] = sparse_coding(sparse_coding, variable_window, normalize, add_height, first_baseline_subtract)
+function[mul_accuracy, crf_accuracy, mean_dict_elements] = sparse_coding(sparse_coding, variable_window, normalize, add_height, first_baseline_subtract, initial_lambda)
 
 close all;
 
@@ -12,7 +12,7 @@ tr_partition = 50;
 uniform_split = true;
 nDictionayElements = 100;
 nIterations = 1000;
-lambda = 0.15;
+lambda = initial_lambda;
 
 filter_size = 10000;
 h = fspecial('gaussian', [1, filter_size], 150);
@@ -36,52 +36,47 @@ ecg_raw = labeled_peaks(1, :);
 if first_baseline_subtract
 	% Performing baseline correction
 	ecg_data = ecg_raw - conv(ecg_raw, h, 'same');
-	ecg_data = ecg_data(filter_size/2:end-filter_size/2);
-
-	peak_idx = labeled_peaks(2, :) > 0;
-	peak_idx = peak_idx(filter_size/2:end-filter_size/2);
-	peak_idx(1:window_size) = 0;
-	peak_idx(end-window_size:end) = 0;
-
-	labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
-	labeled_idx = labeled_idx(filter_size/2:end-filter_size/2);
-	labeled_idx(1:window_size) = 0;
-	labeled_idx(end-window_size:end) = 0;
-
-	peak_labels = labeled_peaks(3, :);
-	peak_labels = peak_labels(filter_size/2:end-filter_size/2);
-
-	estimated_hr = ones(size(ecg_data)) * -1;
-	load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_sgram_062113.mat');
-	estimated_hr(peak_idx) = assigned_hr;
 else
 	ecg_data = ecg_raw;
-
-	peak_idx = labeled_peaks(2, :) > 0;
-	peak_idx(1:window_size) = 0;
-	peak_idx(end-window_size:end) = 0;
-
-	labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
-	labeled_idx(1:window_size) = 0;
-	labeled_idx(end-window_size:end) = 0;
-
-	peak_labels = labeled_peaks(3, :);
-
-	estimated_hr = ones(size(ecg_data)) * -1;
-	load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_big_sgram_061313.mat');
-	estimated_hr(peak_idx) = assigned_hr;
 end
+
+ecg_data = ecg_data(filter_size/2:end-filter_size/2);
+
+peak_idx = labeled_peaks(2, :) > 0;
+peak_idx = peak_idx(filter_size/2:end-filter_size/2);
+peak_idx(1:window_size) = 0;
+peak_idx(end-window_size:end) = 0;
+
+labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
+labeled_idx = labeled_idx(filter_size/2:end-filter_size/2);
+labeled_idx(1:window_size) = 0;
+labeled_idx(end-window_size:end) = 0;
+
+peak_labels = labeled_peaks(3, :);
+peak_labels = peak_labels(filter_size/2:end-filter_size/2);
 
 % Finding which of those peaks are in fact hand labelled
 labeled_peaks_idx = peak_idx & labeled_idx;
 
+estimated_hr = ones(size(ecg_data)) * -1;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Computing the HR for each of the peaks (NOTE: Now all peaks are associated with a HR; NOT just labelled peaks)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This mat holds the new range 70 to 140
+load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_sgram_071313.mat');
+% This mat holds the old range 50 to 200
+% load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_sgram_062113.mat');
+
 % estimated_hr(peak_idx) = compute_hr('rr', ecg_data, peak_idx, subject_profile.events{event}.rr_thresholds);
 % estimated_hr(peak_idx) = compute_hr('fft', ecg_data, peak_idx);
 % load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_fft_053013.mat');
 % estimated_hr(peak_idx) = assigned_hr;
 % load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_sgram_061013.mat');
 % estimated_hr = compute_hr('sgram', ecg_data, peak_idx);
+% estimated_hr = compute_hr('wavelet', ecg_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+estimated_hr(peak_idx) = assigned_hr;
 
 if uniform_split
 	nBins = 3;
@@ -127,6 +122,8 @@ end
 mul_accuracy = NaN(size(hr_bins, 1), size(hr_bins, 1));
 crf_accuracy = NaN(size(hr_bins, 1), size(hr_bins, 1));
 avg_crf_log_likelihood = NaN(size(hr_bins, 1), size(hr_bins, 1));
+mean_dict_elements = NaN(size(hr_bins, 1), size(hr_bins, 1));
+incorrect_indices = {};
 for hr1 = 1:size(hr_bins, 1)
 	% Training instances. Finding which of the hand labelled peaks fall within the valid HR range
 	valid_tr_idx = estimated_hr >= hr_bins(hr1, 1) & estimated_hr <= hr_bins(hr1, 2);
@@ -147,7 +144,8 @@ for hr1 = 1:size(hr_bins, 1)
 		fprintf('tr=%d, ts=%d, tr length=%d, actual=%d, ts length=%d, actual=%d\n', hr1, hr2, length(valid_tr_idx),...
 			length(tr_idx), length(valid_ts_idx), length(ts_idx));
 
-		[mul_accuracy(hr1, hr2), crf_accuracy(hr1, hr2), avg_crf_log_likelihood(hr1, hr2)] =...
+		[mul_accuracy(hr1, hr2), crf_accuracy(hr1, hr2), avg_crf_log_likelihood(hr1, hr2),...
+		 mean_dict_elements(hr1, hr2), incorrect_indices{hr1, hr2}] =...
 					analyze_based_on_HR(tr_idx, ts_idx, peak_idx, labeled_idx, window_size,...
 					peak_labels, ecg_data, init_option, estimated_hr, param,...
 					variable_window, sparse_coding, first_baseline_subtract, normalize, add_height);
@@ -156,9 +154,11 @@ end
 
 label_str = new_hr_str;
 sparse_coding_plots(9, mul_accuracy, crf_accuracy, avg_crf_log_likelihood, 0, label_str, variable_window, sparse_coding);
+sparse_coding_plots(13, incorrect_indices, ecg_data, labeled_peaks_idx, estimated_hr, hr_bins);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[mul_accuracy, crf_accuracy, avg_crf_log_likelihood] = analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
+function[mul_accuracy, crf_accuracy, avg_crf_log_likelihood, mean_dict_elements, incorrect_indices] =...
+								analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
 								labeled_idx, window_size, peak_labels, ecg_data, init_option,...
 								estimated_hr, param, variable_window,...
 								sparse_coding, first_baseline_subtract, normalize, add_height)
@@ -170,6 +170,7 @@ assert(~isempty(ts_idx));
 global D;
 global label_str
 label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+mean_dict_elements = [];
 
 train_win_idx = [tr_idx - window_size; tr_idx + window_size];
 train_win_idx = floor(linspaceNDim(train_win_idx(1, :), train_win_idx(2, :), window_size*2+1));
@@ -207,25 +208,37 @@ if sparse_coding
 	param.mode = 2;
 	train_alpha = mexLasso(ecg_train, D, param);
 	test_alpha = mexLasso(ecg_test, D, param);
+	on_dict_elements = [train_alpha, test_alpha] > 0;
+	mean_dict_elements = mean(sum(on_dict_elements));
 else
 	train_alpha = ecg_train;
 	test_alpha = ecg_test;
 end
 
+sparse_coding_plots(2, param, D);
+% sparse_coding_plots(3, 1:10, ecg_train, peak_labels, train_alpha, D, tr_idx, 'tr');
+% sparse_coding_plots(3, 1:10, ecg_test, peak_labels, test_alpha, D, ts_idx, 'ts');
+
 % perform six class classification using multinomial logistic regression
 [mul_confusion_mat, mul_predicted_label] = multinomial_log_reg(train_alpha', ecg_train_Y', test_alpha', ecg_test_Y');
 % mul_confusion_mat = bsxfun(@rdivide, mul_confusion_mat, sum(mul_confusion_mat, 2));
-mul_accuracy = sum(diag(mul_confusion_mat)) / sum(mul_confusion_mat(:));
+% mul_accuracy = sum(diag(mul_confusion_mat)) / sum(mul_confusion_mat(:));
+mul_accuracy = sum(mul_confusion_mat(:)) - sum(diag(mul_confusion_mat));
 
 % perform classification using basic CRF's
 [crf_confusion_mat, avg_crf_log_likelihood, crf_predicted_label] = basic_crf_classification(tr_idx, ts_idx, train_alpha',...
 							ecg_train_Y', test_alpha', ecg_test_Y', init_option);
 % crf_confusion_mat = bsxfun(@rdivide, crf_confusion_mat, sum(crf_confusion_mat, 2));
-crf_accuracy = sum(diag(crf_confusion_mat)) / sum(crf_confusion_mat(:));
+% crf_accuracy = sum(diag(crf_confusion_mat)) / sum(crf_confusion_mat(:));
+crf_accuracy = sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat));
+
+incorrect_indices = ts_idx(find(crf_predicted_label ~= ecg_test_Y'));
 
 sparse_coding_plots(4, mul_confusion_mat, crf_confusion_mat, init_option, label_str, variable_window, sparse_coding);
 sparse_coding_plots(10, ecg_train, ecg_train_Y, ecg_test, ecg_test_Y, crf_predicted_label', mul_predicted_label',...
 			init_option, variable_window, sparse_coding, first_baseline_subtract);
+sparse_coding_plots(3, find(crf_predicted_label ~= ecg_test_Y'), ecg_test, peak_labels, test_alpha, D,...
+						ts_idx, sprintf('ts%d', init_option), crf_predicted_label);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[confusion_mat, avg_crf_log_likelihood, predicted_label] = basic_crf_classification(tr_idx, ts_idx, ecg_train_X,...
@@ -268,6 +281,8 @@ end
 confusion_mat = confusionmat(ecg_test_Y, predicted_label);
 avg_crf_log_likelihood = mean(log_likelihood);
 
+sparse_coding_plots(12, ecg_train_X, ecg_test_X, ecg_train_Y, ecg_test_Y, predicted_label, init_option);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[confusion_mat, yhatt] = multinomial_log_reg(ecg_train_X, ecg_train_Y, ecg_test_X, ecg_test_Y)
 
@@ -301,7 +316,7 @@ image_format = get_project_settings('image_format');
 
 % The lower bound 30.3237 comes from taking the slope of the within RT distance
 varying_windows = floor(linspace(50, 30.3237, 151));
-hr_range = floor(linspace(50, 200, 151));
+hr_range = floor(linspace(70, 140, 151));
 mid_point = floor(window_size+1);
 assert(isequal(size(ecg_samples, 2), size(hr_to_resize, 2)));
 
@@ -313,53 +328,4 @@ for i = 1:size(hr_to_resize, 2)
 	new_wini = linspace(1, length(new_window), window_size*2+1);
 	ecg_samples(:, i) = interp1(1:length(new_window), ecg_samples(new_window, i), new_wini, 'pchip');
 end
-
-% ecg_samples = bsxfun(@minus, ecg_samples, mean(ecg_samples, 2));
-
-%{
-if i <= 5 & plot_fig
-	figure('visible', 'off');
-	set(gcf, 'Position', [100, 500, 1200, 600]);
-	subplot(1, 2, 1); plot(ecg_samples(:, i)); title(sprintf('Before %s peak, win length=%d, hr=%d',...
-		label_str{varargin{1}(i)}, window_size*2+1, hr_to_resize(i)));
-	hold on; plot(new_window, ecg_samples(new_window, i), 'r');
-	grid on; xlim([1, window_size*2+1]);
-	plot(mid_point, ecg_samples(mid_point, i), 'k*');
-end
-if i <= 5 & plot_fig
-	subplot(1, 2, 2); plot(ecg_samples(:, i)); title(sprintf('After, win length=%d', varying_window_entry));
-	grid on; xlim([1, window_size*2+1]);
-	file_name = sprintf('%s/sparse_coding/new_win_effect_hr%d_%d', plot_dir, hr_to_resize(i), i);
-	savesamesize(gcf, 'file', file_name, 'format', image_format);
-end
-if ~isempty(varargin)
-	reinterpolated = struct();
-	for i = 1:length(label_str)
-		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
-		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
-		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
-		reinterpolated.before_ecg_low_hr{i} = ecg_samples(:, idx1);
-		reinterpolated.before_ecg_med_hr{i} = ecg_samples(:, idx2);
-		reinterpolated.before_ecg_hig_hr{i} = ecg_samples(:, idx3);
-	end
-end
-
-if ~isempty(varargin)
-	for i = 1:6
-		idx1 = find(varargin{1} == i & hr_to_resize >= 80 & hr_to_resize < 100);
-		idx2 = find(varargin{1} == i & hr_to_resize >= 100 & hr_to_resize < 120);
-		idx3 = find(varargin{1} == i & hr_to_resize >= 120);
-		reinterpolated.after_ecg_low_hr{i} = ecg_samples(:, idx1);
-		reinterpolated.after_ecg_med_hr{i} = ecg_samples(:, idx2);
-		reinterpolated.after_ecg_hig_hr{i} = ecg_samples(:, idx3);
-	end
-	save(sprintf('%s/sparse_coding/reinterpolated_hr%d', results_dir, max(hr_to_resize)), '-struct', 'reinterpolated');
-end
-if plot_fig
-	sparse_coding_plots(2, param, D);
-	sparse_coding_plots(3, ecg_train(:, 1:10), labeled_peaks(3, :), train_alpha, D, tr_idx, label_str, 'tr');
-	sparse_coding_plots(3, ecg_test(:, 1:10), labeled_peaks(3, :), test_alpha, D, ts_idx, label_str, 'ts');
-end
-
-%}
 

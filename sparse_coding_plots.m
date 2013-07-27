@@ -24,7 +24,140 @@ case 8, overlay_sgram_hr();
 case 4, confusion_mats(varargin{:});
 case 9, three_confusion_mats(varargin{:});
 case 10, data_cases(varargin{:});
+case 11, function_of_lambda(varargin{:});
+case 12, sparse_heat_maps(varargin{:});
+case 13, incorrect_sample_time_series(varargin{:});
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = incorrect_sample_time_series(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+
+assert(length(varargin) == 5);
+incorrect_indices = varargin{1};
+ecg_data = varargin{2}; 
+labeled_peaks_idx = find(varargin{3});
+estimated_hr = varargin{4};
+hr_bins = varargin{5};
+
+for i = 1:3
+	figure('visible', 'off');
+	set(gcf, 'Position', get_project_settings('figure_size'));
+
+	subplot(2, 1, 1); plot(1:length(labeled_peaks_idx), ecg_data(labeled_peaks_idx), 'b-'); hold on;
+	for j = 1:3
+		[junk, idx, junk] = intersect(labeled_peaks_idx, incorrect_indices{i, j});
+		text(idx, ecg_data(1, incorrect_indices{i, j}), sprintf('%d', j), 'FontSize', 15);
+	end
+
+	subplot(2, 1, 2); plot(1:length(labeled_peaks_idx), estimated_hr(labeled_peaks_idx), 'b-'); hold on;
+	for j = 1:3
+		[junk, idx, junk] = intersect(labeled_peaks_idx, incorrect_indices{i, j});
+		text(idx, estimated_hr(1, incorrect_indices{i, j}), sprintf('%d', j), 'FontSize', 15);
+	end
+	plot(1:length(labeled_peaks_idx), repmat(hr_bins(1, 2), 1, length(labeled_peaks_idx)), 'g-');
+	plot(1:length(labeled_peaks_idx), repmat(hr_bins(2, 2), 1, length(labeled_peaks_idx)), 'g-');
+
+	file_name = sprintf('%s/sparse_coding/misc_plots/incorrect_samples%d', plot_dir, i);
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = sparse_heat_maps(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+
+assert(length(varargin) == 6);
+train_set = varargin{1};
+test_set = varargin{2}; 
+train_Y = varargin{3};
+test_Y = varargin{4};
+predicted_Y = varargin{5};
+init_option = varargin{6};
+
+for l = 1:length(label_str)
+	clear train_heat_mat; clear test_cor_heat_mat; clear test_inc_heat_mat;
+
+	figure('visible', 'off');
+	set(gcf, 'Position', get_project_settings('figure_size'));
+
+	idx = train_Y == l;
+	train_heat_mat = train_set(idx, :)';
+
+	idx = test_Y == l & test_Y == predicted_Y;
+	test_cor_heat_mat = test_set(idx, :)';
+
+	idx = test_Y == l & test_Y ~= predicted_Y;
+	test_inc_heat_mat = test_set(idx, :)';
+	
+	% idx = find(sum([train_heat_mat, test_cor_heat_mat, test_inc_heat_mat], 2) ~= 0);
+	idx = 1:100;
+	dummy_mat = ones(length(idx), 1) .* 0.3;
+	wgt_mat = [train_heat_mat(idx, :), dummy_mat, test_cor_heat_mat(idx, :), dummy_mat, test_inc_heat_mat(idx, :)];
+	imagesc(wgt_mat);
+	colormap gray; h = colorbar; set(h, 'ylim', [-0.15, 0.3]);
+	ylabel('sparse codes'); xlabel(sprintf('Data samples[train(%d), test correct(%d), test incorrect(%d)]',...
+				size(train_heat_mat, 2), size(test_cor_heat_mat, 2), size(test_inc_heat_mat, 2)));
+	title(sprintf('%s peak', label_str{l}));
+
+	%{
+	subplot(1, 3, 1); imagesc(train_heat_mat(idx, :));
+	ylabel('sparse codes'); xlabel('tr');
+	title(sprintf('%s peak', label_str{l}));	
+	h = colorbar;
+	set(h, 'ylim', [-0.15, 0.25]);
+	subplot(1, 3, 2); imagesc(test_cor_heat_mat(idx, :));
+	xlabel('ts-c');
+	set(gca, 'YTick', []);
+	h = colorbar;
+	set(h, 'ylim', [-0.15, 0.25]);
+	subplot(1, 3, 3); imagesc(test_inc_heat_mat(idx, :));
+	xlabel('ts-i');
+	set(gca, 'YTick', []);
+	h = colorbar;
+	set(h, 'ylim', [-0.15, 0.25]);
+	%}
+
+	file_name = sprintf('%s/sparse_coding/sparse_heatmaps%d_%speak', plot_dir, init_option, label_str{l});
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = function_of_lambda(varargin)
+
+global plot_dir;
+global image_format;
+
+assert(length(varargin) == 4);
+mul_acc = varargin{1};
+crf_acc = varargin{2}; 
+mean_dict = varargin{3};
+lambda = varargin{4};
+
+% figure('visible', 'off');
+figure();
+set(gcf, 'Position', get_project_settings('figure_size'));
+subplot(2, 1, 1); plot(1:length(lambda), mul_acc, 'ro-'); hold on;
+plot(1:length(lambda), crf_acc, 'go-');
+set(gca, 'XTick', 1:length(lambda));
+set(gca, 'XTickLabel', lambda);
+legend('MUL', 'CRF');
+xlabel('sparse coding Lambda');
+ylabel('Error count');
+
+subplot(2, 1, 2); plot(1:length(lambda), mean_dict, 'ko-');
+set(gca, 'XTick', 1:length(lambda));
+set(gca, 'XTickLabel', lambda);
+xlabel('sparse coding Lambda');
+ylabel('No. Dictionary elements');
+
+file_name = sprintf('%s/sparse_coding/function_of_lambda', plot_dir);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = data_cases(varargin)
@@ -121,18 +254,19 @@ set(gcf, 'PaperPosition', [0 0 6 4]);
 set(gcf, 'PaperSize', [6 4]);
 colormap bone;
 
-total_error = ones(size(mul_confusion_mat)) - mul_confusion_mat;
-total_error = sum(total_error(:));
+% total_error = ones(size(mul_confusion_mat)) - mul_confusion_mat;
+% total_error = sum(total_error(:));
+total_error = sum(mul_confusion_mat(:));
 subplot(2, 2, 1);
 imagesc(mul_confusion_mat);
-textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%0.4f')));  %# Remove any space padding
+textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%d')));  %# Remove any space padding
 hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(mul_confusion_mat(:) < midValue, 1, 3);
 set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 colorbar
-title(sprintf('%s, %s, Multi. Log. regression, total error=%0.4f', feat_str, win_str, total_error));
+title(sprintf('%s, %s, Multi. Log. regression, total error=%d', feat_str, win_str, total_error));
 set(gca, 'XTick', 1:length(label_str));
 set(gca, 'XTickLabel', label_str);
 set(gca, 'YTick', 1:length(label_str));
@@ -141,18 +275,19 @@ if init_option <= 0, xlabel('Test'); ylabel('Train');
 else, xlabel('Predicted'); ylabel('Ground');
 end
 
-total_error = ones(size(crf_confusion_mat)) - crf_confusion_mat;
-total_error = sum(total_error(:));
+% total_error = ones(size(crf_confusion_mat)) - crf_confusion_mat;
+% total_error = sum(total_error(:));
+total_error = sum(crf_confusion_mat(:));
 subplot(2, 2, 2);
 imagesc(crf_confusion_mat);
-textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%0.4f')));  %# Remove any space padding
+textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%d')));  %# Remove any space padding
 hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(crf_confusion_mat(:) < midValue, 1, 3);
 set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 colorbar
-title(sprintf('%s, %s, Basic CRF, total error=%0.4f', feat_str, win_str, total_error));
+title(sprintf('%s, %s, Basic CRF, total error=%d', feat_str, win_str, total_error));
 set(gca, 'XTick', 1:length(label_str));
 set(gca, 'XTickLabel', label_str);
 set(gca, 'YTick', 1:length(label_str));
@@ -375,7 +510,7 @@ for d = 1:param.K
 	set(gca, 'XTick', []);
 	set(gca, 'YTick', []);
 end
-file_name = sprintf('%s/sparse_coding/sparse_dict_elements', plot_dir);
+file_name = sprintf('%s/sparse_coding/misc_plots/sparse_dict_elements', plot_dir);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -383,25 +518,32 @@ function[] = train_test_linear(varargin)
 
 global plot_dir;
 global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 
-assert(length(varargin) == 7);
-ecg_sparse_feats = varargin{1};
-peak_labels = varargin{2};
-alpha = varargin{3};
-D = varargin{4};
-actual_idx = varargin{5};
-label_str = varargin{6};
+target_samples = varargin{1};
+ecg_sparse_feats = varargin{2};
+peak_labels = varargin{3};
+alpha = varargin{4};
+D = varargin{5};
+actual_idx = varargin{6};
+if length(varargin) == 8
+	predicted_label = varargin{8};
+end
 
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
 
-for tr = 1:size(ecg_sparse_feats, 2)
+for tr = 1:length(target_samples)
 	top_dict_elements_plot = 10;
 
-	title_str = sprintf('%s wave', label_str{peak_labels(actual_idx(tr))});
+	title_str = sprintf('%s wave', label_str{peak_labels(actual_idx(target_samples(tr)))});
+	if exist('predicted_label')
+		title_str = sprintf('grnd: %s, pred: %s', label_str{peak_labels(actual_idx(target_samples(tr)))},...
+							  label_str{predicted_label(target_samples(tr))});
+	end
 
-	target_dict_elements = find(alpha(:, tr));
-	[junk, sorted_idx] = sort(alpha(target_dict_elements, tr), 'descend');
+	target_dict_elements = find(alpha(:, target_samples(tr)));
+	[junk, sorted_idx] = sort(alpha(target_dict_elements, target_samples(tr)), 'descend');
 	target_dict_elements = target_dict_elements(sorted_idx);
 	top_dict_elements_plot = min(top_dict_elements_plot, length(target_dict_elements));
 	target_dict_elements = target_dict_elements(1:top_dict_elements_plot);
@@ -413,26 +555,26 @@ for tr = 1:size(ecg_sparse_feats, 2)
 		xlim([1, length(D(:, target_dict_elements(d)))]);
 		set(gca, 'XTick', []);
 		set(gca, 'YTick', []);
-		[junk, junk, val] = find(alpha(target_dict_elements(d), tr));
+		[junk, junk, val] = find(alpha(target_dict_elements(d), target_samples(tr)));
 		title(sprintf('alpha=%0.4f', val));
 	end
 
 	subplot(4, 5, [11, 12, 16, 17]);
-	plot(ecg_sparse_feats(:, tr), 'r-', 'LineWidth', 2); hold on;
-	plot(D(:, target_dict_elements) * alpha(target_dict_elements, tr), 'g-');
+	plot(ecg_sparse_feats(:, target_samples(tr)), 'r-', 'LineWidth', 2); hold on;
+	plot(D(:, target_dict_elements) * alpha(target_dict_elements, target_samples(tr)), 'g-');
 	y_lim = get(gca, 'ylim');
 	title(sprintf('Top 10 feats; %s', title_str));
 	legend('Original', 'Sparse', 'Location', 'NorthWest');
 	grid on;
 
 	subplot(4, 5, [14, 15, 19, 20]);
-	plot(ecg_sparse_feats(:, tr), 'r-', 'LineWidth', 2); hold on;
-	plot(D * alpha(:, tr), 'g-');
+	plot(ecg_sparse_feats(:, target_samples(tr)), 'r-', 'LineWidth', 2); hold on;
+	plot(D * alpha(:, target_samples(tr)), 'g-');
 	ylim([y_lim]);
-	title(sprintf('All feats (%d); %s', length(find(alpha(:, tr))), title_str));
+	title(sprintf('All feats (%d); %s', length(find(alpha(:, target_samples(tr)))), title_str));
 	grid on;
 
-	file_name = sprintf('%s/sparse_coding/%s_lab%d', plot_dir, varargin{7}, tr);
+	file_name = sprintf('%s/sparse_coding/misc_plots/%s_lab%d', plot_dir, varargin{7}, target_samples(tr));
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
@@ -499,13 +641,17 @@ sgram_based_hr = estimated_hr(estimated_hr > 0);
 load(fullfile(results_dir, 'labeled_peaks/assigned_hr_big_sgram_061313.mat'));
 sgram_big_hr = assigned_hr;
 
+load(fullfile(results_dir, 'labeled_peaks/assigned_hr_bl_subtract_sgram_071313.mat'));
+sgram_new_range = assigned_hr;
+
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
 plot(sgram_based_hr, 'b-'); hold on;
 plot(sgram_big_hr, 'r-');
+plot(sgram_new_range, 'g-');
 plot(behav_hr(peak_idx), 'ko', 'MarkerFaceColor', 'k');
 
 xlabel('peaks ONLY'); ylabel('heart rate');
-legend('Sgram 0.6 min', 'Sgram 2 min', 'behav');
+legend('Sgram 0.6 min', 'Sgram 2 min', 'Sgram 70-140', 'behav');
 ylim([70, 150]);
 
 file_name = sprintf('%s/sparse_coding/misc_plots/ovlp_sgram_hr', plot_dir);
