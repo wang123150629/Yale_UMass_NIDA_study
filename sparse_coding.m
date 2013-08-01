@@ -1,4 +1,6 @@
-function[mul_accuracy, crf_accuracy, mean_dict_elements] = sparse_coding(sparse_coding, variable_window, normalize, add_height, first_baseline_subtract, initial_lambda)
+function[mul_accuracy, crf_accuracy, mean_dict_elements] = sparse_coding(sparse_coding, variable_window, normalize, add_height, add_diff, first_baseline_subtract, initial_lambda)
+
+% sparse_coding(true, true, false, false, true, true, 0.015)
 
 close all;
 
@@ -106,6 +108,7 @@ if sparse_coding
 		ecg_learn = bsxfun(@minus, ecg_learn, mean(ecg_learn, 2));
 	end
 	if add_height
+		keyboard % incorrect approach will need to add height only before the actual classification
 		ecg_learn = [bsxfun(@minus, ecg_learn, mean(ecg_learn, 2)); peak_heights];
 	end
 	param.K = nDictionayElements;  % learns a dictionary with 100 elements
@@ -148,7 +151,8 @@ for hr1 = 1:size(hr_bins, 1)
 		 mean_dict_elements(hr1, hr2), incorrect_indices{hr1, hr2}] =...
 					analyze_based_on_HR(tr_idx, ts_idx, peak_idx, labeled_idx, window_size,...
 					peak_labels, ecg_data, init_option, estimated_hr, param,...
-					variable_window, sparse_coding, first_baseline_subtract, normalize, add_height);
+					variable_window, sparse_coding, first_baseline_subtract, normalize,...
+					add_height, add_diff);
 	end
 end
 
@@ -161,7 +165,8 @@ function[mul_accuracy, crf_accuracy, avg_crf_log_likelihood, mean_dict_elements,
 								analyze_based_on_HR(tr_idx, ts_idx, peak_idx,...
 								labeled_idx, window_size, peak_labels, ecg_data, init_option,...
 								estimated_hr, param, variable_window,...
-								sparse_coding, first_baseline_subtract, normalize, add_height)
+								sparse_coding, first_baseline_subtract, normalize,...
+								add_height, add_diff)
 
 assert(all(estimated_hr(peak_idx) > 50));
 assert(~isempty(tr_idx));
@@ -199,6 +204,7 @@ end
 peak_heights = ecg_test(window_size+1, :);
 if normalize
 	ecg_test = bsxfun(@minus, ecg_test, mean(ecg_test, 2));
+	keyboard % you will need to divide by std dev
 end
 if add_height
 	ecg_test = [bsxfun(@minus, ecg_test, mean(ecg_test, 2)); peak_heights];
@@ -210,6 +216,10 @@ if sparse_coding
 	test_alpha = mexLasso(ecg_test, D, param);
 	on_dict_elements = [train_alpha, test_alpha] > 0;
 	mean_dict_elements = mean(sum(on_dict_elements));
+	if add_diff
+		train_alpha = [train_alpha; sum(ecg_train - D * train_alpha)];
+		test_alpha = [test_alpha; sum(ecg_test - D * test_alpha)];
+	end
 else
 	train_alpha = ecg_train;
 	test_alpha = ecg_test;
@@ -237,8 +247,10 @@ incorrect_indices = ts_idx(find(crf_predicted_label ~= ecg_test_Y'));
 sparse_coding_plots(4, mul_confusion_mat, crf_confusion_mat, init_option, label_str, variable_window, sparse_coding);
 sparse_coding_plots(10, ecg_train, ecg_train_Y, ecg_test, ecg_test_Y, crf_predicted_label', mul_predicted_label',...
 			init_option, variable_window, sparse_coding, first_baseline_subtract);
-sparse_coding_plots(3, find(crf_predicted_label ~= ecg_test_Y'), ecg_test, peak_labels, test_alpha, D,...
+sparse_coding_plots(3, find(crf_predicted_label ~= ecg_test_Y'), ecg_test, peak_labels, test_alpha(1:100, :), D,...
 						ts_idx, sprintf('ts%d', init_option), crf_predicted_label);
+
+sparse_coding_plots(14, ecg_test, D, test_alpha(1:100, :), crf_predicted_label, ecg_test_Y', init_option);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[confusion_mat, avg_crf_log_likelihood, predicted_label] = basic_crf_classification(tr_idx, ts_idx, ecg_train_X,...

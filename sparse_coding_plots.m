@@ -27,6 +27,120 @@ case 10, data_cases(varargin{:});
 case 11, function_of_lambda(varargin{:});
 case 12, sparse_heat_maps(varargin{:});
 case 13, incorrect_sample_time_series(varargin{:});
+case 14, orig_recon_diff(varargin{:});
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = orig_recon_diff(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+
+assert(length(varargin) == 6);
+ecg_test = varargin{1};
+D = varargin{2}; 
+test_alpha = varargin{3};
+crf_predicted_label = varargin{4};
+ecg_test_Y = varargin{5};
+init_option = varargin{6};
+nBins = 10;
+
+for l = 1:length(label_str)
+	idx = ecg_test_Y == l & ecg_test_Y == crf_predicted_label;
+	corr_orig_peaks = ecg_test(:, idx);
+	corr_recon_peaks = D * test_alpha(:, idx);
+
+	idx = ecg_test_Y == l & ecg_test_Y ~= crf_predicted_label;
+	incor_orig_peaks = ecg_test(:, idx);
+	incor_recon_peaks = D * test_alpha(:, idx);
+
+	figure('visible', 'off');
+	set(gcf, 'Position', get_project_settings('figure_size'));
+	for i = 1:size(ecg_test, 1)-1
+		subplot(5, 10, i); scatter(corr_orig_peaks(i, :), corr_recon_peaks(i, :), 'bo');
+		hold on; scatter(incor_orig_peaks(i, :), incor_recon_peaks(i, :), 'ro');
+		axis tight; grid on;
+		set(gca, 'XTick', []);
+		set(gca, 'YTick', []);
+		title(sprintf('%d', i));
+		% legend('Correct', 'Incorrect');
+		% xlabel('Original'); ylabel('Reconstruction');
+	end
+
+	file_name = sprintf('%s/sparse_coding/orig_recon_diff_%d_%speak', plot_dir, init_option, label_str{l});
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
+end
+
+for l = 1:length(label_str)
+	figure('visible', 'off');
+	set(gcf, 'Position', get_project_settings('figure_size'));
+
+	idx1 = ecg_test_Y == l & ecg_test_Y == crf_predicted_label;
+	corr_recon_peaks = test_alpha(:, idx1)' * D';
+	x_final1 = 1:size(corr_recon_peaks, 2);
+	y_final1 = mean(corr_recon_peaks, 1);
+	interval1 = [y_final1 - std(corr_recon_peaks, [], 1); y_final1 + std(corr_recon_peaks, [], 1)];
+	
+	corr_orig_peaks = ecg_test(:, idx1)';
+	x_final2 = 1:size(corr_orig_peaks, 2);
+	y_final2 = mean(corr_orig_peaks, 1);
+	interval2 = [y_final2 - std(corr_orig_peaks, [], 1); y_final2 + std(corr_orig_peaks, [], 1)];
+	
+	idx2 = ecg_test_Y == l & ecg_test_Y ~= crf_predicted_label;
+	incor_recon_peaks = test_alpha(:, idx2)' * D';
+	x_final3 = 1:size(incor_recon_peaks, 2);
+	y_final3 = mean(incor_recon_peaks, 1);
+	interval3 = [y_final3 - std(incor_recon_peaks, [], 1); y_final3 + std(incor_recon_peaks, [], 1)];
+
+	incor_orig_peaks = ecg_test(:, idx2)';
+	x_final4 = 1:size(incor_orig_peaks, 2);
+	y_final4 = mean(incor_orig_peaks, 1);
+	interval4 = [y_final4 - std(incor_orig_peaks, [], 1); y_final4 + std(incor_orig_peaks, [], 1)];
+	
+	ymin = min([min(interval1(:)), min(interval2(:)), min(interval3(:)), min(interval4(:))]);
+	ymax = max([max(interval1(:)), max(interval2(:)), max(interval3(:)), max(interval4(:))]);
+
+	subplot(2, 2, 1); plot(x_final1, y_final1, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final1, interval1(1, :), interval1(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final1)]); ylim([ymin, ymax]);
+	title(sprintf('Correct, reconstructed %s peaks(%d samples)', label_str{l}, sum(idx1)));
+
+	subplot(2, 2, 2); plot(x_final2, y_final2, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final2, interval2(1, :), interval2(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final2)]); ylim([ymin, ymax]);
+	title(sprintf('Correct, original %s peaks(%d samples)', label_str{l}, sum(idx1)));
+
+	if sum(idx2) > 0
+		subplot(2, 2, 3); plot(x_final3, y_final3, 'b-', 'LineWidth', 2); hold on; grid on;
+		color = [89, 89, 89] ./ 255; transparency = 0.4;
+		hhh = jbfill(x_final3, interval3(1, :), interval3(2, :), color, rand(1, 3), 0, transparency);
+		hAnnotation = get(hhh, 'Annotation');
+		hLegendEntry = get(hAnnotation', 'LegendInformation');
+		set(hLegendEntry, 'IconDisplayStyle', 'off');
+		xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final3)]); ylim([ymin, ymax]);
+		title(sprintf('Incorrect, reconstructed %s peaks(%d samples)', label_str{l}, sum(idx2)));
+
+		subplot(2, 2, 4); plot(x_final4, y_final4, 'b-', 'LineWidth', 2); hold on; grid on;
+		color = [89, 89, 89] ./ 255; transparency = 0.4;
+		hhh = jbfill(x_final4, interval4(1, :), interval4(2, :), color, rand(1, 3), 0, transparency);
+		hAnnotation = get(hhh, 'Annotation');
+		hLegendEntry = get(hAnnotation', 'LegendInformation');
+		set(hLegendEntry, 'IconDisplayStyle', 'off');
+		xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final4)]); ylim([ymin, ymax]);
+		title(sprintf('Incorrect, original %s peaks(%d samples)', label_str{l}, sum(idx2)));
+	end
+
+	file_name = sprintf('%s/sparse_coding/ribbon_%d_%speak', plot_dir, init_option, label_str{l});
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,9 +208,9 @@ for l = 1:length(label_str)
 
 	idx = test_Y == l & test_Y ~= predicted_Y;
 	test_inc_heat_mat = test_set(idx, :)';
-	
+
 	% idx = find(sum([train_heat_mat, test_cor_heat_mat, test_inc_heat_mat], 2) ~= 0);
-	idx = 1:100;
+	idx = 1:size(test_inc_heat_mat, 1);
 	dummy_mat = ones(length(idx), 1) .* 0.3;
 	wgt_mat = [train_heat_mat(idx, :), dummy_mat, test_cor_heat_mat(idx, :), dummy_mat, test_inc_heat_mat(idx, :)];
 	imagesc(wgt_mat);
@@ -257,6 +371,7 @@ colormap bone;
 % total_error = ones(size(mul_confusion_mat)) - mul_confusion_mat;
 % total_error = sum(total_error(:));
 total_error = sum(mul_confusion_mat(:));
+
 subplot(2, 2, 1);
 imagesc(mul_confusion_mat);
 textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%d')));  %# Remove any space padding
@@ -278,6 +393,7 @@ end
 % total_error = ones(size(crf_confusion_mat)) - crf_confusion_mat;
 % total_error = sum(total_error(:));
 total_error = sum(crf_confusion_mat(:));
+
 subplot(2, 2, 2);
 imagesc(crf_confusion_mat);
 textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%d')));  %# Remove any space padding
