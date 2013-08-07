@@ -7,6 +7,8 @@ case 'data'
 	out = fullfile(pwd, 'ecg_data');
 case 'results'
 	out = fullfile(pwd, 'results');
+case 'log'
+	out = fullfile(pwd, 'log');
 case 'pdf_result_location'
 	out = '/home/anataraj/NIH-craving/plots/paper_quality_plots';
 case 'image_format'

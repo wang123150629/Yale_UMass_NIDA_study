@@ -1,16 +1,115 @@
-function[] = sparse_coding_wrapper()
+function[] = sparse_coding_wrapper(analysis_id, pipeline)
 
-lambda = [1e-4, 1e-3, 0.01, 0.015, 0.05, 0.1, 0.15, 0.25];
-mul_acc = zeros(1, length(lambda));
-crf_acc = zeros(1, length(lambda));
-mean_dict = zeros(1, length(lambda));
+plot_dir = get_project_settings('plots');
 
-for l = 1:length(lambda)
-	[mul_accuracy, crf_accuracy, mean_dict_elements] = sparse_coding(true, true, false, false, true, lambda(l));
-	mul_acc(1, l) = sum(mul_accuracy(:));
-	crf_acc(1, l) = sum(crf_accuracy(:));
-	mean_dict(1, l) = mean(diag(mean_dict_elements));
+lambda = 0.015;
+subject_id = 'P20_040';
+
+first_baseline_subtract = false;
+sparse_code_peaks = false;
+variable_window = false;
+normalize = false;
+add_height = false;
+add_summ_diff = false;
+add_all_diff = false;
+
+switch pipeline
+case 1
+	sparse_code_peaks = true;
+	title_str = 'sparse';
+case 2
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	title_str = 'bl+sparse';
+case 3
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	title_str = 'bl+sparse+var';
+case 4
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	title_str = 'bl+sparse+var+norm';
+case 5
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	add_height = true;
+	title_str = 'bl+sparse+var+norm+hgt';
+case 6
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	add_height = true;
+	add_summ_diff = true;
+	title_str = 'bl+sparse+var+norm+hgt+summ diff';
+case 7
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	add_height = true;
+	add_all_diff = true;
+	title_str = 'bl+sparse+var+norm+hgt+all diff';
+case 8
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	% variable_window = true;
+	add_summ_diff = true;
+	title_str = 'bl+sparse+summ diff';
+case 9
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	add_all_diff = true;
+	title_str = 'bl+sparse+var+all diff';
+case 10
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	add_summ_diff = true;
+	title_str = 'bl+sparse+var+norm+summ diff';
+case 11
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	variable_window = true;
+	normalize = true;
+	add_all_diff = true;
+	title_str = 'bl+sparse+var+norm+all diff';
+case 12
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	normalize = true;
+	add_summ_diff = true;
+	title_str = 'bl+sparse+norm+summ diff';
+case 13
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	normalize = true;
+	add_all_diff = true;
+	title_str = 'bl+sparse+norm+all diff';
+case 14
+	sparse_code_peaks = true;
+	normalize = true;
+	add_summ_diff = true;
+	title_str = 'sparse+norm+all diff';
+case 15
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	normalize = true;
+	title_str = 'bl+sparse+norm';
+otherwise, error('Invalid pipeline!');
 end
 
-sparse_coding_plots(11, mul_acc, crf_acc, mean_dict, lambda);
+if ~exist(fullfile(plot_dir, 'sparse_coding', analysis_id))
+	mkdir(fullfile(plot_dir, 'sparse_coding', analysis_id));
+end
+
+sparse_coding(first_baseline_subtract, sparse_code_peaks, variable_window, normalize, add_height, add_summ_diff,...
+			add_all_diff, lambda, analysis_id, subject_id, title_str);
 

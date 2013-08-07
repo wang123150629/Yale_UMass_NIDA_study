@@ -14,6 +14,9 @@ global hr_str
 hr_str = {'low', 'med.', 'high'};
 
 switch which_plot
+case 4, two_confusion_mats(varargin{:});
+case 9, summ_confusion_mats(varargin{:});
+%{
 case 1, dist_bw_complexes();
 case 2, dictionary_elements(varargin{:});
 case 3, train_test_linear(varargin{:});
@@ -21,15 +24,146 @@ case 5, crf_features(varargin{:});
 case 6, overlay_hr();
 case 7, sparse_diff_hr();
 case 8, overlay_sgram_hr();
-case 4, confusion_mats(varargin{:});
-case 9, three_confusion_mats(varargin{:});
 case 10, data_cases(varargin{:});
 case 11, function_of_lambda(varargin{:});
 case 12, sparse_heat_maps(varargin{:});
 case 13, incorrect_sample_time_series(varargin{:});
 case 14, orig_recon_diff(varargin{:});
+%}
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = summ_confusion_mats(varargin)
+
+global plot_dir;
+global image_format;
+
+assert(length(varargin) == 7);
+mul_summary_mat = varargin{1};
+mul_accuracy = round_to(mean(mul_summary_mat(:)), 2);
+crf_summary_mat = varargin{2};
+crf_accuracy = round_to(mean(crf_summary_mat(:)), 2);
+mul_total_errors = varargin{3};
+crf_total_errors = varargin{4};
+ylim_l = min([min(mul_summary_mat(:)), min(crf_summary_mat(:))]);
+ylim_u = max([max(mul_summary_mat(:)), max(crf_summary_mat(:))]);
+hr_bins = varargin{5};
+for b = 1:size(hr_bins, 1)
+	hr_str{b} = sprintf('%d--%d', floor(min(hr_bins(b, 1))), floor(max(hr_bins(b, 2))));
+end
+[x, y] = meshgrid(1:length(hr_str)); %# Create x and y coordinates for the strings
+title_str = varargin{6};
+analysis_id = varargin{7};
+
+figure('visible', 'off');
+set(gcf, 'Position', [70, 10, 1200, 500]);
+set(gcf, 'PaperPosition', [0 0 6 4]);
+set(gcf, 'PaperSize', [6 4]);
+colormap bone;
+
+subplot(1, 2, 1);
+imagesc(mul_summary_mat);
+textStrings = strtrim(cellstr(num2str(round_to(mul_summary_mat(:), 2), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(mul_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('Multi. Log. regression, accuracy=%0.2f, error=%d\n%s', mul_accuracy, mul_total_errors, title_str));
+xlabel('Test'); ylabel('Train');
+set(gca, 'XTick', 1:length(hr_str));
+set(gca, 'XTickLabel', hr_str);
+set(gca, 'YTick', 1:length(hr_str));
+set(gca, 'YTickLabel', hr_str);
+
+subplot(1, 2, 2);
+imagesc(crf_summary_mat);
+textStrings = strtrim(cellstr(num2str(round_to(crf_summary_mat(:), 2), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(crf_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('Basic CRF, accuracy=%0.2f, error=%d\n%s', crf_accuracy, crf_total_errors, title_str));
+xlabel('Test'); ylabel('Train');
+set(gca, 'XTick', 1:length(hr_str));
+set(gca, 'XTickLabel', hr_str);
+set(gca, 'YTick', 1:length(hr_str));
+set(gca, 'YTickLabel', hr_str);
+
+file_name = sprintf('%s/sparse_coding/%s/%s_summ_confmat', plot_dir, analysis_id, analysis_id);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+% saveas(gcf, file_name, 'pdf') % Save figure
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = two_confusion_mats(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+
+assert(length(varargin) == 5);
+mul_summary_mat = varargin{1};
+crf_summary_mat = varargin{2};
+ylim_l = min([min(mul_summary_mat(:)), min(crf_summary_mat(:))]);
+ylim_u = max([max(mul_summary_mat(:)), max(crf_summary_mat(:))]);
+title_str = varargin{3};
+analysis_id = varargin{4};
+plot_id = varargin{5};
+
+[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
+figure('visible', 'off'); set(gcf, 'Position', [70, 10, 1200, 500]);
+set(gcf, 'PaperPosition', [0 0 6 4]);
+set(gcf, 'PaperSize', [6 4]);
+colormap bone;
+
+subplot(1, 2, 1);
+imagesc(mul_summary_mat);
+textStrings = strtrim(cellstr(num2str(mul_summary_mat(:), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(mul_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('Multi. Log. regression, %s', title_str));
+set(gca, 'XTick', 1:length(label_str));
+set(gca, 'XTickLabel', label_str);
+set(gca, 'YTick', 1:length(label_str));
+set(gca, 'YTickLabel', label_str);
+xlabel('Predicted'); ylabel('Ground');
+
+subplot(1, 2, 2);
+imagesc(crf_summary_mat);
+textStrings = strtrim(cellstr(num2str(crf_summary_mat(:), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(crf_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('Basic CRF, %s', title_str));
+set(gca, 'XTick', 1:length(label_str));
+set(gca, 'XTickLabel', label_str);
+set(gca, 'YTick', 1:length(label_str));
+set(gca, 'YTickLabel', label_str);
+xlabel('Predicted'); ylabel('Ground');
+
+file_name = sprintf('%s/sparse_coding/%s/%s_%s_two_confmat', plot_dir, analysis_id, analysis_id, plot_id);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+% saveas(gcf, file_name, 'pdf') % Save figure
+
+%{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = orig_recon_diff(varargin)
 
@@ -342,161 +476,6 @@ h100 = legend(legend_entry(legend_entry > 0), legend_str(legend_entry > 0));
 set(h100, 'Location', 'SouthEast', 'Orientation', 'Horizontal');
 file_name = sprintf('%s/sparse_coding/samples_train_test%d', plot_dir, init_option);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = three_confusion_mats(varargin)
-
-global plot_dir;
-global image_format;
-
-assert(length(varargin) == 7);
-mul_confusion_mat = varargin{1};
-crf_confusion_mat = varargin{2};
-avg_crf_log_likelihood = varargin{3};
-init_option = varargin{4};
-label_str = varargin{5};
-variable_window = varargin{6};
-win_str = 'fixed';
-if variable_window, win_str = 'variable'; end
-sparse_coding = varargin{7};
-feat_str = 'peaks';
-if sparse_coding, feat_str = 'sparse'; end
-
-[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
-figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-set(gcf, 'PaperPosition', [0 0 6 4]);
-set(gcf, 'PaperSize', [6 4]);
-colormap bone;
-
-% total_error = ones(size(mul_confusion_mat)) - mul_confusion_mat;
-% total_error = sum(total_error(:));
-total_error = sum(mul_confusion_mat(:));
-
-subplot(2, 2, 1);
-imagesc(mul_confusion_mat);
-textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%d')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(mul_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title(sprintf('%s, %s, Multi. Log. regression, total error=%d', feat_str, win_str, total_error));
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-if init_option <= 0, xlabel('Test'); ylabel('Train');
-else, xlabel('Predicted'); ylabel('Ground');
-end
-
-% total_error = ones(size(crf_confusion_mat)) - crf_confusion_mat;
-% total_error = sum(total_error(:));
-total_error = sum(crf_confusion_mat(:));
-
-subplot(2, 2, 2);
-imagesc(crf_confusion_mat);
-textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%d')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(crf_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title(sprintf('%s, %s, Basic CRF, total error=%d', feat_str, win_str, total_error));
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-if init_option <= 0, xlabel('Test'); ylabel('Train');
-else, xlabel('Predicted'); ylabel('Ground');
-end
-
-subplot(2, 2, 4);
-imagesc(avg_crf_log_likelihood);
-textStrings = strtrim(cellstr(num2str(avg_crf_log_likelihood(:), '%0.4f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(avg_crf_log_likelihood(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title('Basic CRF');
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-if init_option <= 0, xlabel('Test'); ylabel('Train');
-else, xlabel('Predicted'); ylabel('Ground');
-end
-
-file_name = sprintf('%s/sparse_coding/confusion_mat_init_%d', plot_dir, init_option);
-savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = confusion_mats(varargin)
-
-global plot_dir;
-global image_format;
-
-assert(length(varargin) == 6);
-mul_confusion_mat = varargin{1};
-crf_confusion_mat = varargin{2};
-init_option = varargin{3};
-label_str = varargin{4};
-variable_window = varargin{5};
-win_str = 'fixed';
-if variable_window, win_str = 'variable'; end
-sparse_coding = varargin{6};
-feat_str = 'peaks';
-if sparse_coding, feat_str = 'sparse'; end
-
-[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
-figure('visible', 'off'); set(gcf, 'Position', [70, 10, 1200, 500]);
-set(gcf, 'PaperPosition', [0 0 6 4]);
-set(gcf, 'PaperSize', [6 4]);
-colormap bone;
-
-subplot(1, 2, 1);
-imagesc(mul_confusion_mat);
-textStrings = strtrim(cellstr(num2str(mul_confusion_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(mul_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title(sprintf('%s, %s, Multinomial Log. regression', feat_str, win_str));
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-if init_option <= 0, xlabel('Test'); ylabel('Train');
-else, xlabel('Predicted'); ylabel('Ground');
-end
-
-subplot(1, 2, 2);
-imagesc(crf_confusion_mat);
-textStrings = strtrim(cellstr(num2str(crf_confusion_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
-midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
-% Choose white or black for the text color of the strings so they can be easily seen over the background color
-textColors = repmat(crf_confusion_mat(:) < midValue, 1, 3);
-set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-colorbar
-title(sprintf('%s, %s, Basic CRF', feat_str, win_str));
-set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
-set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-if init_option <= 0, xlabel('Test'); ylabel('Train');
-else, xlabel('Predicted'); ylabel('Ground');
-end
-
-file_name = sprintf('%s/sparse_coding/confusion_mat_init_%d', plot_dir, init_option);
-savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = dist_bw_complexes()
@@ -911,5 +890,6 @@ if labels_in_cluster(l) == 5 & acrs_t_peak < 0 & with_r_peak > 0
 	acrs_t_peak = l;
 	acrs_rt_dist = ecg_data_idx(acrs_t_peak) - ecg_data_idx(with_r_peak)
 end
+%}
 %}
 

@@ -1,12 +1,13 @@
 function[] = check_peaks(varargin)
 
 % check_peaks('P20_040_new_labels');
+% check_peaks('P20_048_new_labels');
 
 close all;
 
-subject_id = 'P20_040';
+subject_id = 'P20_048';
+peak_thres = 0.02;
 event = 1;
-peak_thres = 0.01;
 
 subject_profile = subject_profiles(subject_id);
 
@@ -43,8 +44,11 @@ if length(varargin) == 1
 	ecg_peaks = labeled_peaks(2, :);
 	indicator_matrix = labeled_peaks(3, :);
 else
+	% ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
+	%	sprintf('%s_ECG_temp2.csv', subject_timestamp)));
 	ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
-		sprintf('%s_ECG_temp2.csv', subject_timestamp)));
+		sprintf('%s_ECG_clean.csv', subject_timestamp)), 1, 0);
+	ecg_mat = ecg_mat(:, end) .* 0.001220703125;
 
 	ecg_peaks = zeros(1, length(ecg_mat));
 	[maxtab, mintab] = peakdet(ecg_mat, peak_thres);
@@ -227,6 +231,8 @@ function[] = generate_rand_sample(varargin)
 global ecg_mat;
 global start_time;
 
+time = clock();
+rand('twister', sum(100 * clock));
 start_time = randi(length(ecg_mat), 1);
 
 plot_data();
