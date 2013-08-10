@@ -1,8 +1,6 @@
 function[] = sparse_coding(first_baseline_subtract, sparse_code_peaks, variable_window, normalize, add_height, add_summ_diff,...
  					add_all_diff, lambda, analysis_id, subject_id, title_str)
 
-close all;
-
 data_dir = get_project_settings('data');
 results_dir = get_project_settings('results');
 

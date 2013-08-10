@@ -14,11 +14,12 @@ global hr_str
 hr_str = {'low', 'med.', 'high'};
 
 switch which_plot
+case 2, dictionary_elements(varargin{:});
+case 3, plot_orig_recon(varargin{:});
 case 4, two_confusion_mats(varargin{:});
 case 9, summ_confusion_mats(varargin{:});
 %{
 case 1, dist_bw_complexes();
-case 2, dictionary_elements(varargin{:});
 case 3, train_test_linear(varargin{:});
 case 5, crf_features(varargin{:});
 case 6, overlay_hr();
@@ -162,6 +163,77 @@ xlabel('Predicted'); ylabel('Ground');
 file_name = sprintf('%s/sparse_coding/%s/%s_%s_two_confmat', plot_dir, analysis_id, analysis_id, plot_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 % saveas(gcf, file_name, 'pdf') % Save figure
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = dictionary_elements(varargin)
+
+global plot_dir;
+global image_format;
+
+assert(length(varargin) == 2);
+nDictElements = varargin{1};
+D = varargin{2};
+
+rs = 10; rc = 10;
+figure('visible', 'off');
+set(gcf, 'Position', get_project_settings('figure_size'));
+set(gcf, 'PaperPosition', [0 0 10 6]);
+set(gcf, 'PaperSize', [10 6]);
+for d = 1:nDictElements
+	subaxis(rs, rc, d, 'Spacing', 0.01, 'Padding', 0.01, 'Margin', 0.01);
+	plot(D(:, d), 'LineWidth', 2); hold on;
+	axis tight; grid on;
+	set(gca, 'XTick', []);
+	set(gca, 'YTick', []);
+end
+file_name = sprintf('%s/sparse_coding/misc_plots/sparse_dict_elements', plot_dir);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+saveas(gcf, file_name, 'pdf') % Save figure
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = plot_orig_recon(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
+orig = varargin{1};
+ecg_Y = varargin{2};
+sparse_alpha = varargin{3};
+D = varargin{4};
+set_str = varargin{5};
+window_size = size(D, 1);
+nDictElements = size(D, 2);
+
+for s = 1:length(ecg_Y)
+	recon = D * sparse_alpha(1:nDictElements, :);
+	peak_str = label_str{ecg_Y(s)};
+
+	figure('visible', 'off');
+	% set(gcf, 'Position', get_project_settings('figure_size'));
+	set(gcf, 'PaperPosition', [0 0 6 6]);
+	set(gcf, 'PaperSize', [6 6]);
+
+	y_lim = [min([orig(:, s); recon(:, s)])-1, max([orig(:, s); recon(:, s)])];
+
+	plot(orig(:, s), 'r-', 'LineWidth', 2); hold on;
+	plot(recon(:, s), 'b-', 'LineWidth', 2);
+	hlegend = legend(sprintf('Original %s wave', peak_str), sprintf('Reconstructed %s wave', peak_str), 'Location', 'SouthWest',...
+					'Orientation', 'Horizontal');
+	set(hlegend, 'FontSize', le_fs, 'FontWeight', 'b', 'FontName', 'Times');
+
+	grid on; xlim([1, window_size]);
+	xlabel('Windowed peaks', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	ylabel('Millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	ylim([y_lim]);
+	
+	file_name = sprintf('%s/sparse_coding/misc_plots/%s_sample%d', plot_dir, set_str, s);
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
+	saveas(gcf, file_name, 'pdf') % Save figure
+end
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -585,27 +657,6 @@ title(sprintf('Within and Across complex'));
 legend([h1(1), h2(1), h3(1), h4(1), h5(1), h6(1), h7(1), h8(1)], 'with pr', 'with qr', 'with rs', 'with rt', 'acrs pr', 'acrs qr', 'acrs rs', 'acrs rt');
 
 file_name = sprintf('%s/sparse_coding/misc_plots/rr_vs_dist', plot_dir);
-savesamesize(gcf, 'file', file_name, 'format', image_format);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = dictionary_elements(varargin)
-
-global plot_dir;
-global image_format;
-
-assert(length(varargin) == 2);
-param = varargin{1};
-D = varargin{2};
-rs = 10; rc = 10;
-figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-for d = 1:param.K
-	subaxis(rs, rc, d, 'Spacing', 0.01, 'Padding', 0.01, 'Margin', 0.01);
-	plot(D(:, d), 'LineWidth', 2); hold on;
-	axis tight; grid on;
-	set(gca, 'XTick', []);
-	set(gca, 'YTick', []);
-end
-file_name = sprintf('%s/sparse_coding/misc_plots/sparse_dict_elements', plot_dir);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

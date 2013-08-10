@@ -4,6 +4,7 @@ function[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, hr_bi
 
 results_dir = get_project_settings('results');
 
+dimm = 1;
 window_size = 25;
 tr_partition = 50;
 uniform_split = true;
@@ -86,7 +87,8 @@ if sparse_code_peaks
 		ecg_learn = window_and_interpolate(ecg_learn, floor(estimated_hr(find(peak_idx - labeled_idx))), window_size);
 	end
 	if normalize
-		ecg_learn = bsxfun(@rdivide, bsxfun(@minus, ecg_learn, mean(ecg_learn, 1)), std(ecg_learn, [], 1));
+		ecg_learn = bsxfun(@rdivide, bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm)), std(ecg_learn, [], dimm));
+		% ecg_learn = bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm));
 	end
 	param.K = nDictionayElements;  % learns a dictionary with 100 elements
 	param.iter = nIterations;  % let us see what happens after 1000 iterations
@@ -122,8 +124,10 @@ for hr1 = 1:size(hr_bins, 1)
 	train_peak_heights = ecg_train(window_size+1, :);
 	test_peak_heights = ecg_test(window_size+1, :);
 	if normalize
-		ecg_train = bsxfun(@rdivide, bsxfun(@minus, ecg_train, mean(ecg_train, 1)), std(ecg_train, [], 1));
-		ecg_test = bsxfun(@rdivide, bsxfun(@minus, ecg_test, mean(ecg_test, 1)), std(ecg_test, [], 1));
+		ecg_train = bsxfun(@rdivide, bsxfun(@minus, ecg_train, mean(ecg_train, dimm)), std(ecg_train, [], dimm));
+		ecg_test = bsxfun(@rdivide, bsxfun(@minus, ecg_test, mean(ecg_test, dimm)), std(ecg_test, [], dimm));
+		% ecg_train = bsxfun(@minus, ecg_train, mean(ecg_train, dimm));
+		% ecg_test = bsxfun(@minus, ecg_test, mean(ecg_test, dimm));
 	end
 
 	if sparse_code_peaks
@@ -151,6 +155,10 @@ for hr1 = 1:size(hr_bins, 1)
 	
 	ecg_train_Y{hr1} = peak_labels(tr_idx{hr1});
 	ecg_test_Y{hr1} = peak_labels(ts_idx{hr1});
+
+	% sparse_coding_plots(2, param.K, D);
+	sparse_coding_plots(3, ecg_test, ecg_test_Y{hr1}, test_alpha{hr1}, D, 'ts');
+	keyboard
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

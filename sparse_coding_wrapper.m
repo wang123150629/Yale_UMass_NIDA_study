@@ -1,5 +1,7 @@
 function[] = sparse_coding_wrapper(analysis_id, pipeline)
 
+close all;
+
 plot_dir = get_project_settings('plots');
 
 lambda = 0.015;
@@ -58,7 +60,7 @@ case 7
 case 8
 	first_baseline_subtract = true;
 	sparse_code_peaks = true;
-	% variable_window = true;
+	variable_window = true;
 	add_summ_diff = true;
 	title_str = 'bl+sparse+summ diff';
 case 9
@@ -70,39 +72,26 @@ case 9
 case 10
 	first_baseline_subtract = true;
 	sparse_code_peaks = true;
-	variable_window = true;
-	normalize = true;
-	add_summ_diff = true;
-	title_str = 'bl+sparse+var+norm+summ diff';
-case 11
-	first_baseline_subtract = true;
-	sparse_code_peaks = true;
-	variable_window = true;
-	normalize = true;
-	add_all_diff = true;
-	title_str = 'bl+sparse+var+norm+all diff';
-case 12
-	first_baseline_subtract = true;
-	sparse_code_peaks = true;
 	normalize = true;
 	add_summ_diff = true;
 	title_str = 'bl+sparse+norm+summ diff';
-case 13
+case 11
 	first_baseline_subtract = true;
 	sparse_code_peaks = true;
 	normalize = true;
 	add_all_diff = true;
 	title_str = 'bl+sparse+norm+all diff';
-case 14
-	sparse_code_peaks = true;
-	normalize = true;
-	add_summ_diff = true;
-	title_str = 'sparse+norm+all diff';
-case 15
+case 12
 	first_baseline_subtract = true;
 	sparse_code_peaks = true;
 	normalize = true;
 	title_str = 'bl+sparse+norm';
+case 13
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	normalize = true;
+	add_height = true;
+	title_str = 'bl+sparse+norm+hgt';
 otherwise, error('Invalid pipeline!');
 end
 
