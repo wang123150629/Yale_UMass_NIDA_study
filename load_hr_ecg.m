@@ -1,13 +1,12 @@
-function[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, hr_bins] =...
+function[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, hr_bins] =...
 						load_hr_ecg(first_baseline_subtract, sparse_code_peaks, variable_window,...
-						normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda)
+						normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda, data_split)
 
 results_dir = get_project_settings('results');
 
 dimm = 1;
 window_size = 25;
 tr_partition = 50;
-uniform_split = true;
 nDictionayElements = 100;
 nIterations = 1000;
 filter_size = 10000;
@@ -65,31 +64,37 @@ load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_s
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 estimated_hr(peak_idx) = assigned_hr;
 
-if uniform_split
+switch data_split
+case 'unf_spt'
 	nBins = 3;
 	tmp_valid_hr = estimated_hr(estimated_hr > 0);
 	binned_hr = ntile_split(tmp_valid_hr, nBins);
 	for b = 1:nBins
 		hr_bins(b, :) = [min(tmp_valid_hr(binned_hr{b})), max(tmp_valid_hr(binned_hr{b}))];
 	end
-else
-	hr_bins = [50, 99; 100, 119; 120, 1000];
+case 'hrd_spt'
+	hr_bins = [50, 99; 100, 119; 120, 250];
+case 'two_prt'
+	hr_bins = [40, 250];
 end
 
-param = struct();
+unlabeled_idx = find(peak_idx - labeled_idx);
+assert(~isempty(unlabeled_idx));
+ln_idx{1} = unlabeled_idx;
+unlabeled_idx = [unlabeled_idx - window_size; unlabeled_idx + window_size];
+unlabeled_idx = floor(linspaceNDim(unlabeled_idx(1, :), unlabeled_idx(2, :), window_size*2+1));
+ecg_learn = ecg_data(unlabeled_idx)';
+if variable_window
+	ecg_learn = window_and_interpolate(ecg_learn, floor(estimated_hr(find(peak_idx - labeled_idx))), window_size);
+end
+learn_peak_heights = ecg_learn(window_size+1, :);
+if normalize
+	ecg_learn = bsxfun(@rdivide, bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm)), std(ecg_learn, [], dimm));
+	% ecg_learn = bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm));
+end
+
 if sparse_code_peaks
-	unlabeled_idx = find(peak_idx - labeled_idx);
-	assert(~isempty(unlabeled_idx));
-	unlabeled_idx = [unlabeled_idx - window_size; unlabeled_idx + window_size];
-	unlabeled_idx = floor(linspaceNDim(unlabeled_idx(1, :), unlabeled_idx(2, :), window_size*2+1));
-	ecg_learn = ecg_data(unlabeled_idx)';
-	if variable_window
-		ecg_learn = window_and_interpolate(ecg_learn, floor(estimated_hr(find(peak_idx - labeled_idx))), window_size);
-	end
-	if normalize
-		ecg_learn = bsxfun(@rdivide, bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm)), std(ecg_learn, [], dimm));
-		% ecg_learn = bsxfun(@minus, ecg_learn, mean(ecg_learn, dimm));
-	end
+	param = struct();
 	param.K = nDictionayElements;  % learns a dictionary with 100 elements
 	param.iter = nIterations;  % let us see what happens after 1000 iterations
 	param.lambda = lambda;
@@ -97,8 +102,23 @@ if sparse_code_peaks
 	param.batchsize = 400;
 	param.approx = 0;
 	param.verbose = false;
+	param.mode = 2;
 
 	D = mexTrainDL(ecg_learn, param);
+
+	learn_alpha{1} = mexLasso(ecg_learn, D, param);
+	if add_summ_diff
+		learn_alpha{1} = [learn_alpha{1}; sum(abs(ecg_learn - (D * learn_alpha{1})))];
+		% learn_alpha{hr1} = [learn_alpha{1}; sum(ecg_learn - D * learn_alpha{1})];
+	end
+	if add_all_diff
+		learn_alpha{1} = [learn_alpha{1}; (abs(ecg_learn - (D * learn_alpha{1})))];
+	end
+	if add_height
+		learn_alpha{1} = [learn_alpha{1}; learn_peak_heights];
+	end
+else
+	learn_alpha{1} = ecg_learn;
 end
 
 for hr1 = 1:size(hr_bins, 1)
@@ -131,7 +151,6 @@ for hr1 = 1:size(hr_bins, 1)
 	end
 
 	if sparse_code_peaks
-		param.mode = 2;
 		train_alpha{hr1} = mexLasso(ecg_train, D, param);
 		test_alpha{hr1} = mexLasso(ecg_test, D, param);
 		if add_summ_diff
@@ -157,8 +176,14 @@ for hr1 = 1:size(hr_bins, 1)
 	ecg_test_Y{hr1} = peak_labels(ts_idx{hr1});
 
 	% sparse_coding_plots(2, param.K, D);
-	sparse_coding_plots(3, ecg_test, ecg_test_Y{hr1}, test_alpha{hr1}, D, 'ts');
-	keyboard
+	% sparse_coding_plots(3, ecg_test, ecg_test_Y{hr1}, test_alpha{hr1}, D, 'ts');
+	%{
+	orig_ecg = ecg_data(test_win_idx)';
+	orig_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, orig_ecg, mean(orig_ecg, dimm)), std(orig_ecg, [], dimm));
+	varwin_ecg = window_and_interpolate(orig_ecg, floor(estimated_hr(ts_idx{hr1})), window_size);
+	varwin_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, varwin_ecg, mean(varwin_ecg, dimm)), std(varwin_ecg, [], dimm));
+	sparse_coding_plots(15, orig_ecg, orig_norm_ecg, varwin_ecg, varwin_norm_ecg, ecg_test_Y{hr1}, hr1);
+	%}
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

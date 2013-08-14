@@ -14,6 +14,7 @@ normalize = false;
 add_height = false;
 add_summ_diff = false;
 add_all_diff = false;
+data_split = 'unf_spt'; % 'two_prt';
 
 switch pipeline
 case 1
@@ -100,5 +101,5 @@ if ~exist(fullfile(plot_dir, 'sparse_coding', analysis_id))
 end
 
 sparse_coding(first_baseline_subtract, sparse_code_peaks, variable_window, normalize, add_height, add_summ_diff,...
-			add_all_diff, lambda, analysis_id, subject_id, title_str);
+			add_all_diff, lambda, analysis_id, subject_id, title_str, data_split);
 

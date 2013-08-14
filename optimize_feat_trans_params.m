@@ -39,7 +39,7 @@ feature_params = reshape(params(1:nLabels*nFeatures), nLabels, nFeatures);
 trans_params = reshape(params(((nLabels*nFeatures)+1):end), nLabels, nLabels);
 
 % Use sum product message passing algorithm from part A to compute log likelihood and marginals
-[log_likelihood, all_unary_marginals, all_pairwise_marginals] =...
+[all_unary_marginals, all_pairwise_marginals, log_likelihood] =...
 				sum_prdt_msg_passing(feature_params, trans_params, train_chunks, ecg_train_X, ecg_train_Y, nLabels);
 
 % Compute the objective function. Since we minimize we take a -ve
