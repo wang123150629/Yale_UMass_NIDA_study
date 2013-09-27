@@ -3,14 +3,14 @@ function[subject_profile] = detect_peaks(subject_profile, slide_or_chunk, time_w
 subject_id =  subject_profile.subject_id;
 
 for v = 1:subject_profile.nEvents
-	% if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
+	if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
 		mat_path = detect_peaks_within_events(subject_profile, slide_or_chunk, time_window,...
 						peak_detect_appr, pqrst_flag, v);
 		subject_profile.events{v} = setfield(subject_profile.events{v},...
 					sprintf('peaks_%s%d', slide_or_chunk, time_window), mat_path);
 		plot_distance_bw_peaks(subject_profile, v, slide_or_chunk,...
 			time_window, peak_detect_appr, pqrst_flag);
-	% end
+	end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -210,5 +210,36 @@ c = mean(info_per_chunk.r_point(info_per_chunk.r_point(:, 1) > 0, :));
 d = mean(info_per_chunk.s_point(info_per_chunk.s_point(:, 1) > 0, :));
 e = mean(info_per_chunk.t_point(info_per_chunk.t_point(:, 1) > 0, :));
 fprintf('%0.4f, %0.4f, %0.4f, %0.4f, %0.4f\n', a(1), b(1), c(1), d(1), e(1));
+%}
+
+%{
+	how_many_samples_had_peaks = find(info_per_chunk.p_point(:, 1) > 0);
+	how_many_samples_had_peaks = how_many_samples_had_peaks(how_many_samples_had_peaks > 1000);
+	for h = 1:length(how_many_samples_had_peaks)
+		font_size = get_project_settings('font_size');
+		le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+		xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+		figure('visible', 'off')
+		set(gcf, 'PaperPosition', [0 0 6 6]);
+		set(gcf, 'PaperSize', [6 6]);
+		plot(ecg_col, window_data(how_many_samples_had_peaks(h), ecg_col), 'g-', 'LineWidth', 2); hold on;
+	text(info_per_chunk.p_point(how_many_samples_had_peaks(h), 1), info_per_chunk.p_point(how_many_samples_had_peaks(h), 2), 'P',...
+'FontSize', 30, 'FontWeight', 'b', 'FontName', 'Times');
+	text(info_per_chunk.q_point(how_many_samples_had_peaks(h), 1), info_per_chunk.q_point(how_many_samples_had_peaks(h), 2), 'Q',...
+'FontSize', 30, 'FontWeight', 'b', 'FontName', 'Times');
+	text(info_per_chunk.r_point(how_many_samples_had_peaks(h), 1), info_per_chunk.r_point(how_many_samples_had_peaks(h), 2), 'R',...
+'FontSize', 30, 'FontWeight', 'b', 'FontName', 'Times');
+	text(info_per_chunk.s_point(how_many_samples_had_peaks(h), 1), info_per_chunk.s_point(how_many_samples_had_peaks(h), 2), 'S',...
+'FontSize', 30, 'FontWeight', 'b', 'FontName', 'Times');
+	text(info_per_chunk.t_point(how_many_samples_had_peaks(h), 1), info_per_chunk.t_point(how_many_samples_had_peaks(h), 2), 'T',...
+'FontSize', 30, 'FontWeight', 'b', 'FontName', 'Times');
+		x_tick = get(gca, 'XtickLabel'); % ylim([0, 5]);
+		set(gca, 'XtickLabel', str2num(x_tick) .* 4, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		xlabel('Interpolated(400 milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		ylabel('std. millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		file_name = sprintf('/home/anataraj/Desktop/peak/peaks%d', h);
+		saveas(gcf, file_name, 'pdf')
+	end
+	keyboard
 %}
 

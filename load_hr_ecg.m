@@ -1,10 +1,12 @@
-function[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, hr_bins] =...
+function[train_alpha, ecg_train_Y, tr_idx, test_alpha,...
+	ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data,...
+	hr_bins, ecg_test_reconstructions, ecg_test_originals] =...
 						load_hr_ecg(first_baseline_subtract, sparse_code_peaks, variable_window,...
-						normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda, data_split)
+						normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda,...
+						data_split, dimm, analysis_id)
 
 results_dir = get_project_settings('results');
 
-dimm = 1;
 window_size = 25;
 tr_partition = 50;
 nDictionayElements = 100;
@@ -105,6 +107,7 @@ if sparse_code_peaks
 	param.mode = 2;
 
 	D = mexTrainDL(ecg_learn, param);
+	sparse_coding_plots(2, param.K, D, analysis_id);
 
 	learn_alpha{1} = mexLasso(ecg_learn, D, param);
 	if add_summ_diff
@@ -153,6 +156,9 @@ for hr1 = 1:size(hr_bins, 1)
 	if sparse_code_peaks
 		train_alpha{hr1} = mexLasso(ecg_train, D, param);
 		test_alpha{hr1} = mexLasso(ecg_test, D, param);
+		ecg_test_reconstructions{hr1} = test_alpha{hr1}' * D';
+		ecg_test_originals{hr1} = ecg_test';
+
 		if add_summ_diff
 			train_alpha{hr1} = [train_alpha{hr1}; sum(abs(ecg_train - (D * train_alpha{hr1})))];
 			test_alpha{hr1} = [test_alpha{hr1}; sum(abs(ecg_test - (D * test_alpha{hr1})))];
@@ -175,14 +181,19 @@ for hr1 = 1:size(hr_bins, 1)
 	ecg_train_Y{hr1} = peak_labels(tr_idx{hr1});
 	ecg_test_Y{hr1} = peak_labels(ts_idx{hr1});
 
-	% sparse_coding_plots(2, param.K, D);
-	% sparse_coding_plots(3, ecg_test, ecg_test_Y{hr1}, test_alpha{hr1}, D, 'ts');
 	%{
+	% Plots for Ben's 15 min presentation
+	% sparse_coding_plots(3, ecg_test, ecg_test_Y{hr1}, test_alpha{hr1}, D, sprintf('%s_ts', analysis_id));
 	orig_ecg = ecg_data(test_win_idx)';
-	orig_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, orig_ecg, mean(orig_ecg, dimm)), std(orig_ecg, [], dimm));
 	varwin_ecg = window_and_interpolate(orig_ecg, floor(estimated_hr(ts_idx{hr1})), window_size);
-	varwin_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, varwin_ecg, mean(varwin_ecg, dimm)), std(varwin_ecg, [], dimm));
-	sparse_coding_plots(15, orig_ecg, orig_norm_ecg, varwin_ecg, varwin_norm_ecg, ecg_test_Y{hr1}, hr1);
+	temp_dimm = 1;
+	orig_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, orig_ecg, mean(orig_ecg, temp_dimm)), std(orig_ecg, [], temp_dimm));
+	varwin_norm_ecg = bsxfun(@rdivide, bsxfun(@minus, varwin_ecg, mean(varwin_ecg, temp_dimm)), std(varwin_ecg, [], temp_dimm));
+	temp_dimm = 2;
+	orig_norm2_ecg = bsxfun(@rdivide, bsxfun(@minus, orig_ecg, mean(orig_ecg, temp_dimm)), std(orig_ecg, [], temp_dimm));
+	varwin_norm2_ecg = bsxfun(@rdivide, bsxfun(@minus, varwin_ecg, mean(varwin_ecg, temp_dimm)), std(varwin_ecg, [], temp_dimm));
+	sparse_coding_plots(15, orig_ecg, orig_norm_ecg, orig_norm2_ecg, varwin_ecg, varwin_norm_ecg, varwin_norm2_ecg,...
+				ecg_test_Y{hr1}, hr1, analysis_id);
 	%}
 end
 

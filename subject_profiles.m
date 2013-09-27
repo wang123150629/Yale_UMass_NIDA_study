@@ -90,18 +90,6 @@ case 'P20_048'
 	subject_profile.events{1, 1}.file_name = 'cocn';
 	subject_profile.events{1, 1}.exp_sessions = 0:4;
 	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
-case 'P20_053'
-	subject_profile.ylim = [-2, 2];
-	subject_profile.scaling_factor = 0.001220703125;
-	subject_profile.events = cell(1, 1);
-	subject_profile.events{1, 1} = struct();
-	subject_profile.events{1, 1}.label = sprintf('cocaine');
-	subject_profile.events{1, 1}.sensor = sprintf('Sensor_1');
-	subject_profile.events{1, 1}.timestamp = sprintf('');
-	subject_profile.events{1, 1}.rr_thresholds = 0.05;
-	subject_profile.events{1, 1}.file_name = 'cocn';
-	subject_profile.events{1, 1}.exp_sessions = 0:4;
-	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
 case 'P20_058'
 	subject_profile.ylim = [-2.5, 2];
 	subject_profile.scaling_factor = 0.001220703125;
@@ -196,10 +184,35 @@ case 'P20_061'
 	subject_profile.events{1, 2}.file_name = 'acti';
 	subject_profile.events{1, 2}.exp_sessions = 1;
 	subject_profile.events{1, 2}.dosage_levels = [0];
+	% subject normally exercised between 3 and 7pm. No exact days!
 	subject_profile.events{1, 2}.start_time = [15, 00];
 	subject_profile.events{1, 2}.end_time = [19, 00];
 
 	% MPH for this guys is sitting in 2013_01_06-21_23_07. Need to clean it up
+case 'P20_053'
+	subject_profile.ylim = [-5, 6];
+	subject_profile.scaling_factor = 0.001220703125;
+	subject_profile.events = {};
+
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_2');
+	subject_profile.events{1, 1}.timestamp = sprintf('2013_02_01-07_15_19');
+	subject_profile.events{1, 1}.rr_thresholds = 0.05;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = [0, 2];
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+
+	subject_profile.events{1, 2} = struct();
+	subject_profile.events{1, 2}.label = sprintf('activity');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_1');
+	subject_profile.events{1, 2}.timestamp = sprintf('2013_02_05-21_18_04');
+	subject_profile.events{1, 2}.rr_thresholds = 0.05;
+	subject_profile.events{1, 2}.file_name = 'acti';
+	subject_profile.events{1, 2}.exp_sessions = 1;
+	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.start_time = [21, 32];
+	subject_profile.events{1, 2}.end_time = [21, 55];
 
 otherwise
 	error(sprintf('Invalid subject id=%s!', subject_id));

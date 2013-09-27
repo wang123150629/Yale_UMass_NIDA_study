@@ -12,6 +12,38 @@ infusion_indices = find(behav_mat(:, behav_mat_columns.infusion) == 1);
 vas_indices = find(behav_mat(:, behav_mat_columns.vas_high) >= 0);
 
 %------------------------------------------------------------------------------
+
+%{
+% I made this plot for Ben's presentation
+figure('visible', 'on');
+set(gcf, 'Position', get_project_settings('figure_size'));
+set(gcf, 'PaperPosition', [0 0 6 4]);
+set(gcf, 'PaperSize', [6 4]);
+
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
+max_heart_rate = 170;
+plot(index_maps.summary, summary_mat(:, data_mat_columns.HR), 'b-');
+hold on; grid on;
+xlabel('Time(hours)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Heart rate', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylim([0, max_heart_rate]);
+xlim([index_maps.summary(1), index_maps.summary(end)]);
+plot_behav_data_on_top(subject_profile, min(summary_mat(:, data_mat_columns.HR)), max_heart_rate, dosage_levels,...
+							behav_mat, click_indices, infusion_indices, index_maps.behav);
+x_ticks = get(gca, 'XTickLabel');
+set(gca, 'XTick', 12096:3600:35878, 'XTickLabel', 0:6, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+y_ticks = get(gca, 'YTickLabel');
+set(gca, 'YTickLabel', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+
+file_name = sprintf('/home/anataraj/Desktop/P20_040_hr', plot_dir);
+saveas(gcf, file_name, 'pdf') % Save figure
+
+keyboard
+%}
+
 figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
 
 max_heart_rate = 170;
@@ -61,9 +93,25 @@ associated_entries = chunk_size(2:2+length(dosage_levels)); % Taking the second 
 for d = 1:length(dosage_levels)
 	target_idx = behav_mat(:, behav_mat_columns.dosage) == dosage_levels(d);
 	plot(behav_indices(target_idx), associated_entries(d), 'mo');
+	% temp = find(target_idx);
+	% plot(behav_indices(temp(1)), [0:150], 'm.');
 end
-plot(behav_indices(click_indices), chunk_size(end), 'k*');
-plot(behav_indices(infusion_indices), chunk_size(end-1), 'r*');
+
+plot(behav_indices(click_indices), chunk_size(end), 'ko', 'MarkerSize', 5, 'MarkerFaceColor','k');
+plot(behav_indices(infusion_indices), chunk_size(end-1), 'ro', 'MarkerSize', 5, 'MarkerFaceColor','r');
+
+%{
+target_idx = behav_mat(:, behav_mat_columns.session) == 2 & behav_mat(:, behav_mat_columns.dosage) == dosage_levels(4);
+temp = find(target_idx);                                                                                               
+plot(behav_indices(temp(1)), [0:150], 'm.', 'Linewidth', 2);       
+label_pos = [13500, 16200, 17500, 20000, 23000]; % for 3rd subject
+tt = 20;
+text(label_pos(1), tt, 'B', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+text(label_pos(2), tt, '8', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+text(label_pos(3), tt, '16', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+text(label_pos(4), tt, '32', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+text(label_pos(5), tt, 'SA', 'FontSize', 16, 'FontWeight', 'b', 'FontName', 'Times');
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{

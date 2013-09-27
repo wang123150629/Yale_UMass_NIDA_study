@@ -5,12 +5,12 @@ close all;
 slide_or_chunk = 'slide';
 peak_detect_appr = 4;
 pqrst_flag = true;
-number_of_subjects = 7;
+number_of_subjects = 8;
 
 subject_ids = get_subject_ids(number_of_subjects);
 result_dir = get_project_settings('results');
 
-for s = 6:number_of_subjects
+for s = 8:number_of_subjects
 	% create a subject profile
 	if ~exist(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile.mat')))
 		subject_profile = subject_profiles(subject_ids{s});
@@ -20,8 +20,6 @@ for s = 6:number_of_subjects
 
 	% pre-process the data and update the subject profile
 	subject_profile = preprocess_ecg_data(subject_profile);
-
-	keyboard
 
 	% Create data samples from averaging over individual samples within a sliding or a blocked window
 	switch slide_or_chunk
@@ -35,6 +33,8 @@ for s = 6:number_of_subjects
 	end
 
 	subject_profile = detect_peaks(subject_profile, slide_or_chunk, time_window, peak_detect_appr, pqrst_flag);
+
+	keyboard
 
 	save(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile')), '-struct', 'subject_profile');
 	close all;

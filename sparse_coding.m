@@ -4,29 +4,29 @@ function[] = sparse_coding(first_baseline_subtract, sparse_code_peaks, variable_
 data_dir = get_project_settings('data');
 results_dir = get_project_settings('results');
 
-window_size = 19;
+% dimm = 1 is within peaks and dimm = 2 is across peaks i.e. over points
+dimm = 1;
+window_size = 25;
 tr_partition = 50;
-uniform_split = true;
 nDictionayElements = 100;
 nIterations = 1000;
 filter_size = 10000;
 
 assert(mod(window_size, 2) > 0);
 
-[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, hr_bins] =...
+[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, hr_bins,...
+ecg_test_reconstructions, ecg_test_originals] =...
 				load_hr_ecg(first_baseline_subtract, sparse_code_peaks, variable_window,...
-				normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda, data_split);
-
-[crf_learn_predlbl, learn_clusters] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
-sparse_coding_plots(16, ecg_data, crf_learn_predlbl, learn_clusters, ln_idx{1}, analysis_id);
-
-keyboard
+				normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda,...
+				data_split, dimm, analysis_id);
 
 crf_summary_mat = NaN(size(hr_bins, 1));
 mul_summary_mat = NaN(size(hr_bins, 1));
 crf_total_errors = 0;
 mul_total_errors = 0;
 for hr1 = 1:size(hr_bins, 1)
+	hold_crf_predicted_label = {};
+	hold_test_clusters = {};
 	[feature_params, trans_params] = build_feature_trans_parms(train_alpha{hr1}', ecg_train_Y{hr1}', tr_idx{hr1});
 	for hr2 = 1:size(hr_bins, 1)
 		%--------------------------------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ for hr1 = 1:size(hr_bins, 1)
 		mul_total_errors = mul_total_errors + (sum(mul_confusion_mat(:)) - sum(diag(mul_confusion_mat)));
 
 		%--------------------------------------------------------------------------------------------------------------------
-		[crf_confusion_mat, crf_predicted_label] =...
+		[crf_confusion_mat, crf_predicted_label, test_clusters] =...
 				basic_crf_classification(test_alpha{hr2}', ecg_test_Y{hr2}', ts_idx{hr2}, feature_params, trans_params);
 
 		crf_summary_mat(hr1, hr2) = sum(diag(crf_confusion_mat)) / sum(crf_confusion_mat(:));
@@ -47,18 +47,32 @@ for hr1 = 1:size(hr_bins, 1)
 			sum(crf_predicted_label ~= ecg_test_Y{hr2}')));
 		crf_total_errors = crf_total_errors + (sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat)));
 
+		% I gather this data to make some fancy plots later
+		hold_crf_predicted_label{hr2} = crf_predicted_label';
+		hold_test_clusters{hr2} = test_clusters;
+
 		fprintf('tr=%d, ts=%d, tr length=%d, ts length=%d\n', hr1, hr2, length(tr_idx{hr1}), length(ts_idx{hr2}));
 		%--------------------------------------------------------------------------------------------------------------------
 		sparse_coding_plots(4, mul_confusion_mat, crf_confusion_mat, title_str, analysis_id, sprintf('%d%d', hr1, hr2));
+		sparse_coding_plots(14, ecg_test_originals{hr2}, ecg_test_reconstructions{hr2}, ecg_test_Y{hr2}',...
+					crf_predicted_label, analysis_id);
 	end
+	sparse_coding_plots(16, ecg_data, hold_crf_predicted_label, hold_test_clusters, ts_idx, sprintf('%s%d', analysis_id, hr1));
 end
 sparse_coding_plots(9, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors, hr_bins, title_str, analysis_id);
 
+[crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
+sparse_coding_plots(16, ecg_data, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
+
+keyboard
+
 write_to_html(analysis_id, subject_id, lambda, 100, first_baseline_subtract, sparse_code_peaks, variable_window, normalize,...
-	add_height, add_summ_diff, add_all_diff, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors, data_split);
+		add_height, add_summ_diff, add_all_diff, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors,...
+		data_split, dimm);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[confusion_mat, predicted_label] = basic_crf_classification(test_alpha, ecg_test_Y, ts_idx, feature_params, trans_params)
+function[confusion_mat, predicted_label, test_clusters] =...
+					basic_crf_classification(test_alpha, ecg_test_Y, ts_idx, feature_params, trans_params)
 
 labels = unique(ecg_test_Y);
 nLabels = length(labels);
@@ -72,8 +86,7 @@ test_clusters = test_clusters(:, valid_ts_cluster_idx);
 
 fprintf('nTest=%d\n', size(test_clusters, 2)); 
 
-[all_unary_marginals, all_pairwise_marginals] =...
-				sum_prdt_msg_passing(feature_params, trans_params, test_clusters, test_alpha, [], nLabels);
+[all_unary_marginals, all_pairwise_marginals] = sum_prdt_msg_passing(feature_params, trans_params, test_clusters, test_alpha, [], nLabels);
 
 nTestSamples = length(all_unary_marginals);
 predicted_label = NaN(size(test_alpha, 1), 1); 
@@ -125,7 +138,7 @@ learn_clusters = [1, learn_clusters+1; learn_clusters, length(ln_idx)];
 valid_ln_cluster_idx = diff(learn_clusters) > 1;
 learn_clusters = learn_clusters(:, valid_ln_cluster_idx);
 
-fprintf('nLearn=%d\n', size(learn_clusters, 2)); 
+fprintf('nLearn=%d\n', size(learn_clusters, 2));
 
 [all_unary_marginals, all_pairwise_marginals] =...
 				sum_prdt_msg_passing(feature_params, trans_params, learn_clusters, learn_alpha, [], nLabels);

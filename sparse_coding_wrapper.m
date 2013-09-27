@@ -1,5 +1,8 @@
 function[] = sparse_coding_wrapper(analysis_id, pipeline)
 
+if nargin ~= 2, error('Missing analysis_id and/or pipeline information!'); end
+assert(length(analysis_id) == 7);
+assert(isnumeric(pipeline));
 close all;
 
 plot_dir = get_project_settings('plots');
@@ -14,7 +17,7 @@ normalize = false;
 add_height = false;
 add_summ_diff = false;
 add_all_diff = false;
-data_split = 'unf_spt'; % 'two_prt';
+data_split = 'unf_spt';
 
 switch pipeline
 case 1
@@ -88,6 +91,12 @@ case 12
 	normalize = true;
 	title_str = 'bl+sparse+norm';
 case 13
+	first_baseline_subtract = true;
+	sparse_code_peaks = true;
+	normalize = true;
+	data_split = 'two_prt';
+	title_str = 'bl+sparse+norm';
+case 14
 	first_baseline_subtract = true;
 	sparse_code_peaks = true;
 	normalize = true;

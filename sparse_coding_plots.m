@@ -8,6 +8,7 @@ global results_dir
 results_dir = get_project_settings('results');
 global image_format
 image_format = get_project_settings('image_format');
+% image_format = 'pdf';
 global window_size
 window_size = 25;
 global hr_str
@@ -18,8 +19,9 @@ case 2, dictionary_elements(varargin{:});
 case 3, plot_orig_recon(varargin{:});
 case 4, two_confusion_mats(varargin{:});
 case 9, summ_confusion_mats(varargin{:});
+case 14, orig_recon_diff(varargin{:});
 case 15, preprocess_ribbons(varargin{:});
-case 16, learn_set_labels(varargin{:});
+case 16, gen_set_labels(varargin{:});
 %{
 case 1, dist_bw_complexes();
 case 3, train_test_linear(varargin{:});
@@ -31,8 +33,92 @@ case 10, data_cases(varargin{:});
 case 11, function_of_lambda(varargin{:});
 case 12, sparse_heat_maps(varargin{:});
 case 13, incorrect_sample_time_series(varargin{:});
-case 14, orig_recon_diff(varargin{:});
 %}
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = orig_recon_diff(varargin)
+
+global plot_dir;
+global image_format;
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+
+ecg_test_originals = varargin{1};
+ecg_test_reconstructions = varargin{2};
+ecg_test_Y = varargin{3};
+crf_predicted_label = varargin{4};
+analysis_id = varargin{5};
+
+for l = 1:length(label_str)
+	figure('visible', 'off');
+	set(gcf, 'Position', get_project_settings('figure_size'));
+
+	idx1 = ecg_test_Y == l & ecg_test_Y == crf_predicted_label;
+
+	corr_recon_peaks = ecg_test_reconstructions(idx1, :);
+	x_final1 = 1:size(corr_recon_peaks, 2);
+	y_final1 = mean(corr_recon_peaks, 1);
+	interval1 = [y_final1 - std(corr_recon_peaks, [], 1); y_final1 + std(corr_recon_peaks, [], 1)];
+	
+	corr_orig_peaks = ecg_test_originals(idx1, :);
+	x_final2 = 1:size(corr_orig_peaks, 2);
+	y_final2 = mean(corr_orig_peaks, 1);
+	interval2 = [y_final2 - std(corr_orig_peaks, [], 1); y_final2 + std(corr_orig_peaks, [], 1)];
+	
+	idx2 = ecg_test_Y == l & ecg_test_Y ~= crf_predicted_label;
+
+	incor_recon_peaks = ecg_test_reconstructions(idx2, :);
+	x_final3 = 1:size(incor_recon_peaks, 2);
+	y_final3 = mean(incor_recon_peaks, 1);
+	interval3 = [y_final3 - std(incor_recon_peaks, [], 1); y_final3 + std(incor_recon_peaks, [], 1)];
+
+	incor_orig_peaks = ecg_test_originals(idx2, :);
+	x_final4 = 1:size(incor_orig_peaks, 2);
+	y_final4 = mean(incor_orig_peaks, 1);
+	interval4 = [y_final4 - std(incor_orig_peaks, [], 1); y_final4 + std(incor_orig_peaks, [], 1)];
+	
+	ymin = min([min(interval1(:)), min(interval2(:)), min(interval3(:)), min(interval4(:))]);
+	ymax = max([max(interval1(:)), max(interval2(:)), max(interval3(:)), max(interval4(:))]);
+
+	subplot(2, 2, 1); plot(x_final1, y_final1, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final1, interval1(1, :), interval1(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('std. millivolts'); xlim([1, length(x_final1)]); ylim([ymin, ymax]);
+	title(sprintf('Correct, reconstructed %s peaks(%d samples)', label_str{l}, sum(idx1)));
+
+	subplot(2, 2, 2); plot(x_final2, y_final2, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final2, interval2(1, :), interval2(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('std. millivolts'); xlim([1, length(x_final2)]); ylim([ymin, ymax]);
+	title(sprintf('Correct, original %s peaks(%d samples)', label_str{l}, sum(idx1)));
+
+	if sum(idx2) > 0
+		subplot(2, 2, 3); plot(x_final3, y_final3, 'b-', 'LineWidth', 2); hold on; grid on;
+		color = [89, 89, 89] ./ 255; transparency = 0.4;
+		hhh = jbfill(x_final3, interval3(1, :), interval3(2, :), color, rand(1, 3), 0, transparency);
+		hAnnotation = get(hhh, 'Annotation');
+		hLegendEntry = get(hAnnotation', 'LegendInformation');
+		set(hLegendEntry, 'IconDisplayStyle', 'off');
+		xlabel('windowed peaks'); ylabel('std. millivolts'); xlim([1, length(x_final3)]); ylim([ymin, ymax]);
+		title(sprintf('Incorrect, reconstructed %s peaks(%d samples)', label_str{l}, sum(idx2)));
+
+		subplot(2, 2, 4); plot(x_final4, y_final4, 'b-', 'LineWidth', 2); hold on; grid on;
+		color = [89, 89, 89] ./ 255; transparency = 0.4;
+		hhh = jbfill(x_final4, interval4(1, :), interval4(2, :), color, rand(1, 3), 0, transparency);
+		hAnnotation = get(hhh, 'Annotation');
+		hLegendEntry = get(hAnnotation', 'LegendInformation');
+		set(hLegendEntry, 'IconDisplayStyle', 'off');
+		xlabel('windowed peaks'); ylabel('std. millivolts'); xlim([1, length(x_final4)]); ylim([ymin, ymax]);
+		title(sprintf('Incorrect, original %s peaks(%d samples)', label_str{l}, sum(idx2)));
+	end
+	file_name = sprintf('%s/sparse_coding/%s/ribbon_%speak', plot_dir, analysis_id, label_str{l});
+	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,7 +188,6 @@ set(gca, 'YTickLabel', hr_str);
 
 file_name = sprintf('%s/sparse_coding/%s/%s_summ_confmat', plot_dir, analysis_id, analysis_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = two_confusion_mats(varargin)
@@ -164,7 +249,6 @@ xlabel('Predicted'); ylabel('Ground');
 
 file_name = sprintf('%s/sparse_coding/%s/%s_%s_two_confmat', plot_dir, analysis_id, analysis_id, plot_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = dictionary_elements(varargin)
@@ -172,15 +256,15 @@ function[] = dictionary_elements(varargin)
 global plot_dir;
 global image_format;
 
-assert(length(varargin) == 2);
 nDictElements = varargin{1};
 D = varargin{2};
+analysis_id = varargin{3};
 
 rs = 10; rc = 10;
 figure('visible', 'off');
 set(gcf, 'Position', get_project_settings('figure_size'));
-set(gcf, 'PaperPosition', [0 0 10 6]);
-set(gcf, 'PaperSize', [10 6]);
+% set(gcf, 'PaperPosition', [0 0 10 6]);
+% set(gcf, 'PaperSize', [10 6]);
 for d = 1:nDictElements
 	subaxis(rs, rc, d, 'Spacing', 0.01, 'Padding', 0.01, 'Margin', 0.01);
 	plot(D(:, d), 'LineWidth', 2); hold on;
@@ -188,9 +272,8 @@ for d = 1:nDictElements
 	set(gca, 'XTick', []);
 	set(gca, 'YTick', []);
 end
-file_name = sprintf('%s/sparse_coding/misc_plots/sparse_dict_elements', plot_dir);
+file_name = sprintf('%s/sparse_coding/misc_plots/%s_sparse_dict_elements', plot_dir, analysis_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = plot_orig_recon(varargin)
@@ -215,9 +298,9 @@ for s = 1:length(ecg_Y)
 	peak_str = label_str{ecg_Y(s)};
 
 	figure('visible', 'off');
-	% set(gcf, 'Position', get_project_settings('figure_size'));
-	set(gcf, 'PaperPosition', [0 0 6 6]);
-	set(gcf, 'PaperSize', [6 6]);
+	set(gcf, 'Position', get_project_settings('figure_size'));
+	% set(gcf, 'PaperPosition', [0 0 6 6]);
+	% set(gcf, 'PaperSize', [6 6]);
 
 	y_lim = [min([orig(:, s); recon(:, s)])-1, max([orig(:, s); recon(:, s)])];
 
@@ -234,7 +317,6 @@ for s = 1:length(ecg_Y)
 	
 	file_name = sprintf('%s/sparse_coding/misc_plots/%s_sample%d', plot_dir, set_str, s);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
-	saveas(gcf, file_name, 'pdf') % Save figure
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -246,10 +328,13 @@ label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 
 orig_ecg = varargin{1};
 orig_norm_ecg = varargin{2};
-varwin_ecg = varargin{3};
-varwin_norm_ecg = varargin{4};
-ecg_test_Y = varargin{5};
-hr = varargin{6};
+orig_norm2_ecg = varargin{3};
+varwin_ecg = varargin{4};
+varwin_norm_ecg = varargin{5};
+varwin_norm2_ecg = varargin{6};
+ecg_test_Y = varargin{7};
+hr = varargin{8};
+analysis_id = varargin{9};
 
 for l = 1:length(label_str)
 	idx1 = ecg_test_Y == l;
@@ -274,15 +359,25 @@ for l = 1:length(label_str)
 	y_final4 = mean(l_varwin_norm_ecg, 1);
 	interval4 = [y_final4 - std(l_varwin_norm_ecg, [], 1); y_final4 + std(l_varwin_norm_ecg, [], 1)];
 	
+	l_orig_norm2_ecg = orig_norm2_ecg(:, idx1)';
+	x_final5 = 1:size(l_orig_norm2_ecg, 2);
+	y_final5 = mean(l_orig_norm2_ecg, 1);
+	interval5 = [y_final5 - std(l_orig_norm2_ecg, [], 1); y_final5 + std(l_orig_norm2_ecg, [], 1)];
+
+	l_varwin_norm2_ecg = varwin_norm2_ecg(:, idx1)';
+	x_final6 = 1:size(l_varwin_norm2_ecg, 2);
+	y_final6 = mean(l_varwin_norm2_ecg, 1);
+	interval6 = [y_final6 - std(l_varwin_norm2_ecg, [], 1); y_final6 + std(l_varwin_norm2_ecg, [], 1)];
+
 	ymin = min([min(interval1(:)), min(interval3(:))]);
 	ymax = max([max(interval1(:)), max(interval3(:))]);
-	ymin2 = min([min(interval2(:)), min(interval4(:))]);
-	ymax2 = max([max(interval2(:)), max(interval4(:))]);
+	ymin2 = min([min(interval2(:)), min(interval4(:)), min(interval5(:)), min(interval6(:))]);
+	ymax2 = max([max(interval2(:)), max(interval4(:)), max(interval5(:)), max(interval6(:))]);
 
 	figure('visible', 'off');
 	set(gcf, 'Position', get_project_settings('figure_size'));
 
-	subplot(2, 2, 1); plot(x_final1, y_final1, 'b-', 'LineWidth', 2); hold on; grid on;
+	subplot(2, 3, 1); plot(x_final1, y_final1, 'b-', 'LineWidth', 2); hold on; grid on;
 	color = [89, 89, 89] ./ 255; transparency = 0.4;
 	hhh = jbfill(x_final1, interval1(1, :), interval1(2, :), color, rand(1, 3), 0, transparency);
 	hAnnotation = get(hhh, 'Annotation');
@@ -291,16 +386,25 @@ for l = 1:length(label_str)
 	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final1)]); ylim([ymin, ymax]);
 	title(sprintf('Raw ECG'));
 
-	subplot(2, 2, 2); plot(x_final2, y_final2, 'b-', 'LineWidth', 2); hold on; grid on;
+	subplot(2, 3, 2); plot(x_final2, y_final2, 'b-', 'LineWidth', 2); hold on; grid on;
 	color = [89, 89, 89] ./ 255; transparency = 0.4;
 	hhh = jbfill(x_final2, interval2(1, :), interval2(2, :), color, rand(1, 3), 0, transparency);
 	hAnnotation = get(hhh, 'Annotation');
 	hLegendEntry = get(hAnnotation', 'LegendInformation');
 	set(hLegendEntry, 'IconDisplayStyle', 'off');
 	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final2)]); ylim([ymin2, ymax2]);
-	title(sprintf('Normalized ECG'));
+	title(sprintf('Normalized (Within) ECG'));
 
-	subplot(2, 2, 3); plot(x_final3, y_final3, 'b-', 'LineWidth', 2); hold on; grid on;
+	subplot(2, 3, 3); plot(x_final5, y_final5, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final5, interval5(1, :), interval5(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final5)]); ylim([ymin2, ymax2]);
+	title(sprintf('Normalized (Across) ECG'));
+
+	subplot(2, 3, 4); plot(x_final3, y_final3, 'b-', 'LineWidth', 2); hold on; grid on;
 	color = [89, 89, 89] ./ 255; transparency = 0.4;
 	hhh = jbfill(x_final3, interval3(1, :), interval3(2, :), color, rand(1, 3), 0, transparency);
 	hAnnotation = get(hhh, 'Annotation');
@@ -309,21 +413,30 @@ for l = 1:length(label_str)
 	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final3)]); ylim([ymin, ymax]);
 	title(sprintf('Variable Window ECG'));
 
-	subplot(2, 2, 4); plot(x_final4, y_final4, 'b-', 'LineWidth', 2); hold on; grid on;
+	subplot(2, 3, 5); plot(x_final4, y_final4, 'b-', 'LineWidth', 2); hold on; grid on;
 	color = [89, 89, 89] ./ 255; transparency = 0.4;
 	hhh = jbfill(x_final4, interval4(1, :), interval4(2, :), color, rand(1, 3), 0, transparency);
 	hAnnotation = get(hhh, 'Annotation');
 	hLegendEntry = get(hAnnotation', 'LegendInformation');
 	set(hLegendEntry, 'IconDisplayStyle', 'off');
 	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final4)]); ylim([ymin2, ymax2]);
-	title(sprintf('Variable Window + Normalized ECG'));
+	title(sprintf('Variable Window + Normalized (Within) ECG'));
 
-	file_name = sprintf('%s/sparse_coding/misc_plots/preprocess_ribbons_hr%d_%speak', plot_dir, hr, label_str{l});
+	subplot(2, 3, 6); plot(x_final6, y_final6, 'b-', 'LineWidth', 2); hold on; grid on;
+	color = [89, 89, 89] ./ 255; transparency = 0.4;
+	hhh = jbfill(x_final6, interval6(1, :), interval6(2, :), color, rand(1, 3), 0, transparency);
+	hAnnotation = get(hhh, 'Annotation');
+	hLegendEntry = get(hAnnotation', 'LegendInformation');
+	set(hLegendEntry, 'IconDisplayStyle', 'off');
+	xlabel('windowed peaks'); ylabel('millivolts'); xlim([1, length(x_final6)]); ylim([ymin2, ymax2]);
+	title(sprintf('Variable Window + Normalized (Across) ECG'));
+
+	file_name = sprintf('%s/sparse_coding/misc_plots/%s_prepro_ribbons_hr%d_%speak', plot_dir, analysis_id, hr, label_str{l});
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = learn_set_labels(varargin)
+function[] = gen_set_labels(varargin)
 
 global plot_dir;
 global image_format;
@@ -331,51 +444,38 @@ label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 label_clr = {'R', 'G', 'B', 'M', 'C', 'K'};
 
 ecg_data = varargin{1};
-crf_learn_predlbl = varargin{2}'; 
-learn_clusters = varargin{3};
-ln_idx = varargin{4};
+crf_predlbl = varargin{2};
+target_clusters = varargin{3};
+target_idx = varargin{4};
 analysis_id = varargin{5};
+nSets = length(target_clusters);
+assert(nSets == length(crf_predlbl));
+assert(nSets == length(target_idx));
 
 ecg_mat = [];
 peak_labels = [];
-for l = 1:size(learn_clusters, 2)
-	% translates 1 to 38 (samples in the 1st cluster) into real indices as 42 to 771. Note when doing sparse coding we only
-	% care about peaks at position 41, 83, ... 771. Now to plot we care about everything in between as well hence the blanket index
-	idx = ln_idx(learn_clusters(1, l)):ln_idx(learn_clusters(2, l));
-	ecg_mat = [ecg_mat, ecg_data(1, idx)];
-	temp = zeros(1, length(idx));
-	idx2 = ln_idx(learn_clusters(1, l):learn_clusters(2, l));
-	[junk, junk, plot_x_axis] = intersect(idx2, idx);	
-	temp(plot_x_axis) = crf_learn_predlbl(learn_clusters(1, l):learn_clusters(2, l));
-	peak_labels = [peak_labels, temp];
-
-	%{
-	figure('visible', 'off');
-	set(gcf, 'Position', get_project_settings('figure_size'));
-	% translates 1 to 38 (samples in the 1st cluster) into real indices as 42 to 771. Note when doing sparse coding we only
-	% care about peaks at position 41, 83, ... 771. Now to plot we care about everything in between as well hence the blanket index
-	idx = ln_idx(learn_clusters(1, l)):ln_idx(learn_clusters(2, l));
-	plot(ecg_data(1, idx), 'b-'); hold on;
-	% idx2 is only the peak locations like 41, 83, ... 771
-	idx2 = ln_idx(learn_clusters(1, l):learn_clusters(2, l));
-	cluster_ecg_data = ecg_data(1, idx2);
-
-	% Intersecting these two will tell me where the clusters are sitting in the blanket vector
-	[junk, junk, plot_x_axis] = intersect(idx2, idx);
-
-	for lbl = 1:length(label_str)
-		% I use the intersect info to plot the six different types of peaks
-		idx3 = crf_learn_predlbl(learn_clusters(1, l):learn_clusters(2, l)) == lbl;
-		text(plot_x_axis(idx3), cluster_ecg_data(1, idx3), label_str{lbl}, 'FontWeight', 'Bold', 'color', label_clr{lbl});
+for s = 1:nSets
+	target_clusters_per_set = target_clusters{s};
+	target_idx_per_set = target_idx{s};
+	crf_predlbl_per_set = crf_predlbl{s};
+	for l = 1:size(target_clusters_per_set, 2)
+		% translates 1 to 38 (samples in the 1st cluster) into real indices as 42 to 771. Note when doing sparse coding we only
+		% care about peaks at position 41, 83, ... 771.
+		% Now to plot we care about everything in between as well hence the blanket index
+		idx = target_idx_per_set(target_clusters_per_set(1, l)):target_idx_per_set(target_clusters_per_set(2, l));
+		ecg_mat = [ecg_mat, ecg_data(1, idx)];
+		temp = zeros(1, length(idx));
+		idx2 = target_idx_per_set(target_clusters_per_set(1, l):target_clusters_per_set(2, l));
+		[junk, junk, plot_x_axis] = intersect(idx2, idx);	
+		temp(plot_x_axis) = crf_predlbl_per_set(target_clusters_per_set(1, l):target_clusters_per_set(2, l));
+		assert(all(temp(plot_x_axis) > 0) & all(temp(plot_x_axis) < 7));
+		peak_labels = [peak_labels, temp];
 	end
-	file_name = sprintf('%s/sparse_coding/%s/learn%d_cluster', plot_dir, analysis_id, l);
-	savesamesize(gcf, 'file', file_name, 'format', image_format);
-	%}
 end
-labelled_learn_set = struct();
-labelled_learn_set.ecg_mat = ecg_mat;
-labelled_learn_set.peak_labels = peak_labels;
-save(sprintf('%s/sparse_coding/%s/%s_labelled_learn_set.mat', plot_dir, analysis_id, analysis_id), '-struct', 'labelled_learn_set');
+labelled_set = struct();
+labelled_set.ecg_mat = ecg_mat;
+labelled_set.peak_labels = peak_labels;
+save(sprintf('%s/sparse_coding/%s/%s_labelled_set.mat', plot_dir, analysis_id(1:7), analysis_id), '-struct', 'labelled_set');
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -890,7 +990,6 @@ for f = 1:size(feature_params, 1)
 end
 file_name = sprintf('%s/sparse_coding/feat_pot_init_%d', plot_dir, init_option);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
 
 figure('visible', 'off'); set(gcf, 'Position', [70, 50, 600, 500]);
 set(gcf, 'PaperPosition', [0 0 4 4]);
@@ -902,7 +1001,6 @@ set(gca, 'YTickLabel', label_str);
 colorbar
 file_name = sprintf('%s/sparse_coding/trans_pot_init_%d', plot_dir, init_option);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
-% saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = overlay_sgram_hr()
@@ -1084,5 +1182,29 @@ if labels_in_cluster(l) == 5 & acrs_t_peak < 0 & with_r_peak > 0
 	acrs_rt_dist = ecg_data_idx(acrs_t_peak) - ecg_data_idx(with_r_peak)
 end
 %}
+
+%{
+figure('visible', 'off');
+set(gcf, 'Position', get_project_settings('figure_size'));
+% translates 1 to 38 (samples in the 1st cluster) into real indices as 42 to 771. Note when doing sparse coding we only
+% care about peaks at position 41, 83, ... 771. Now to plot we care about everything in between as well hence the blanket index
+idx = target_idx(target_clusters(1, l)):target_idx(target_clusters(2, l));
+plot(ecg_data(1, idx), 'b-'); hold on;
+% idx2 is only the peak locations like 41, 83, ... 771
+idx2 = target_idx(target_clusters(1, l):target_clusters(2, l));
+cluster_ecg_data = ecg_data(1, idx2);
+
+% Intersecting these two will tell me where the clusters are sitting in the blanket vector
+[junk, junk, plot_x_axis] = intersect(idx2, idx);
+
+for lbl = 1:length(label_str)
+	% I use the intersect info to plot the six different types of peaks
+	idx3 = crf_predlbl(target_clusters(1, l):target_clusters(2, l)) == lbl;
+	text(plot_x_axis(idx3), cluster_ecg_data(1, idx3), label_str{lbl}, 'FontWeight', 'Bold', 'color', label_clr{lbl});
+end
+file_name = sprintf('%s/sparse_coding/%s/learn%d_cluster', plot_dir, analysis_id, l);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+%}
+
 %}
 

@@ -1,0 +1,19 @@
+1. Download data from scp -r anataraj@none.cs.umass.edu:/srv/data/aparate/yale-subjects/P20_hhh .
+
+2. Rename 'Sensor k' folders within the subject directory as 'Sensor_k'
+
+3. Run 'bash get_first_last_line.sh P20_hhh'
+	- Take a look at the output and figure out what directories to keep and what to move to 'others' directory
+	- You will need the study_calendar from Ed OR the start and end timestamps of all important sessions
+
+4. Run 'bash format_csv_files.sh P20_hhh ECG' and 'bash format_csv_files.sh P20_hhh Summary'
+	- This will reformat all the target 2013_* folders within each Sensor_k folders
+
+	- This will reformat all the target 2013_* folders within each Sensor_k folders
+
+5. Open P20_hhh_UMASS.xlsx
+	- Remove the 'Comments' column
+	- Save as P20_hhh_behav.csv
+
+6. Update subject_profiles.m file with new subject information
+

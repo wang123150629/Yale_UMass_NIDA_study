@@ -5,7 +5,7 @@ plot_dir = get_project_settings('plots');
 
 global ecg_mat
 global peak_labels
-load(fullfile(plot_dir, 'sparse_coding', analysis_id, sprintf('%s_labelled_learn_set.mat', analysis_id)));
+load(fullfile(plot_dir, 'sparse_coding', analysis_id(1:7), sprintf('%s_labelled_set.mat', analysis_id)));
 
 global start_time
 start_time = 1; 
@@ -58,6 +58,7 @@ S.rnd_pushh = uicontrol('Style', 'pushbutton', 'String', 'RAND SAMPLE',...
 		  'Position', [20 y_location-60 100 20],...
 		  'Callback', {@generate_rand_sample, S});
 
+%{
 S.pk_pushh = uicontrol('Style', 'pushbutton', 'String', 'LABEL PEAKS',...
 		  'Position', [20 y_location-90 100 20],...
 		  'Callback', {@monitor_clicks, S});
@@ -69,6 +70,7 @@ S.un_pushh = uicontrol('Style', 'pushbutton', 'String', 'UNDO',...
 S.sv_pushh = uicontrol('Style', 'pushbutton', 'String', 'SAVE LABELS',...
 		  'Position', [20 y_location-150 100 20],...
 		  'Callback', @save_mats);
+%}
 
 S.ex_pushh = uicontrol('Style', 'pushbutton', 'String', 'QUIT',...
 		  'Position', [20 y_location-180 100 20],...
@@ -148,10 +150,15 @@ label_clr = {'R', 'G', 'B', 'M', 'C', 'K'};
 data_idx = start_time:start_time+window_length;
 y_entries = linspace(min(ecg_mat(data_idx)), max(ecg_mat(data_idx)), nIndicators);
 plot(1:length(ecg_mat), ecg_mat, 'b-', 'LineWidth', 2); hold on;
+
+win_peak_labels = peak_labels(1, data_idx);
 for lbl = 1:length(label_str)
-	idx3 = peak_labels == lbl;
-	text(find(idx3), ecg_mat(1, find(idx3)), label_str{lbl}, 'FontWeight', 'Bold', 'color', label_clr{lbl});
+	clear idx3;
+	idx3 = win_peak_labels == lbl;
+	text(data_idx(find(idx3)), ecg_mat(1, data_idx(find(idx3))), label_str{lbl}, 'FontSize', 12, 'FontWeight', 'Bold',...
+									'color', label_clr{lbl});
 end
+
 ylabel('Millivolts');
 xlim([data_idx(1), data_idx(end)]);
 ylim([min(ecg_mat(data_idx)), max(ecg_mat(data_idx))]);

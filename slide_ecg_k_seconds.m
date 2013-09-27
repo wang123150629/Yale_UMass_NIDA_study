@@ -133,3 +133,22 @@ if ~isempty(interpolated_ecg_within_win)
 	% if abs(mean_rr_intervals - mean(rr_intervals)) > 10, keyboard; end
 end
 
+%{
+	if ~isempty(lower_bound) & ~isempty(upper_bound)
+	font_size = get_project_settings('font_size');
+	le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+	xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+	figure('visible', 'off')
+	set(gcf, 'PaperPosition', [0 0 6 6]);
+	set(gcf, 'PaperSize', [6 6]);
+	plot(mean_for_this_chunk, 'g-', 'LineWidth', 6); hold on;
+	plot(lower_bound(1, :), 'g--', 'LineWidth', 3);
+	plot(upper_bound(1, :), 'g--', 'LineWidth', 3);
+	x_tick = get(gca, 'XtickLabel'); % ylim([0, 5]);
+	set(gca, 'XtickLabel', str2num(x_tick) .* 4, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	xlabel('Interpolated(400 milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	ylabel('std. millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	file_name = sprintf('/home/anataraj/Desktop/mean_win/mean_win%d', s);
+	saveas(gcf, file_name, 'pdf')
+	end
+%}
