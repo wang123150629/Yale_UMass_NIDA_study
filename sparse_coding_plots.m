@@ -444,16 +444,20 @@ label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 label_clr = {'R', 'G', 'B', 'M', 'C', 'K'};
 
 ecg_data = varargin{1};
-crf_predlbl = varargin{2};
-target_clusters = varargin{3};
-target_idx = varargin{4};
-analysis_id = varargin{5};
+time_cell = varargin{2};
+crf_predlbl = varargin{3};
+target_clusters = varargin{4};
+target_idx = varargin{5};
+analysis_id = varargin{6};
 nSets = length(target_clusters);
+assert(isequal(length(ecg_data), length(time_cell)));
 assert(nSets == length(crf_predlbl));
 assert(nSets == length(target_idx));
 
 ecg_mat = [];
 peak_labels = [];
+idx_for_time = [];
+idx_for_boundary = [];
 for s = 1:nSets
 	target_clusters_per_set = target_clusters{s};
 	target_idx_per_set = target_idx{s};
@@ -464,6 +468,8 @@ for s = 1:nSets
 		% Now to plot we care about everything in between as well hence the blanket index
 		idx = target_idx_per_set(target_clusters_per_set(1, l)):target_idx_per_set(target_clusters_per_set(2, l));
 		ecg_mat = [ecg_mat, ecg_data(1, idx)];
+		idx_for_boundary = [idx_for_boundary, length(ecg_mat)];
+		idx_for_time = [idx_for_time, idx];
 		temp = zeros(1, length(idx));
 		idx2 = target_idx_per_set(target_clusters_per_set(1, l):target_clusters_per_set(2, l));
 		[junk, junk, plot_x_axis] = intersect(idx2, idx);	
@@ -472,9 +478,15 @@ for s = 1:nSets
 		peak_labels = [peak_labels, temp];
 	end
 end
+time_matrix = time_cell(1, idx_for_time);
+assert(isequal(length(peak_labels), length(time_matrix)));
+assert(isequal(length(ecg_mat), length(time_matrix)));
+
 labelled_set = struct();
 labelled_set.ecg_mat = ecg_mat;
+labelled_set.time_matrix = time_matrix;
 labelled_set.peak_labels = peak_labels;
+labelled_set.idx_for_boundary = idx_for_boundary;
 save(sprintf('%s/sparse_coding/%s/%s_labelled_set.mat', plot_dir, analysis_id(1:7), analysis_id), '-struct', 'labelled_set');
 
 %{

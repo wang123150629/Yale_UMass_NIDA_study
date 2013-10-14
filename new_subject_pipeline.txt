@@ -1,4 +1,5 @@
 1. Download data from scp -r anataraj@none.cs.umass.edu:/srv/data/aparate/yale-subjects/P20_hhh .
+1a Phone data is located at scp -r anataraj@none.cs.umass.edu:/nfs/none/users4/aparate/mhealth-data/yale/P20_hhh/ecg .
 
 2. Rename 'Sensor k' folders within the subject directory as 'Sensor_k'
 

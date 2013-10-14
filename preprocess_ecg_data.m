@@ -43,10 +43,10 @@ ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timesta
 
 start_temp = find(ecg_mat(:, raw_ecg_mat_columns.actual_hh) == event_start_hh &...
 		  ecg_mat(:, raw_ecg_mat_columns.actual_mm) == event_start_mm);
-assert(length(start_temp) == 60 * raw_ecg_mat_time_res);
+% assert(length(start_temp) == 60 * raw_ecg_mat_time_res);
 end_temp = find(ecg_mat(:, raw_ecg_mat_columns.actual_hh) == event_end_hh &...
 		ecg_mat(:, raw_ecg_mat_columns.actual_mm) == event_end_mm);
-assert(length(end_temp) == 60 * raw_ecg_mat_time_res);
+% assert(length(end_temp) == 60 * raw_ecg_mat_time_res);
 
 % This is the case since the self administration day is organized as experiment sessions and dosage levels
 preprocessed_data = cell(1, length(subject_profile.events{event}.exp_sessions));
@@ -189,6 +189,9 @@ disp(sprintf('Raw ECG: %d:%d:%0.3f -- %d:%d:%0.3f',...
 % converting the bioharness numbers into millivolts
 x = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.ecg) .* scaling_factor;
 length_x = length(x);
+
+% keyboard
+% the below code will need to be revamped since there are gaps in cellphone data
 x_time = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.actual_hh:raw_ecg_mat_columns.actual_ss);
 
 [rr, rs] = rrextract(x, raw_ecg_mat_time_res, subject_threshold);

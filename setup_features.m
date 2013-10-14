@@ -45,7 +45,7 @@ case 7
 	feature_extracted_data = [loaded_data(:, qs_peak_col), loaded_data(:, pr_peak_col),...
 				  loaded_data(:, qt_peak_col), loaded_data(:, qtc_peak_col),...
 				  loaded_data(:, t_height_col)];
-	title_str = 'Comb1';
+	title_str = 'AM';
 	cols_to_scale = 1:4;
 case 8
 	feature_extracted_data = loaded_data(:, ecg_col);
@@ -54,7 +54,7 @@ case 9
 	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, qs_peak_col),...
 				  loaded_data(:, pr_peak_col), loaded_data(:, qt_peak_col),...
 				  loaded_data(:, qtc_peak_col), loaded_data(:, t_height_col)];
-	title_str = 'Comb2';
+	title_str = 'AM+W';
 	cols_to_scale = 101:104;
 otherwise
 	error('Invalid feature set flag!');

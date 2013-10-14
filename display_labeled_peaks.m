@@ -1,16 +1,18 @@
-function[] = display_labelled_peaks(analysis_id)
+function[] = display_labeled_peaks(analysis_id)
 
 close all;
 plot_dir = get_project_settings('plots');
 
 global ecg_mat
 global peak_labels
+global time_matrix
+global idx_for_boundary
 load(fullfile(plot_dir, 'sparse_coding', analysis_id(1:7), sprintf('%s_labelled_set.mat', analysis_id)));
 
 global start_time
 start_time = 1; 
 global window_length;
-window_length = 50;
+window_length = 500;
 
 S.fh = figure('units','pixels',...
 		'position', get_project_settings('figure_size'),...
@@ -141,25 +143,42 @@ function[] = plot_data()
 
 global ecg_mat;
 global peak_labels;
+global time_matrix;
+global idx_for_boundary;
 global start_time;
 global window_length;
+
 nIndicators = 6;
 label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 label_clr = {'R', 'G', 'B', 'M', 'C', 'K'};
 
 data_idx = start_time:start_time+window_length;
-y_entries = linspace(min(ecg_mat(data_idx)), max(ecg_mat(data_idx)), nIndicators);
-plot(1:length(ecg_mat), ecg_mat, 'b-', 'LineWidth', 2); hold on;
+if min(ecg_mat(data_idx)) == max(ecg_mat(data_idx))
+	y_entries = linspace(1, 5, nIndicators);
+	y_lim = [1, 5];
+else
+	y_entries = linspace(min(ecg_mat(data_idx)), max(ecg_mat(data_idx)), nIndicators);
+	y_lim = [min(ecg_mat(data_idx)), max(ecg_mat(data_idx))];
+end
 
+plot(1:length(data_idx), ecg_mat(1, data_idx), 'b-', 'LineWidth', 2); hold on;
+xlim([0, length(data_idx)]);
+ylabel('Normalized Millivolts');
+ylim(y_lim);
+set(gca, 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]));
+
+if ~isempty(intersect(idx_for_boundary, data_idx))
+	[junk, junk, ii] = intersect(idx_for_boundary, data_idx);
+	plot(repmat(ii, nIndicators, 1), repmat(y_entries', 1, length(ii)), 'm--', 'Linewidth', 2);
+end
+
+grid on;
 win_peak_labels = peak_labels(1, data_idx);
 for lbl = 1:length(label_str)
 	clear idx3;
 	idx3 = win_peak_labels == lbl;
-	text(data_idx(find(idx3)), ecg_mat(1, data_idx(find(idx3))), label_str{lbl}, 'FontSize', 12, 'FontWeight', 'Bold',...
+	text(find(idx3), ecg_mat(1, data_idx(find(idx3))), label_str{lbl}, 'FontSize', 12, 'FontWeight', 'Bold',...
 									'color', label_clr{lbl});
 end
-
-ylabel('Millivolts');
-xlim([data_idx(1), data_idx(end)]);
-ylim([min(ecg_mat(data_idx)), max(ecg_mat(data_idx))]);
+hold off;
 

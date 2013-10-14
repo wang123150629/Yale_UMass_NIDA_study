@@ -1,5 +1,8 @@
 function[] = sparse_coding_wrapper(analysis_id, pipeline)
 
+% sparse_coding_wrapper('131003a', 12)
+% sparse_coding_wrapper('131003b', 13)
+
 if nargin ~= 2, error('Missing analysis_id and/or pipeline information!'); end
 assert(length(analysis_id) == 7);
 assert(isnumeric(pipeline));
@@ -101,6 +104,7 @@ case 14
 	sparse_code_peaks = true;
 	normalize = true;
 	add_height = true;
+	data_split = 'two_prt';
 	title_str = 'bl+sparse+norm+hgt';
 otherwise, error('Invalid pipeline!');
 end

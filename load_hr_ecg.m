@@ -1,5 +1,5 @@
 function[train_alpha, ecg_train_Y, tr_idx, test_alpha,...
-	ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data,...
+	ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, time_matrix,...
 	hr_bins, ecg_test_reconstructions, ecg_test_originals] =...
 						load_hr_ecg(first_baseline_subtract, sparse_code_peaks, variable_window,...
 						normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda,...
@@ -15,8 +15,10 @@ filter_size = 10000;
 h = fspecial('gaussian', [1, filter_size], 150);
 h = h / sum(h);
 
-% New file : Six labels P, Q, R, S, T, U - Unknown
-load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
+% New file : Six labels P, Q, R, S, T, U - Unknown; only chunk of cocaine day from 1 to 3pm
+% load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
+% New file : Six labels P, Q, R, S, T, U - Unknown; the whole cocaine day
+load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_cocaine_time.mat', subject_id)));
 
 % Reading off data from the interface file
 ecg_raw = labeled_peaks(1, :);
@@ -29,16 +31,17 @@ else
 end
 
 ecg_data = ecg_data(filter_size/2:end-filter_size/2);
+% The last entry is a pair of empty ""
+time_matrix = time_matrix(1, 1:end-1);
+time_matrix = time_matrix(1, filter_size/2:end-filter_size/2);
 
 peak_idx = labeled_peaks(2, :) > 0;
 peak_idx = peak_idx(filter_size/2:end-filter_size/2);
-peak_idx(1:window_size) = 0;
-peak_idx(end-window_size:end) = 0;
+peak_idx(1, [1:window_size, end-window_size:end]) = 0;
 
 labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
 labeled_idx = labeled_idx(filter_size/2:end-filter_size/2);
-labeled_idx(1:window_size) = 0;
-labeled_idx(end-window_size:end) = 0;
+labeled_idx(1, [1:window_size, end-window_size:end]) = 0;
 
 peak_labels = labeled_peaks(3, :);
 peak_labels = peak_labels(filter_size/2:end-filter_size/2);
@@ -64,10 +67,10 @@ load('/home/anataraj/NIH-craving/results/labeled_peaks/assigned_hr_bl_subtract_s
 % estimated_hr = compute_hr('wavelet', ecg_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-estimated_hr(peak_idx) = assigned_hr;
 
 switch data_split
 case 'unf_spt'
+	estimated_hr(peak_idx) = assigned_hr;
 	nBins = 3;
 	tmp_valid_hr = estimated_hr(estimated_hr > 0);
 	binned_hr = ntile_split(tmp_valid_hr, nBins);
@@ -75,8 +78,10 @@ case 'unf_spt'
 		hr_bins(b, :) = [min(tmp_valid_hr(binned_hr{b})), max(tmp_valid_hr(binned_hr{b}))];
 	end
 case 'hrd_spt'
+	estimated_hr(peak_idx) = assigned_hr;
 	hr_bins = [50, 99; 100, 119; 120, 250];
 case 'two_prt'
+	estimated_hr(peak_idx) = 100;
 	hr_bins = [40, 250];
 end
 

@@ -1,6 +1,8 @@
 function[] = classify_ecg_driver(tr_percent)
 
-nSubjects = 7;
+% classify_ecg_driver(60)
+
+nSubjects = 8;
 set_of_features_to_try = [1:9];
 nRuns = 1;
 % classifierList = {@two_class_linear_kernel_logreg, @two_class_logreg, @two_class_svm_linear};
@@ -10,11 +12,13 @@ subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 
 % Looping over each subject and performing classification
-for s = 1:nSubjects
+for s = 8:nSubjects
+	classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	switch subject_ids{s}
-	case 'P20_060', classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5; 5, 9; 5, 10];
-	case 'P20_061', classes_to_classify = [1, 4; 1, 5; 5, 12];
-	otherwise, classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
+	case 'P20_053', classes_to_classify = [1, 5; 5, 8; 5, 10];
+	case 'P20_060', classes_to_classify = [classes_to_classify; 1, 9; 5, 9; 5, 11];
+	case 'P20_061', classes_to_classify = [classes_to_classify(2:end, :); 1, 12; 5, 12; 5, 10];
+	case 'P20_079', classes_to_classify = [1, 14]; %[classes_to_classify; 1, 13; 5, 13; 1, 14; 5, 14; 5, 10];
 	end
 	nAnalysis = size(classes_to_classify, 1);
 	mean_over_runs = cell(1, nAnalysis);
@@ -32,7 +36,7 @@ for s = 1:nSubjects
 				classify_ecg_data(subject_ids{s}, classes_to_classify(c, :),...
 				set_of_features_to_try, nRuns, tr_percent, classifierList);
 	end
-	% Collecting the results to plotted later
+	% Collecting the results to be plotted later
 	classifier_results = struct();
 	classifier_results.mean_over_runs = mean_over_runs;
 	classifier_results.errorbars_over_runs = errorbars_over_runs;
@@ -42,8 +46,8 @@ for s = 1:nSubjects
 	classifier_results.feature_str = feature_str;
 	classifier_results.class_label = class_label;
 	classifier_results.chance_baseline = chance_baseline;
-	% save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d', subject_ids{s}, tr_percent)),...
-	%						'-struct', 'classifier_results');
+	save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d', subject_ids{s}, tr_percent)),...
+							'-struct', 'classifier_results');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +92,6 @@ case 5
 						  classes_to_classify(2), sum(loaded_data(:, end) == 5));
 end
 
-%{
 % For each feature to try we trim the data matrix by removing irrelevant columns
 for f = 1:length(set_of_features_to_try)
 	accuracies = NaN(nRuns, nClassifiers);
@@ -98,6 +101,7 @@ for f = 1:length(set_of_features_to_try)
 	[feature_extracted_data, feature_str{1, f}] = setup_features(loaded_data, set_of_features_to_try(f));
 	% Repeat this process over runs. Now for the training partition we are performing (retain first half to train and
 	% second half to test) there is no randomness so only one run will suffice. This code exists to make life easier :)
+
 	for r = 1:nRuns
 		[complete_train_set, complete_test_set, chance_baseline(f, r)] =...
 					partition_and_relabel(feature_extracted_data, tr_percent);
@@ -118,5 +122,4 @@ for f = 1:length(set_of_features_to_try)
 	fpr_over_runs(f, :) = mean(false_pos_rate, 1);
 	auc_over_runs(f, :) = mean(auc, 1);
 end
-%}
 

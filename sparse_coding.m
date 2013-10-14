@@ -14,7 +14,7 @@ filter_size = 10000;
 
 assert(mod(window_size, 2) > 0);
 
-[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, hr_bins,...
+[train_alpha, ecg_train_Y, tr_idx, test_alpha, ecg_test_Y, ts_idx, learn_alpha, ln_idx, ecg_data, time_matrix, hr_bins,...
 ecg_test_reconstructions, ecg_test_originals] =...
 				load_hr_ecg(first_baseline_subtract, sparse_code_peaks, variable_window,...
 				normalize, add_height, add_summ_diff, add_all_diff, subject_id, lambda,...
@@ -57,12 +57,21 @@ for hr1 = 1:size(hr_bins, 1)
 		sparse_coding_plots(14, ecg_test_originals{hr2}, ecg_test_reconstructions{hr2}, ecg_test_Y{hr2}',...
 					crf_predicted_label, analysis_id);
 	end
-	sparse_coding_plots(16, ecg_data, hold_crf_predicted_label, hold_test_clusters, ts_idx, sprintf('%s%d', analysis_id, hr1));
+	sparse_coding_plots(16, ecg_data, time_matrix, hold_crf_predicted_label, hold_test_clusters, ts_idx,...
+				sprintf('%s%d', analysis_id, hr1));
 end
 sparse_coding_plots(9, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors, hr_bins, title_str, analysis_id);
 
 [crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
-sparse_coding_plots(16, ecg_data, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
+sparse_coding_plots(16, ecg_data, time_matrix, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
+
+temp = zeros(1, 5945750);
+temp(1, tr_idx{1}) = ecg_train_Y{hr1}';
+temp(1, ts_idx{1}) = crf_predicted_label';
+temp(1, ln_idx{1}) = crf_learn_predlbl{1}';
+save('P20_040_crf_lab_peaks.mat', 'temp');
+%{
+%}
 
 keyboard
 

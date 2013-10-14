@@ -34,8 +34,6 @@ for s = 8:number_of_subjects
 
 	subject_profile = detect_peaks(subject_profile, slide_or_chunk, time_window, peak_detect_appr, pqrst_flag);
 
-	keyboard
-
 	save(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile')), '-struct', 'subject_profile');
 	close all;
 end

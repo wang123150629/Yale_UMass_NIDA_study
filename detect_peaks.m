@@ -3,14 +3,14 @@ function[subject_profile] = detect_peaks(subject_profile, slide_or_chunk, time_w
 subject_id =  subject_profile.subject_id;
 
 for v = 1:subject_profile.nEvents
-	if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
+	% if ~isfield(subject_profile.events{v}, sprintf('peaks_%s%d', slide_or_chunk, time_window))
 		mat_path = detect_peaks_within_events(subject_profile, slide_or_chunk, time_window,...
 						peak_detect_appr, pqrst_flag, v);
 		subject_profile.events{v} = setfield(subject_profile.events{v},...
 					sprintf('peaks_%s%d', slide_or_chunk, time_window), mat_path);
 		plot_distance_bw_peaks(subject_profile, v, slide_or_chunk,...
 			time_window, peak_detect_appr, pqrst_flag);
-	end
+	% end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -106,7 +106,7 @@ for e = 1:length(exp_sessions)
 			info_per_chunk.s_point = [info_per_chunk.s_point; peaks_locked(:, 7:8)];
 			info_per_chunk.t_point = [info_per_chunk.t_point; peaks_locked(:, 9:10)];
 			info_per_chunk.best_peak_thres = [info_per_chunk.best_peak_thres; best_peak_threshold];
-			fprintf('thres=%0.4f\n', best_peak_threshold);
+			fprintf('Exp: %d, Dosage: %d, thres=%0.4f\n', exp_sessions(e), dosage_levels(d), best_peak_threshold);
 		end
 	end
 end

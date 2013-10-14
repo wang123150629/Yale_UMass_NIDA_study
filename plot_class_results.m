@@ -8,7 +8,7 @@ else
 	paper_quality = false;
 end
 
-nSubjects = 6;
+nSubjects = 8;
 subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
@@ -17,7 +17,7 @@ target_feat_rows = 1:9;
 target_ana_cols = 1:4;
 auroc_over_subjects = NaN(length(target_feat_rows), length(target_ana_cols), nSubjects);
 
-for s = 1:nSubjects
+for s = 8:nSubjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d.mat', subject_ids{s},...
 										tr_percent)));
 	nAnalysis = length(classifier_results.mean_over_runs);
@@ -29,19 +29,6 @@ for s = 1:nSubjects
 		feature_str = classifier_results.feature_str{1, a};
 		class_label = classifier_results.class_label{1, a};
 		legend_str{a} = sprintf('%s vs %s', class_label{1}, class_label{2});
-		%{
-		figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-		errorbar(1:nFeatures, mean_over_runs, errorbars_over_runs, 'b', 'LineWidth', 2);
-		hold on; grid on; xlim([0.90, nFeatures+0.10]); ylim([50, 102]);
-		plot(1:nFeatures, mean(classifier_results.chance_baseline{1, a}, 2), 'r--');
-		title(sprintf('%s, within subject, Logistic reg, %s vs. %s', get_project_settings('strrep_subj_id', subject_ids{s}),...
-								class_label{1}, class_label{2}));
-		xlabel('Features'); ylabel('Accuracy');
-		set(gca, 'XTick', 1:nFeatures);
-		set(gca, 'XTickLabel', feature_str);
-		file_name = sprintf('%s/%s/class_ana%d_tr%d_perf', plot_dir, subject_ids{s}, a, tr_percent);
-		savesamesize(gcf, 'file', file_name, 'format', image_format);
-		%}
 	end
 
 	figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
@@ -51,14 +38,46 @@ for s = 1:nSubjects
 	set(gca, 'XTick', 1:nFeatures);
 	set(gca, 'XTickLabel', feature_str);
 	xlim([0.5, nFeatures+0.5]); grid on;
-	title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
+	% title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
 	file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 
-	tmp = [classifier_results.auc_over_runs{:}];
-	auroc_over_subjects(:, :, s) = tmp(target_feat_rows, target_ana_cols);
+	%{
+	font_size = get_project_settings('font_size');
+	le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+	xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+	figure('visible', 'off');
+	set(gcf, 'PaperPosition', [0 0 6 4]);
+	set(gcf, 'PaperSize', [6 4]);
+	bar([classifier_results.auc_over_runs{:}]);
+	xlabel('Features', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	ylabel('AUROC', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	set(gca, 'XTick', 1:nFeatures);
+	set(gca, 'XTickLabel', feature_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+	title('Baseline vs. Physical Exercise');
+	xlim([0.5, nFeatures+0.5]); grid on;
+	file_name = sprintf('/home/anataraj/Presentations/Images/p20_079_base_exer_class');
+	saveas(gcf, file_name, 'pdf') % Save figure
+	%}
 end
 
+%{
+figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
+errorbar(1:nFeatures, mean_over_runs, errorbars_over_runs, 'b', 'LineWidth', 2);
+hold on; grid on; xlim([0.90, nFeatures+0.10]); ylim([50, 102]);
+plot(1:nFeatures, mean(classifier_results.chance_baseline{1, a}, 2), 'r--');
+title(sprintf('%s, within subject, Logistic reg, %s vs. %s', get_project_settings('strrep_subj_id', subject_ids{s}),...
+						class_label{1}, class_label{2}));
+xlabel('Features'); ylabel('Accuracy');
+set(gca, 'XTick', 1:nFeatures);
+set(gca, 'XTickLabel', feature_str);
+file_name = sprintf('%s/%s/class_ana%d_tr%d_perf', plot_dir, subject_ids{s}, a, tr_percent);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+%}
+% tmp = [classifier_results.auc_over_runs{:}];
+% auroc_over_subjects(:, :, s) = tmp(target_feat_rows, target_ana_cols);
+
+%{
 if paper_quality
 	figure('visible', 'off'); 
 	set(gcf, 'PaperPosition', [0 0 6 4]);
@@ -108,4 +127,5 @@ else
 	file_name = sprintf('%s/mean_within_subject_feat%d', plot_dir, nFeatures);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 end
+%}
 
