@@ -109,7 +109,7 @@ case 14
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'Phy. Exer';
+	class_information{1, 1}.label = 'Bike2';
 %{
 case 6
 	class_information{1, 1} = struct();

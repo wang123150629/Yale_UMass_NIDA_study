@@ -1,4 +1,4 @@
-function[] = make_plots(which_plot, varargin)
+function[] = make_ubicomp_plots(which_plot, varargin)
 
 close all;
 

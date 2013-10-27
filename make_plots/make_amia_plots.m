@@ -1,4 +1,4 @@
-function[] = make_plots_for_poster()
+function[] = make_amia_poster()
 
 close all;
 

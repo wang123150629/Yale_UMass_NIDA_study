@@ -15,6 +15,8 @@ trans_params = normrnd(0, 0.01, nLabels, nLabels);
 params = [reshape(feature_params, 1, size(feature_params, 1)*size(feature_params, 2)),...
 	  reshape(trans_params, 1, size(trans_params, 1)*size(trans_params, 2))];
 
+keyboard
+
 func = @(x)gradient_function(x, train_chunks, ecg_train_X, ecg_train_Y);
 % options.Derivativecheck = 'on';
 options.Method = 'lbfgs';

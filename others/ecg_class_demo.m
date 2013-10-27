@@ -22,7 +22,10 @@ end_temp = find(ecg_mat(:, 4) == event_end_hh &...
 		ecg_mat(:, 5) == event_end_mm);
 
 x1 = ecg_mat(start_temp(1):end_temp(end), end) .* 0.001220703125;
-[rr1, rs] = rrextract(x1, 250, 0.002);
+[rr1, rs] = rrextract(x1, 250, 0.02);
+
+keyboard
+
 time_matrix1 = ecg_mat(start_temp(1):end_temp(end), 4:6)';
 time_matrix1 = sprintf('%d:%d:%02.0f*', time_matrix1);
 time_matrix1 = regexp(time_matrix1, '*', 'split');

@@ -1,6 +1,6 @@
 function[] = feature_heat_maps()
 
-% This code is a clone of classify_ecg_driver(60)
+% This code is a clone of classify_ecg_driver(60) with minor modifications
 
 nSubjects = 9;
 set_of_features_to_try = [1:6];
@@ -14,10 +14,10 @@ result_dir = get_project_settings('results');
 for s = 6:nSubjects
 	classes_to_classify = [1:5];
 	switch subject_ids{s}
-	case 'P20_053', classes_to_classify = [1, 5, 8, 10];
+	case 'P20_061', classes_to_classify = [5, 12];
 	case 'P20_060', classes_to_classify = [classes_to_classify, 9, 11];
-	case 'P20_061', classes_to_classify = [classes_to_classify(2:end, :), 12, 10];
-	case 'P20_079', classes_to_classify = [classes_to_classify, 13, 14, 10];
+	case 'P20_079', classes_to_classify = [classes_to_classify, 13, 10];
+	case 'P20_053', classes_to_classify = [1, 5, 8, 10];
 	end
 
 	nClasses = length(classes_to_classify);
@@ -45,12 +45,13 @@ for s = 6:nSubjects
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[] = make_heat_maps(complete_train_set, complete_test_set, class_label, feature_str, subject_id, f)
+function[] = make_heat_maps(complete_train_set, complete_test_set, class_label, feature_str, subject_id, feat_id)
 
 nBins = 25;
 image_format = get_project_settings('image_format');
 plot_dir = get_project_settings('plots');
 assert(size(complete_train_set, 2) == 2);
+assert(size(complete_test_set, 2) == 2);
 
 f = figure('visible', 'off');
 set(gcf, 'Position', [70, 10, 1300, 650]);
@@ -83,6 +84,6 @@ mtit(f, sprintf('%s, %s', get_project_settings('strrep_subj_id', subject_id), fe
 				'fontsize', 15, 'color', [1 0 0], 'xoff', 1300/1250000, 'yoff', .025);
 set(f, 'visible', 'off');
 
-file_name = sprintf('%s/feature_heatmaps/%s_feat_%d', plot_dir, subject_id, f);
+file_name = sprintf('%s/feature_heatmaps/%s_feat_%d', plot_dir, subject_id, feat_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
 

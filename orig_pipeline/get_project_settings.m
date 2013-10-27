@@ -21,6 +21,8 @@ case 'font_size'
 	out = [12, 20, 20, 12, 12, 20];
 case 'how_many_sec_per_win'
 	out = 30;
+case 'how_many_sec_to_slide'
+	out = 1;
 case 'figure_size'
 	out = [70, 10, 1300, 650];
 case 'peak_thresholds'

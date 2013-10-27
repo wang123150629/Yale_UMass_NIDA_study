@@ -172,7 +172,7 @@ subject_sensor = subject_profile.events{event}.sensor;
 subject_timestamp = subject_profile.events{event}.timestamp;
 raw_ecg_mat_columns = subject_profile.columns.raw_ecg;
 subject_threshold = subject_profile.events{event}.rr_thresholds;
-scaling_factor = subject_profile.scaling_factor;
+scaling_factor = subject_profile.events{event}.scaling_factor;
 
 dos_interpolated_ecg = [];
 hold_start_end_indices = [];
@@ -190,11 +190,19 @@ disp(sprintf('Raw ECG: %d:%d:%0.3f -- %d:%d:%0.3f',...
 x = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.ecg) .* scaling_factor;
 length_x = length(x);
 
-% keyboard
 % the below code will need to be revamped since there are gaps in cellphone data
-x_time = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.actual_hh:raw_ecg_mat_columns.actual_ss);
+x_time = ecg_mat(raw_start_time:raw_end_time, raw_ecg_mat_columns.actual_y:raw_ecg_mat_columns.actual_ss);
 
-[rr, rs] = rrextract(x, raw_ecg_mat_time_res, subject_threshold);
+rr_pk_window = 15000;
+rr_win = [0:rr_pk_window:length(x)];
+if length(x) - rr_win(end) > 0
+	rr_win = [0:rr_pk_window:length(x), length(x)];
+end
+rr = [];
+for r = 1:length(rr_win)-1
+	rr = [rr, rr_win(r)+rrextract(x(rr_win(r)+1:rr_win(r+1)), raw_ecg_mat_time_res, subject_threshold)];
+end
+assert(length(rr) == length(unique(rr)));
 
 rr_start_end = [rr(1:end-1); rr(2:end)-1]';
 for s = 1:size(rr_start_end, 1)
@@ -214,45 +222,6 @@ for s = 1:size(rr_start_end, 1)
 		end
 	end
 end
-
-%{
-font_size = get_project_settings('font_size');
-le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
-xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
-
-clr_str = 'g';
-if s > 160
-figure('visible', 'off')
-set(gcf, 'PaperPosition', [0 0 6 6]);
-set(gcf, 'PaperSize', [6 6]);
-plot(interpol_data, sprintf('%s-', clr_str), 'LineWidth', 2);
-x_tick = get(gca, 'XtickLabel'); % ylim([0, 5]);
-set(gca, 'XtickLabel', str2num(x_tick) .* 4, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-% set(gca, 'YtickLabel', {0, '', 1, '', 2, '', 3, '', 4, '', 5}, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-xlabel('Interpolated(400 milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-file_name = sprintf('/home/anataraj/Desktop/interpol/interpol%d', s);
-saveas(gcf, file_name, 'pdf')
-end
-
-else
-	clr_str = 'r';
-
-if s > 160
-figure('visible', 'off')
-set(gcf, 'PaperPosition', [0 0 6 6]);
-set(gcf, 'PaperSize', [6 6]);
-plot(x(rr_start_end(s, 1):rr_start_end(s, 2)), sprintf('%s-', clr_str), 'LineWidth', 2);
-x_tick = get(gca, 'XtickLabel'); % ylim([0, 5]);
-set(gca, 'XtickLabel', str2num(x_tick) .* 4, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-% set(gca, 'YtickLabel', {0, '', 1, '', 2, '', 3, '', 4, '', 5}, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-xlabel('Time(milliseconds)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-ylabel('millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-file_name = sprintf('/home/anataraj/Desktop/hr_filter/hr_filter%d', s);
-saveas(gcf, file_name, 'pdf')
-close all;
-end
-%}
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -277,5 +246,12 @@ title(sprintf('%s, raw ECG b/w RR', title_str)); ylim([0, 5]);
 set(gca, 'XTickLabel', str2num(get(gca, 'XTickLabel')) * 4);
 file_name = sprintf('%s/subj_%s_dos_%d_raw_rr', plot_dir, subject_id, d);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
+%}
+
+%{
+figure(); plot(x); hold on; plot(rr, x(rr), 'ro'); 
+length(rr)
+keyboard
+close all;
 %}
 

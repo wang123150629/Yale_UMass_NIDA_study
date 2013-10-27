@@ -1,4 +1,4 @@
-function[] = stitch_hr()
+function[] = overlay_spcd_hr()
 
 close all;
 

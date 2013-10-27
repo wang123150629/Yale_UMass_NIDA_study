@@ -16,9 +16,9 @@ h = fspecial('gaussian', [1, filter_size], 150);
 h = h / sum(h);
 
 % New file : Six labels P, Q, R, S, T, U - Unknown; only chunk of cocaine day from 1 to 3pm
-% load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
 % New file : Six labels P, Q, R, S, T, U - Unknown; the whole cocaine day
 load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_cocaine_time.mat', subject_id)));
+% load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
 
 % Reading off data from the interface file
 ecg_raw = labeled_peaks(1, :);

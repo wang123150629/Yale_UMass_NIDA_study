@@ -5,12 +5,12 @@ close all;
 slide_or_chunk = 'slide';
 peak_detect_appr = 4;
 pqrst_flag = true;
-number_of_subjects = 8;
+number_of_subjects = 9;
 
 subject_ids = get_subject_ids(number_of_subjects);
 result_dir = get_project_settings('results');
 
-for s = 8:number_of_subjects
+for s = 6:number_of_subjects
 	% create a subject profile
 	if ~exist(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile.mat')))
 		subject_profile = subject_profiles(subject_ids{s});
@@ -31,7 +31,7 @@ for s = 8:number_of_subjects
 		subject_profile = slide_ecg_k_seconds(subject_profile);
 	otherwise, error('Invalid windowing strategy!');
 	end
-
+	
 	subject_profile = detect_peaks(subject_profile, slide_or_chunk, time_window, peak_detect_appr, pqrst_flag);
 
 	save(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile')), '-struct', 'subject_profile');

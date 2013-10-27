@@ -36,6 +36,16 @@ tpr = length(find(class_guessed(class_1_idx) == interested_class)) / length(clas
 fpr = length(find(class_guessed(class_m1_idx) == interested_class)) / length(class_m1_idx);
 [x_val, y_val, T, AUC] = perfcurve(test_set(:, end), pos_class_prob, interested_class);
 
+%{
+tp = sum(class_guessed(class_1_idx) == test_set(class_1_idx, end));
+fp = sum(class_guessed(class_1_idx) ~= test_set(class_1_idx, end));
+fn = sum(class_guessed(class_m1_idx) ~= test_set(class_m1_idx, end));
+tn = sum(class_guessed(class_m1_idx) == test_set(class_m1_idx, end));
+precision = tp / (tp + fp);
+recall = tp / (tp + fn);
+fprintf('AUC=%0.4f, precision=%0.4f, recall=%0.4f\n', AUC, precision, recall);
+%}
+
 % fprintf('tpr=%0.4f, fpr=%0.4f, AUC=%0.4f\n', tpr, fpr, AUC);
 % tnr = length(find(class_guessed(class_m1_idx) == 0)) / length(class_m1_idx);
 % fnr = length(find(class_guessed(class_1_idx) == 0)) / length(class_1_idx);

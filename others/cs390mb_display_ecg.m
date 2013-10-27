@@ -38,7 +38,7 @@ end
 global start_time
 start_time = 1; 
 global window_length;
-window_length = 500;
+window_length = 1000;
 
 S.fh = figure('units','pixels',...
 		'position', [70, 10, 1300, 720],...
@@ -86,9 +86,13 @@ S.rnd_pushh = uicontrol('Style', 'pushbutton', 'String', 'RAND SAMPLE',...
 		  'Position', [20 y_location-60 100 20],...
 		  'Callback', {@generate_rand_sample, S});
 
-S.rnd_pushh = uicontrol('Style', 'pushbutton', 'String', 'SHOW R PEAKS',...
+S.rnd_pushh = uicontrol('Style', 'pushbutton', 'String', 'R PEAKS ON',...
 		  'Position', [20 y_location-90 100 20],...
 		  'Callback', {@show_r_peaks_func, S});
+
+S.rnd_pushh = uicontrol('Style', 'pushbutton', 'String', 'R PEAKS OFF',...
+		  'Position', [20 y_location-120 100 20],...
+		  'Callback', {@no_r_peaks_func, S});
 
 %{
 S.pk_pushh = uicontrol('Style', 'pushbutton', 'String', 'LABEL PEAKS',...
@@ -173,6 +177,14 @@ function[] = show_r_peaks_func(varargin)
 
 global show_r_peaks;
 show_r_peaks = true;
+
+plot_data();
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = no_r_peaks_func(varargin)
+
+global show_r_peaks;
+show_r_peaks = false;
 
 plot_data();
 

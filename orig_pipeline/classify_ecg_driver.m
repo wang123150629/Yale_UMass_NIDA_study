@@ -2,7 +2,7 @@ function[] = classify_ecg_driver(tr_percent)
 
 % classify_ecg_driver(60)
 
-nSubjects = 8;
+nSubjects = 9;
 set_of_features_to_try = [1:9];
 nRuns = 1;
 % classifierList = {@two_class_linear_kernel_logreg, @two_class_logreg, @two_class_svm_linear};
@@ -12,13 +12,13 @@ subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 
 % Looping over each subject and performing classification
-for s = 8:nSubjects
+for s = 6:nSubjects
 	classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	switch subject_ids{s}
-	case 'P20_053', classes_to_classify = [1, 5; 5, 8; 5, 10];
+	case 'P20_061', classes_to_classify = [5, 12];
 	case 'P20_060', classes_to_classify = [classes_to_classify; 1, 9; 5, 9; 5, 11];
-	case 'P20_061', classes_to_classify = [classes_to_classify(2:end, :); 1, 12; 5, 12; 5, 10];
-	case 'P20_079', classes_to_classify = [1, 14]; %[classes_to_classify; 1, 13; 5, 13; 1, 14; 5, 14; 5, 10];
+	case 'P20_079', classes_to_classify = [classes_to_classify; 1, 13; 5, 13; 5, 10];
+	case 'P20_053', classes_to_classify = [1, 5; 5, 8; 10, 5];
 	end
 	nAnalysis = size(classes_to_classify, 1);
 	mean_over_runs = cell(1, nAnalysis);
@@ -77,21 +77,6 @@ for c = 1:nClasses
 	class_label{1, c} = class_information{1, 1}.label;
 end
 
-switch classes_to_classify(2)
-case 2
-	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
-						  classes_to_classify(2), sum(loaded_data(:, end) == 2));
-case 3
-	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
-						  classes_to_classify(2), sum(loaded_data(:, end) == 3));
-case 4
-	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
-						  classes_to_classify(2), sum(loaded_data(:, end) == 4));
-case 5
-	fprintf('%s, class %d = %d; class %d = %d\n', subject_id, classes_to_classify(1), sum(loaded_data(:, end) == 1),...
-						  classes_to_classify(2), sum(loaded_data(:, end) == 5));
-end
-
 % For each feature to try we trim the data matrix by removing irrelevant columns
 for f = 1:length(set_of_features_to_try)
 	accuracies = NaN(nRuns, nClassifiers);
@@ -105,15 +90,21 @@ for f = 1:length(set_of_features_to_try)
 	for r = 1:nRuns
 		[complete_train_set, complete_test_set, chance_baseline(f, r)] =...
 					partition_and_relabel(feature_extracted_data, tr_percent);
-		disp(sprintf('%s \t%s \t%s \t%s \t%d \t%d', subject_id, class_label{1, 1}, class_label{1, 2},...
-			feature_str{1, f}, size(complete_train_set, 1), size(complete_test_set, 1)));
+		assert(length(unique(complete_train_set(:, end))) == 2);
+		tr_one_idx = complete_train_set(:, end) == 1;
+		tr_minusone_idx = complete_train_set(:, end) == -1;
+		assert(length(unique(complete_test_set(:, end))) == 2);
+		ts_one_idx = complete_test_set(:, end) == 1;
+		ts_minusone_idx = complete_test_set(:, end) == -1;
+		disp(sprintf('%s \t%s \t%s \t%s \t%d \t%d \t%d \t%d', subject_id, class_label{1, 2}, class_label{1, 1},...
+			feature_str{1, f}, sum(tr_one_idx), sum(tr_minusone_idx), sum(ts_one_idx), sum(ts_minusone_idx)));
 		% Finally run this dataset through each classifier and gather results
 		for k = 1:nClassifiers
 			save_betas = sprintf('class_%s_feat%d_%d_vs_%d', subject_id,...
 				set_of_features_to_try(f), classes_to_classify(1), classes_to_classify(2));
 
 			[accuracies(r, k), true_pos_rate(r, k), false_pos_rate(r, k), auc(r, k)] =...
-			classifierList{k}(complete_train_set, complete_test_set, save_betas);
+				classifierList{k}(complete_train_set, complete_test_set, save_betas);
 		end
 	end
 	mean_over_runs(f, :) = mean(accuracies, 1);

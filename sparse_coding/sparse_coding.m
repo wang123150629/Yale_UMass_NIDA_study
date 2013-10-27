@@ -65,12 +65,12 @@ sparse_coding_plots(9, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_t
 [crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
 sparse_coding_plots(16, ecg_data, time_matrix, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
 
+%{
 temp = zeros(1, 5945750);
 temp(1, tr_idx{1}) = ecg_train_Y{hr1}';
 temp(1, ts_idx{1}) = crf_predicted_label';
 temp(1, ln_idx{1}) = crf_learn_predlbl{1}';
 save('P20_040_crf_lab_peaks.mat', 'temp');
-%{
 %}
 
 keyboard

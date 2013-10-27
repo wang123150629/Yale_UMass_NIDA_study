@@ -3,14 +3,17 @@ function[] = box_plot_hr(subject_id)
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 
+classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 switch subject_id
+case 'P20_061', classes_to_classify = [1, 12];
 case 'P20_060', classes_to_classify = [1, 9, 11];
-case 'P20_061', classes_to_classify = [1, 12, 10];
-case 'P20_079', classes_to_classify = [1, 13, 14, 10];
+case 'P20_079', classes_to_classify = [1, 13, 10];
+case 'P20_053', classes_to_classify = [1, 8, 10];
 end
 
 mean_hr = [];
 groupings = [];
+event_lbl = {};
 std_hr = [];
 g_cntr = 1;
 for c = classes_to_classify
@@ -19,16 +22,31 @@ for c = classes_to_classify
 	load(fullfile(result_dir, subject_id, sprintf('%s_preprocessed_data.mat', event)));
 	nEvents = length(preprocessed_data);
 	for e = 1:nEvents
-		mean_hr = [mean_hr; (1000 ./ (preprocessed_data{e}.valid_rr_intervals .* 4)) .* 60];
-		% std_hr = [std_hr, (1000 ./ (preprocessed_data{e}.valid_rr_intervals .* 4)) .* 60];
-		groupings = [groupings; repmat(g_cntr, length(preprocessed_data{e}.valid_rr_intervals), 1)];
-		g_cntr = g_cntr + 1;
-	end
-	if c == 1
-		event_lbl = {'Base', 'fix 8mg', 'fix 16mg', 'fix 32mg', 'Dosage'};
-	else
-		event_lbl{end+1} = class_information{1, 1}.label;
-		g_cntr = g_cntr + 1;
+		if ~isempty(preprocessed_data{e}.valid_rr_intervals)
+			mean_hr = [mean_hr; (1000 ./ (preprocessed_data{e}.valid_rr_intervals .* 4)) .* 60];
+			% std_hr = [std_hr, (1000 ./ (preprocessed_data{e}.valid_rr_intervals .* 4)) .* 60];
+			groupings = [groupings; repmat(g_cntr, length(preprocessed_data{e}.valid_rr_intervals), 1)];
+			if c == 1
+				switch length(unique(preprocessed_data{e}.dosage_labels))
+				case 1,
+					if unique(preprocessed_data{e}.dosage_labels) < 0
+						event_lbl{end+1} = 'Base';
+					else
+						tttdd = unique(preprocessed_data{e}.dosage_labels);
+						event_lbl{end+1} = sprintf('Blind:%d', tttdd(tttdd > 0));
+					end
+				case 2,
+					tttdd = unique(preprocessed_data{e}.dosage_labels);
+					event_lbl{end+1} = sprintf('Blind:%d', tttdd(tttdd > 0));
+				case 4
+					event_lbl{end+1} = 'fixed sess.';
+				otherwise, error('Invalid number of dosages!');
+				end
+			else
+				event_lbl{end+1} = class_information{1, 1}.label;
+			end
+			g_cntr = g_cntr + 1;
+		end
 	end
 end
 

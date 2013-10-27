@@ -1,4 +1,4 @@
-function[] = plot_class_results(tr_percent, varargin)
+function[] = plot_wsubj_class_results(tr_percent, varargin)
 
 close all;
 
@@ -8,7 +8,7 @@ else
 	paper_quality = false;
 end
 
-nSubjects = 8;
+nSubjects = 9;
 subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
@@ -17,7 +17,7 @@ target_feat_rows = 1:9;
 target_ana_cols = 1:4;
 auroc_over_subjects = NaN(length(target_feat_rows), length(target_ana_cols), nSubjects);
 
-for s = 8:nSubjects
+for s = 6:nSubjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d.mat', subject_ids{s},...
 										tr_percent)));
 	nAnalysis = length(classifier_results.mean_over_runs);
@@ -38,7 +38,7 @@ for s = 8:nSubjects
 	set(gca, 'XTick', 1:nFeatures);
 	set(gca, 'XTickLabel', feature_str);
 	xlim([0.5, nFeatures+0.5]); grid on;
-	% title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
+	title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
 	file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
 
