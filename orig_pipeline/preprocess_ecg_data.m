@@ -206,11 +206,11 @@ assert(length(rr) == length(unique(rr)));
 
 rr_start_end = [rr(1:end-1); rr(2:end)-1]';
 for s = 1:size(rr_start_end, 1)
-	if (rr_start_end(s, 2) - rr_start_end(s, 1)) > cut_off_heart_rate(1) &...
-	   (rr_start_end(s, 2) - rr_start_end(s, 1)) <= cut_off_heart_rate(2)
+	if length(rr_start_end(s, 1):rr_start_end(s, 2)) >= cut_off_heart_rate(1) &...
+	   length(rr_start_end(s, 1):rr_start_end(s, 2)) <= cut_off_heart_rate(2)
 
 		% Interplotaing the RR chunks
-		x_length = length(x(rr_start_end(s, 1):rr_start_end(s, 2)));
+		x_length = length(rr_start_end(s, 1):rr_start_end(s, 2));
 		xi = linspace(1, x_length, nInterpolatedFeatures);
 		interpol_data = interp1(1:x_length, x(rr_start_end(s, 1):rr_start_end(s, 2)), xi, 'pchip');
 		if max(interpol_data) <= 5 & min(interpol_data) >= 0

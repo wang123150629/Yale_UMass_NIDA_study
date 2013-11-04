@@ -52,8 +52,8 @@ for d = 1:length(dosage_levels)
 		interpolated_ecg = preprocessed_data.interpolated_ecg(target_dosage_idx, :); % pick out corresponding features
 		hold_start_end_indices = preprocessed_data.hold_start_end_indices(target_dosage_idx, :); % start end indices
 		rr_intervals = preprocessed_data.valid_rr_intervals(target_dosage_idx, :); % start end indices
-		assert(all(hold_start_end_indices(:, 2)-hold_start_end_indices(:, 1) >= cut_off_heart_rate(1) &...
-		 	   hold_start_end_indices(:, 2)-hold_start_end_indices(:, 1) <= cut_off_heart_rate(2)));
+		assert(all(length(hold_start_end_indices(:, 1):hold_start_end_indices(:, 2)) >= cut_off_heart_rate(1) &...
+		 	   length(hold_start_end_indices(:, 1):hold_start_end_indices(:, 2)) <= cut_off_heart_rate(2)));
 		x_size = preprocessed_data.x_size(dosage_levels(d) == dosage_levels);
 		x_time = preprocessed_data.x_time{dosage_levels(d) == dosage_levels};
 		datenum_format_x_time = datenum(x_time);

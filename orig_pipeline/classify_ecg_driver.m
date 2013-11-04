@@ -84,9 +84,9 @@ for f = 1:length(set_of_features_to_try)
 	false_pos_rate = NaN(nRuns, nClassifiers);
 	auc = NaN(nRuns, nClassifiers);
 	[feature_extracted_data, feature_str{1, f}] = setup_features(loaded_data, set_of_features_to_try(f));
+
 	% Repeat this process over runs. Now for the training partition we are performing (retain first half to train and
 	% second half to test) there is no randomness so only one run will suffice. This code exists to make life easier :)
-
 	for r = 1:nRuns
 		[complete_train_set, complete_test_set, chance_baseline(f, r)] =...
 					partition_and_relabel(feature_extracted_data, tr_percent);
@@ -100,11 +100,10 @@ for f = 1:length(set_of_features_to_try)
 			feature_str{1, f}, sum(tr_one_idx), sum(tr_minusone_idx), sum(ts_one_idx), sum(ts_minusone_idx)));
 		% Finally run this dataset through each classifier and gather results
 		for k = 1:nClassifiers
-			save_betas = sprintf('class_%s_feat%d_%d_vs_%d', subject_id,...
-				set_of_features_to_try(f), classes_to_classify(1), classes_to_classify(2));
-
+			%save_betas = sprintf('class_%s_feat%d_%d_vs_%d', subject_id,...
+			%	set_of_features_to_try(f), classes_to_classify(1), classes_to_classify(2));
 			[accuracies(r, k), true_pos_rate(r, k), false_pos_rate(r, k), auc(r, k)] =...
-				classifierList{k}(complete_train_set, complete_test_set, save_betas);
+				classifierList{k}(complete_train_set, complete_test_set, '');
 		end
 	end
 	mean_over_runs(f, :) = mean(accuracies, 1);

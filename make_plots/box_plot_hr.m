@@ -3,7 +3,6 @@ function[] = box_plot_hr(subject_id)
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 
-classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 switch subject_id
 case 'P20_061', classes_to_classify = [1, 12];
 case 'P20_060', classes_to_classify = [1, 9, 11];

@@ -34,6 +34,7 @@ class_1_idx = find(test_set(:, end) == 1);
 class_m1_idx = find(test_set(:, end) == -1);
 tpr = length(find(class_guessed(class_1_idx) == interested_class)) / length(class_1_idx);
 fpr = length(find(class_guessed(class_m1_idx) == interested_class)) / length(class_m1_idx);
+
 [x_val, y_val, T, AUC] = perfcurve(test_set(:, end), pos_class_prob, interested_class);
 
 %{
