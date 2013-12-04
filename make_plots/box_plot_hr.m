@@ -1,13 +1,18 @@
-function[] = box_plot_hr(subject_id)
+function[] = box_plot_hr(subject_id, plot_style)
 
+% box_plot_hr('P20_060', 'box');
+% box_plot_hr('P20_060', 'hist');
+
+close all;
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 
 switch subject_id
-case 'P20_061', classes_to_classify = [1, 12];
 case 'P20_060', classes_to_classify = [1, 9, 11];
+case 'P20_061', classes_to_classify = [1, 9, 12];
 case 'P20_079', classes_to_classify = [1, 13, 10];
 case 'P20_053', classes_to_classify = [1, 8, 10];
+case 'P20_094', classes_to_classify = [1, 9, 10, 15];
 end
 
 mean_hr = [];
@@ -51,10 +56,24 @@ end
 
 figure('visible', 'on');
 set(gcf, 'Position', get_project_settings('figure_size'));
-boxplot(mean_hr, groupings, 'labels', event_lbl);
-ylabel('Heart rate');
-title(sprintf('Subject: %s', get_project_settings('strrep_subj_id', subject_id)));
 image_format = get_project_settings('image_format');
-file_name = sprintf('%s/%s/bx_plot_hr', plot_dir, subject_id);
-savesamesize(gcf, 'file', file_name, 'format', image_format);
+
+if strcmp(plot_style, 'box')
+	boxplot(mean_hr, groupings, 'labels', event_lbl);
+	ylabel('Heart rate');
+	title(sprintf('Subject: %s', get_project_settings('strrep_subj_id', subject_id)));
+	file_name = sprintf('%s/%s/bx_plot_hr', plot_dir, subject_id);
+else
+	for i = 1:8
+		if sum(groupings == i) > 0
+			subplot(4, 2, i); hist(mean_hr(groupings == i), 20); hold on; grid on;
+			plot(mean(mean_hr(groupings == i)), 100, 'ro', 'MarkerFaceColor', 'r');
+			title(sprintf('%s, count=%d', event_lbl{i}, sum(groupings == i)));
+			xlabel('Heart rate'); ylabel('count'); xlim([50, 150]);
+		end
+	end
+	file_name = sprintf('%s/%s/hist_plot_hr', plot_dir, subject_id);
+end
+% savesamesize(gcf, 'file', file_name, 'format', image_format);
+saveas(gcf, file_name, 'pdf');
 

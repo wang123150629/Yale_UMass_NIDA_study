@@ -127,6 +127,10 @@ function[] = summ_confusion_mats(varargin)
 global plot_dir;
 global image_format;
 
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
 assert(length(varargin) == 7);
 mul_summary_mat = varargin{1};
 mul_accuracy = round_to(mean(mul_summary_mat(:)), 2);
@@ -153,7 +157,8 @@ colormap bone;
 subplot(1, 2, 1);
 imagesc(mul_summary_mat);
 textStrings = strtrim(cellstr(num2str(round_to(mul_summary_mat(:), 2), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+%# Plot the strings
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(mul_summary_mat(:) < midValue, 1, 3);
@@ -161,17 +166,19 @@ set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 h = colorbar;
 set(h, 'ylim', [ylim_l, ylim_u]);
 
-title(sprintf('Multi. Log. regression, accuracy=%0.2f, error=%d\n%s', mul_accuracy, mul_total_errors, title_str));
-xlabel('Test'); ylabel('Train');
+title(sprintf('Multi. Log. regression, accuracy=%0.2f, error=%d\n%s', mul_accuracy, mul_total_errors, title_str), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Test', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Train', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'XTick', 1:length(hr_str));
-set(gca, 'XTickLabel', hr_str);
+set(gca, 'XTickLabel', hr_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'YTick', 1:length(hr_str));
-set(gca, 'YTickLabel', hr_str);
+set(gca, 'YTickLabel', hr_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 subplot(1, 2, 2);
 imagesc(crf_summary_mat);
 textStrings = strtrim(cellstr(num2str(round_to(crf_summary_mat(:), 2), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+%# Plot the strings
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(crf_summary_mat(:) < midValue, 1, 3);
@@ -179,12 +186,13 @@ set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 h = colorbar;
 set(h, 'ylim', [ylim_l, ylim_u]);
 
-title(sprintf('Basic CRF, accuracy=%0.2f, error=%d\n%s', crf_accuracy, crf_total_errors, title_str));
-xlabel('Test'); ylabel('Train');
+title(sprintf('Basic CRF, accuracy=%0.2f, error=%d\n%s', crf_accuracy, crf_total_errors, title_str), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Test', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Train', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'XTick', 1:length(hr_str));
-set(gca, 'XTickLabel', hr_str);
+set(gca, 'XTickLabel', hr_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'YTick', 1:length(hr_str));
-set(gca, 'YTickLabel', hr_str);
+set(gca, 'YTickLabel', hr_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 file_name = sprintf('%s/sparse_coding/%s/%s_summ_confmat', plot_dir, analysis_id, analysis_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);
@@ -195,6 +203,9 @@ function[] = two_confusion_mats(varargin)
 global plot_dir;
 global image_format;
 label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
 
 assert(length(varargin) == 5);
 mul_summary_mat = varargin{1};
@@ -213,8 +224,8 @@ colormap bone;
 
 subplot(1, 2, 1);
 imagesc(mul_summary_mat);
-textStrings = strtrim(cellstr(num2str(mul_summary_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+textStrings = strtrim(cellstr(num2str(mul_summary_mat(:), '%d')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(mul_summary_mat(:) < midValue, 1, 3);
@@ -222,17 +233,18 @@ set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 h = colorbar;
 set(h, 'ylim', [ylim_l, ylim_u]);
 
-title(sprintf('Multi. Log. regression, %s', title_str));
+title(sprintf('Multi. Log. regression, %s', title_str), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
+set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-xlabel('Predicted'); ylabel('Ground');
+set(gca, 'YTickLabel', label_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Predicted', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Ground', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 subplot(1, 2, 2);
 imagesc(crf_summary_mat);
-textStrings = strtrim(cellstr(num2str(crf_summary_mat(:), '%0.2f')));  %# Remove any space padding
-hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center'); %# Plot the strings
+textStrings = strtrim(cellstr(num2str(crf_summary_mat(:), '%d')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(crf_summary_mat(:) < midValue, 1, 3);
@@ -240,12 +252,13 @@ set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
 h = colorbar;
 set(h, 'ylim', [ylim_l, ylim_u]);
 
-title(sprintf('Basic CRF, %s', title_str));
+title(sprintf('Basic CRF, %s', title_str), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'XTick', 1:length(label_str));
-set(gca, 'XTickLabel', label_str);
+set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(gca, 'YTick', 1:length(label_str));
-set(gca, 'YTickLabel', label_str);
-xlabel('Predicted'); ylabel('Ground');
+set(gca, 'YTickLabel', label_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Predicted', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Ground', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 file_name = sprintf('%s/sparse_coding/%s/%s_%s_two_confmat', plot_dir, analysis_id, analysis_id, plot_id);
 savesamesize(gcf, 'file', file_name, 'format', image_format);

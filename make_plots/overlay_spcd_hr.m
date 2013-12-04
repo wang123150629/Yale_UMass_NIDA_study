@@ -2,6 +2,10 @@ function[] = overlay_spcd_hr()
 
 close all;
 
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
 data_dir = get_project_settings('data');
 results_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
@@ -14,7 +18,7 @@ subject_timestamp = subject_profile.events{event}.timestamp;
 subject_threshold = subject_profile.events{event}.rr_thresholds;
 cut_off_heart_rate = get_project_settings('cut_off_heart_rate');
 
-crf_rr_mat = load('P20_040_crf_lab_peaks.mat');
+crf_rr_mat = load('misc_mats/P20_040_crf_lab_peaks.mat');
 ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp, sprintf('%s_ECG.csv', subject_timestamp)), 1, 0);
 behav_mat = csvread(fullfile(data_dir, subject_id, sprintf('%s_behav.csv', subject_id)), 1, 0);
 summary_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
@@ -73,14 +77,16 @@ for s = 1:size(st_end, 1)
 end
 
 figure(); set(gcf, 'Position', get_project_settings('figure_size'));
-plot(rr_hr, 'r'); hold on;
-plot(crf_hr, 'b');
-plot(summ_hr, 'k');
+plot(rr_hr, 'r', 'LineWidth', 2); hold on;
+plot(crf_hr, 'b', 'LineWidth', 2);
+plot(summ_hr, 'k', 'LineWidth', 2);
 plot(behav_hr, 'mo', 'MarkerFaceColor', 'm');
 ylim([50, 150]);
-xlabel('Time(milliseconds)');
-ylabel('Heart rate');
-legend('ECGToolbox', 'CRF', 'Summary(Zephyr)', 'Behav(Phillips)');
+set(gca, 'XTickLabel', '');
+xlabel('Time(6.5 Hours)', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Heart rate', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+h = legend('ECGToolbox', 'CRF', 'Summary(Zephyr)', 'Behav(Phillips)');
+set(h, 'FontSize', le_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 image_format = get_project_settings('image_format');
 file_name = sprintf('%s/sparse_coding/misc_plots/diff_hr_comp', plot_dir);

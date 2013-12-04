@@ -41,9 +41,9 @@ if length(varargin) == 1
 	indicator_matrix = labeled_peaks(3, :);
 	% Note time_matrix is automatically initialized when loading the struct
 else
-	ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
+	ecg_mat_all = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
 		sprintf('%s_ECG.csv', subject_timestamp)), 1, 0);
-	ecg_mat = ecg_mat(:, end) .* 0.001220703125;
+	ecg_mat = ecg_mat_all(:, end) .* 0.001220703125;
 
 	ecg_peaks = zeros(1, length(ecg_mat));
 	[maxtab, mintab] = peakdet(ecg_mat, peak_thres);
@@ -55,7 +55,7 @@ else
 	indicator_matrix(1, maxtab(:, 1)) = 100;
 	indicator_matrix(1, mintab(:, 1)) = 100;
 
-	time_matrix = ecg_mat(:, 4:6)';
+	time_matrix = ecg_mat_all(:, 4:6)';
 	time_matrix = sprintf('%d:%d:%d*', time_matrix);
 	time_matrix = regexp(time_matrix, '*', 'split');
 end
@@ -121,6 +121,23 @@ S.sv_pushh = uicontrol('Style', 'pushbutton', 'String', 'SAVE LABELS',...
 S.ex_pushh = uicontrol('Style', 'pushbutton', 'String', 'QUIT',...
 		  'Position', [20 y_location-180 100 20],...
 		  'Callback', @exit_interface);
+
+S.ex_pushh = uicontrol('Style', 'pushbutton', 'String', 'SNAPSHOT',...
+		  'Position', [20 y_location-210 100 20],...
+		  'Callback', @take_snapshot);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = take_snapshot(varargin)
+
+plot_dir = get_project_settings('plots');
+image_format = get_project_settings('image_format');
+
+timestamp = clock();
+
+file_name = sprintf('%s/sparse_coding/snapshots/lbl_peaks_snap_%d_%d_%d', plot_dir, timestamp(4), timestamp(5),...
+												round_to(timestamp(6), 0));
+savesamesize(gcf, 'file', file_name, 'format', image_format);
+% saveas(gcf, file_name, 'pdf') % Save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = exit_interface(varargin)
@@ -275,6 +292,10 @@ global nIndicators;
 global y_entries
 global time_matrix;
 
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
 data_idx = start_time:start_time+window_length;
 if min(ecg_mat(data_idx)) == max(ecg_mat(data_idx))
 	y_entries = linspace(1, 5, nIndicators);
@@ -285,22 +306,25 @@ else
 end
 
 [ax, h1, h2] = plotyy(1:length(data_idx), ecg_mat(data_idx, 1), 1:length(data_idx), indicator_matrix(1, data_idx)); hold on;
-set(h1, 'LineStyle', '-', 'LineWidth', 2);
+set(h1, 'LineStyle', '-', 'LineWidth', 3);
 set(h2, 'LineStyle', 'o', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
 
-set(get(ax(1), 'Ylabel'), 'String', 'Millivolts');
+set(get(ax(1), 'Ylabel'), 'String', 'Millivolts', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(ax(1), 'xlim', [0, length(data_idx)]);
 set(ax(1), 'YTick', y_entries);
 set(ax(1), 'ylim', y_lim);
+y_ticks = get(ax(1), 'YTickLabel');
+set(ax(1), 'YTickLabel', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(ax(1), 'XTickLabel', '');
 
-set(get(ax(2), 'Ylabel'), 'String', 'Peaks');
+set(get(ax(2), 'Ylabel'), 'String', 'Peaks', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(ax(2), 'xlim', [0, length(data_idx)]);
 set(ax(2), 'ylim', [1, nIndicators]);
 set(ax(2), 'YTick', 1:nIndicators);
-set(ax(2), 'YTickLabel', {'P', 'Q', 'R', 'S', 'T', 'U'});
-set(ax(2), 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]));
+set(ax(2), 'YTickLabel', {'P', 'Q', 'R', 'S', 'T', 'U'}, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
+set(ax(2), 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]),...
+					'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 grid on;
 hold on;
 peak_idx = find(ecg_peaks(data_idx));

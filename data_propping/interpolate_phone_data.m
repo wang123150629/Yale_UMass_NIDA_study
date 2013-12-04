@@ -1,8 +1,8 @@
 function[] = interpolate_phone_data()
 
-subject_id = 'P20_061';
+subject_id = 'P20_094';
 subject_sensor = 'Sensor_100';
-subject_timestamp = '2013_01_18-00_01_01';
+subject_timestamp = '2013_11_19-00_01_13';
 
 close all;
 
@@ -11,13 +11,16 @@ new_mat = [];
 
 ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
 						sprintf('%s_ECG_noninterpolated.csv', subject_timestamp)), 1, 0);
+% check to ensure that all data comes from the same day
 assert(sum(diff(ecg_mat(:, 1)) > 0) == 0);
 assert(sum(diff(ecg_mat(:, 2)) > 0) == 0);
 assert(sum(diff(ecg_mat(:, 3)) > 0) == 0);
 matlab_time = datenum(ecg_mat(:, 1:end-1));
 unix_time = round(8.64e7 * (matlab_time - datenum('1970', 'yyyy')));
+% If there is more than one second of data missing then just treat that period as sensor dropout style data loss
 break_points = [0, find(diff(unix_time) > 1000 | diff(unix_time) < -1000)', size(ecg_mat, 1)];
 
+% Take chunks of data, interpolte them with apropriate timestamp and write them out
 for b = 1:length(break_points)-1
 	new_timestamp = unix_time(break_points(b)+1):4:unix_time(break_points(b+1));
 

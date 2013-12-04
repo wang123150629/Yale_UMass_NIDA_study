@@ -55,7 +55,7 @@ case 8
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'ping pong';
+	class_information{1, 1}.label = 'excse';
 case 9
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'exer';
@@ -64,7 +64,7 @@ case 9
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'exercise';
+	class_information{1, 1}.label = 'excse';
 case 10
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'mph';
@@ -73,7 +73,7 @@ case 10
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'MPH day 1';
+	class_information{1, 1}.label = 'MPH';
 case 11
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'mph2';
@@ -82,7 +82,7 @@ case 11
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'MPH day 2';
+	class_information{1, 1}.label = 'MPH';
 case 12
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'acti';
@@ -100,7 +100,7 @@ case 13
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'Bike';
+	class_information{1, 1}.label = 'excse';
 case 14
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'bike2';
@@ -109,7 +109,16 @@ case 14
 	class_information{1, 1}.time_window = 30;
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'Bike2';
+	class_information{1, 1}.label = 'excse';
+case 15
+	class_information{1, 1} = struct();
+	class_information{1, 1}.event = 'exer2';
+	class_information{1, 1}.slide_or_chunk = 'slide';
+	class_information{1, 1}.pqrst_flag = true;
+	class_information{1, 1}.time_window = 30;
+	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
+	class_information{1, 1}.dosage = 0;
+	class_information{1, 1}.label = 'excse2';
 %{
 case 6
 	class_information{1, 1} = struct();

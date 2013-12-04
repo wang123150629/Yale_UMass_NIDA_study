@@ -15,7 +15,7 @@ global window_length;
 window_length = 500;
 
 S.fh = figure('units','pixels',...
-		'position', get_project_settings('figure_size'),...
+		'position', [70, 10, 1300, 700],...
 		'menubar', 'none',...
 		'name', 'PQRST Interface',...
 		'numbertitle', 'off',...
@@ -148,6 +148,10 @@ global idx_for_boundary;
 global start_time;
 global window_length;
 
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
 nIndicators = 6;
 label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
 label_clr = {'R', 'G', 'B', 'M', 'C', 'K'};
@@ -163,9 +167,10 @@ end
 
 plot(1:length(data_idx), ecg_mat(1, data_idx), 'b-', 'LineWidth', 2); hold on;
 xlim([0, length(data_idx)]);
-ylabel('Normalized Millivolts');
+ylabel('Normalized Millivolts', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 ylim(y_lim);
-set(gca, 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]));
+set(gca, 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]),...
+					'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 if ~isempty(intersect(idx_for_boundary, data_idx))
 	[junk, junk, ii] = intersect(idx_for_boundary, data_idx);

@@ -28,3 +28,14 @@ for i in /home/anataraj/NIH-craving/ecg_data/${subject_id}/* ; do
 	fi
 done
 
+
+				filecounter=1
+				for k in ${file_name}*.csv ; do
+					echo $k
+					if [ $filecounter -eq 1 ]; then
+						echo timestamp, ecg > output.csv
+					fi
+					cat $k >> output.csv
+					filecounter=$[$filecounter +1]
+				done
+

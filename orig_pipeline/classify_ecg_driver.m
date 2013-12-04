@@ -2,8 +2,8 @@ function[] = classify_ecg_driver(tr_percent)
 
 % classify_ecg_driver(60)
 
-nSubjects = 9;
-set_of_features_to_try = [1:9];
+nSubjects = 10;
+set_of_features_to_try = [1:10];
 nRuns = 1;
 % classifierList = {@two_class_linear_kernel_logreg, @two_class_logreg, @two_class_svm_linear};
 classifierList = {@two_class_logreg};
@@ -15,10 +15,11 @@ result_dir = get_project_settings('results');
 for s = 6:nSubjects
 	classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 	switch subject_ids{s}
-	case 'P20_061', classes_to_classify = [5, 12];
 	case 'P20_060', classes_to_classify = [classes_to_classify; 1, 9; 5, 9; 5, 11];
+	case 'P20_061', classes_to_classify = [5, 9];
 	case 'P20_079', classes_to_classify = [classes_to_classify; 1, 13; 5, 13; 5, 10];
-	case 'P20_053', classes_to_classify = [1, 5; 5, 8; 10, 5];
+	case 'P20_053', classes_to_classify = [1, 5; 1, 8; 5, 8; 5, 10];
+	case 'P20_094', classes_to_classify = [classes_to_classify; 1, 9; 1, 15; 5, 9; 5, 15; 5, 10];
 	end
 	nAnalysis = size(classes_to_classify, 1);
 	mean_over_runs = cell(1, nAnalysis);

@@ -8,13 +8,11 @@ else
 	paper_quality = false;
 end
 
-nSubjects = 9;
+nSubjects = 10;
 subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
-target_feat_rows = 1:9;
-target_ana_cols = 1:4;
 
 for s = 6:nSubjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_hrbased_results_tr%d.mat',...

@@ -5,7 +5,7 @@ close all;
 slide_or_chunk = 'slide';
 peak_detect_appr = 4;
 pqrst_flag = true;
-number_of_subjects = 6;
+number_of_subjects = 10;
 
 subject_ids = get_subject_ids(number_of_subjects);
 result_dir = get_project_settings('results');

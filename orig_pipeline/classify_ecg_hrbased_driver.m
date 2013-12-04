@@ -3,8 +3,8 @@ function[] = classify_ecg_hrbased_driver(tr_percent)
 % classify_ecg_hrbased_driver(50)
 % This is a clone of classify_ecg_driver()
 
-nSubjects = 9;
-set_of_features_to_try = [1, 7, 8];
+nSubjects = 10;
+set_of_features_to_try = [1, 7, 8, 9];
 nRuns = 1;
 classifierList = {@two_class_logreg};
 subject_ids = get_subject_ids(nSubjects);
@@ -13,10 +13,11 @@ result_dir = get_project_settings('results');
 % Looping over each subject and performing classification
 for s = 6:nSubjects
 	switch subject_ids{s}
-	case 'P20_061', classes_to_classify = [5, 12]; % dosage vs activity
 	case 'P20_060', classes_to_classify = [5, 9; 5, 11]; % dosage vs exercise and dosage vs MPH
+	case 'P20_061', classes_to_classify = [5, 9]; % dosage vs activity and dosage vs exercise
 	case 'P20_079', classes_to_classify = [5, 13; 5, 10]; % dosage vs bike and dosage vs MPH
 	case 'P20_053', classes_to_classify = [5, 8; 5, 10]; % dosage vs ping and dosage vs MPH
+	case 'P20_094', classes_to_classify = [5, 9; 5, 15; 5, 10]; % dosage vs exercise, dosage vs exercise2 and dosage vs MPH
 	end
 	nAnalysis = size(classes_to_classify, 1);
 	mean_over_runs = cell(1, nAnalysis);
@@ -159,6 +160,10 @@ case 7
 	title_str = 'AM';
 	cols_to_scale = 1:4;
 case 8
+	feature_cols = [qs_peak_col, pr_peak_col, qt_peak_col, qtc_peak_col];
+	title_str = 'AM-T';
+	cols_to_scale = 4;
+case 9
 	feature_cols = ecg_col;
 	title_str = 'W';
 otherwise
@@ -190,7 +195,7 @@ if min_count > 50
 							repmat(final_labels{c}, length(test_samples), 1)];
 		class_hr_to_plot{c} = hr_est([train_samples', test_samples']);
 	end
-	if feature_set_flag == 8
+	if feature_set_flag == 9
 		plot_complexes_hr_bins(complete_train_set, complete_test_set, class_hr_to_plot, class_label, hr_bins, subject_id, nBins);
 	end
 end

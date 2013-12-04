@@ -48,9 +48,14 @@ case 7
 	title_str = 'AM';
 	cols_to_scale = 1:4;
 case 8
+	feature_extracted_data = [loaded_data(:, qs_peak_col), loaded_data(:, pr_peak_col),...
+				  loaded_data(:, qt_peak_col), loaded_data(:, qtc_peak_col)];
+	title_str = 'AM-T';
+	cols_to_scale = 4;
+case 9
 	feature_extracted_data = loaded_data(:, ecg_col);
 	title_str = 'W';
-case 9
+case 10
 	feature_extracted_data = [loaded_data(:, ecg_col), loaded_data(:, qs_peak_col),...
 				  loaded_data(:, pr_peak_col), loaded_data(:, qt_peak_col),...
 				  loaded_data(:, qtc_peak_col), loaded_data(:, t_height_col)];

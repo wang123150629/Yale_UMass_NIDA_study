@@ -8,15 +8,50 @@ class2_tr = complete_train_set(:, end) == 1;
 class1_ts = complete_test_set(:, end) == -1;
 class2_ts = complete_test_set(:, end) == 1;
 
+interval1 = [mean(complete_train_set(class1_tr, 1:end-1), 1) - std(complete_train_set(class1_tr, 1:end-1), [], 1); mean(complete_train_set(class1_tr, 1:end-1), 1) + std(complete_train_set(class1_tr, 1:end-1), [], 1)];
+
+interval2 = [mean(complete_train_set(class1_ts, 1:end-1), 1) - std(complete_train_set(class1_ts, 1:end-1), [], 1); mean(complete_train_set(class1_ts, 1:end-1), 1) + std(complete_train_set(class1_ts, 1:end-1), [], 1)];
+
+interval3 = [mean(complete_train_set(class2_tr, 1:end-1), 1) - std(complete_train_set(class2_tr, 1:end-1), [], 1); mean(complete_train_set(class2_tr, 1:end-1), 1) + std(complete_train_set(class2_tr, 1:end-1), [], 1)];
+
+interval4 = [mean(complete_train_set(class2_ts, 1:end-1), 1) - std(complete_train_set(class2_ts, 1:end-1), [], 1); mean(complete_train_set(class2_ts, 1:end-1), 1) + std(complete_train_set(class2_ts, 1:end-1), [], 1)];
+
 figure('visible', 'off');
 set(gcf, 'Position', get_project_settings('figure_size'));
 
 subplot(2, 3, [1, 2, 4, 5]);
-plot(mean(complete_train_set(class1_tr, 1:end-1), 1), 'b-', 'LineWidth', 2); hold on
+color = [0,0,128] ./ 255; transparency = 0.4;
+hhh = jbfill(1:100, interval1(1, :), interval1(2, :), color, rand(1, 3), 0, transparency);
+hAnnotation = get(hhh, 'Annotation');
+hLegendEntry = get(hAnnotation', 'LegendInformation');
+set(hLegendEntry, 'IconDisplayStyle', 'off');
+hold on;
+
+color = [128,0,0] ./ 255; transparency = 0.4;
+hhh = jbfill(1:100, interval2(1, :), interval2(2, :), color, rand(1, 3), 0, transparency);
+hAnnotation = get(hhh, 'Annotation');
+hLegendEntry = get(hAnnotation', 'LegendInformation');
+set(hLegendEntry, 'IconDisplayStyle', 'off');
+
+color = [128,128,128] ./ 255; transparency = 0.4;
+hhh = jbfill(1:100, interval3(1, :), interval3(2, :), color, rand(1, 3), 0, transparency);
+hAnnotation = get(hhh, 'Annotation');
+hLegendEntry = get(hAnnotation', 'LegendInformation');
+set(hLegendEntry, 'IconDisplayStyle', 'off');
+
+color = [0,128,0] ./ 255; transparency = 0.4;
+hhh = jbfill(1:100, interval4(1, :), interval4(2, :), color, rand(1, 3), 0, transparency);
+hAnnotation = get(hhh, 'Annotation');
+hLegendEntry = get(hAnnotation', 'LegendInformation');
+set(hLegendEntry, 'IconDisplayStyle', 'off');
+
+plot(mean(complete_train_set(class1_tr, 1:end-1), 1), 'b-', 'LineWidth', 2);
 plot(mean(complete_test_set(class1_ts, 1:end-1), 1), 'r-', 'LineWidth', 2);
 plot(mean(complete_train_set(class2_tr, 1:end-1), 1), 'k-', 'LineWidth', 2);
 plot(mean(complete_test_set(class2_ts, 1:end-1), 1), 'g-', 'LineWidth', 2);
+
 grid on;
+
 legend(sprintf('Train %s(%d)', class_label{1}, sum(class1_tr)), sprintf('Test %s(%d)', class_label{1}, sum(class1_ts)),...
        sprintf('Train %s(%d)', class_label{2}, sum(class2_tr)), sprintf('Test %s(%d)', class_label{2}, sum(class2_ts)));
 xlabel('Waveform features'); ylabel('Normalized millivolts');

@@ -2,26 +2,11 @@ function [subject_ids] = get_subject_ids(number_of_subjects)
 
 if nargin ~= 1, error('Missing number of subjects'); end
 
-switch number_of_subjects
-case 1
-	subject_ids = {'P20_040'};
-case 2
-	subject_ids = {'P20_040', 'P20_048'};
-case 3
-	subject_ids = {'P20_040', 'P20_048', 'P20_058'};
-case 4
-	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060'};
-case 5
-	subject_ids = {'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_036'};
-case 6
-	subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060'};
-case 7
-	subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061'};
-case 8
-	subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061', 'P20_079'};
-case 9
-	subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061', 'P20_079', 'P20_053'};
-otherwise
-	error('Invalid number of subjects!');
+subject_ids = {'P20_036', 'P20_039', 'P20_040', 'P20_048', 'P20_058', 'P20_060', 'P20_061', 'P20_079', 'P20_053', 'P20_094'};
+
+if number_of_subjects > length(subject_ids)
+	error('Invalid number_of_subjects!');
+else
+	subject_ids = subject_ids(1, 1:number_of_subjects);
 end
 

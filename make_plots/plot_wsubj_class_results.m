@@ -8,14 +8,11 @@ else
 	paper_quality = false;
 end
 
-nSubjects = 9;
+nSubjects = 10;
 subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
-target_feat_rows = 1:9;
-target_ana_cols = 1:4;
-auroc_over_subjects = NaN(length(target_feat_rows), length(target_ana_cols), nSubjects);
 
 for s = 6:nSubjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d.mat', subject_ids{s},...
@@ -25,7 +22,7 @@ for s = 6:nSubjects
 	for a = 1:nAnalysis
 		% mean_over_runs = classifier_results.mean_over_runs{1, a};
 		% errorbars_over_runs = classifier_results.errorbars_over_runs{1, a};
-		nFeatures = length(mean_over_runs);
+		nFeatures = length(classifier_results.mean_over_runs{a});
 		feature_str = classifier_results.feature_str{1, a};
 		class_label = classifier_results.class_label{1, a};
 		legend_str{a} = sprintf('%s vs %s', class_label{1}, class_label{2});
@@ -33,6 +30,7 @@ for s = 6:nSubjects
 
 	figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
 	bar([classifier_results.auc_over_runs{:}]);
+	% legend(legend_str, 'Location', 'NorthEastOutside', 'Orientation', 'Vertical');
 	legend(legend_str, 'Location', 'South', 'Orientation', 'Horizontal');
 	xlabel('Features'); ylabel('AUROC');
 	set(gca, 'XTick', 1:nFeatures);
@@ -41,6 +39,7 @@ for s = 6:nSubjects
 	title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
 	file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
 	savesamesize(gcf, 'file', file_name, 'format', image_format);
+	% saveas(gcf, file_name, 'pdf');
 
 	%{
 	font_size = get_project_settings('font_size');

@@ -10,7 +10,6 @@ window_size = 25;
 tr_partition = 50;
 nDictionayElements = 100;
 nIterations = 1000;
-filter_size = 10000;
 
 assert(mod(window_size, 2) > 0);
 
@@ -65,19 +64,21 @@ sparse_coding_plots(9, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_t
 [crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
 sparse_coding_plots(16, ecg_data, time_matrix, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
 
-%{
 temp = zeros(1, 5945750);
-temp(1, tr_idx{1}) = ecg_train_Y{hr1}';
-temp(1, ts_idx{1}) = crf_predicted_label';
-temp(1, ln_idx{1}) = crf_learn_predlbl{1}';
+filter_size = 10000;
+filter_size = filter_size/2 - 1;
+temp(1, filter_size+tr_idx{1}) = ecg_train_Y{hr1}';
+temp(1, filter_size+ts_idx{1}) = crf_predicted_label';
+temp(1, filter_size+ln_idx{1}) = crf_learn_predlbl{1}';
+assert(sum(temp(1:filter_size)) == 0);
+assert(sum(temp(end-filter_size:end)) == 0);
 save('P20_040_crf_lab_peaks.mat', 'temp');
-%}
-
+%{
 keyboard
-
 write_to_html(analysis_id, subject_id, lambda, 100, first_baseline_subtract, sparse_code_peaks, variable_window, normalize,...
 		add_height, add_summ_diff, add_all_diff, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors,...
 		data_split, dimm);
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[confusion_mat, predicted_label, test_clusters] =...
