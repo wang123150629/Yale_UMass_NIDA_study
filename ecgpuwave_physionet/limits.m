@@ -1,5 +1,9 @@
 function [annt,annAmp,banot,QT,QTC,QW,RW,SW,QRS]=limits(dirhea,dirsig,dirann,ecgnr,anot,typerec,res,nl,ti,tf,nbo_flag,Kq,Kr,Ks,Krr,Kpb,Kpe,Ktb,Kte,pco)
 
+dirhea = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirhea));
+dirsig = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirsig));
+dirann = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirann));
+
 %-----  WL Principal program  ----------------------
 %Detecci�n de puntos significativos en el ECG.
 %
@@ -59,7 +63,8 @@ if nargin<20  pco=8; end
 
 fidan=0;
 if ~isempty(ti)&~isempty(tf)
-    ti=timestr(ti); tf=timestr(tf);
+    % ti=timestr(ti); tf=timestr(tf);
+    ti=-1; tf=Inf;	
     t=[ti,tf];
 end
 
@@ -256,10 +261,10 @@ while ilat<no_beats-3
             end
         end
         X = X(:,leadinfile);   
-        X = (X - heasig.adczero())/heasig.gain(lead); %*1e3; % conversion to microV
+        X = (X - heasig.adczero(nl))/heasig.gain(nl); %*1e3; % conversion to microV
    end
    if typerec==2 
-       X=sinal(leand,ti+1:tf)';
+       X=sinal(nl,ti+1:tf)';
    end
    
    

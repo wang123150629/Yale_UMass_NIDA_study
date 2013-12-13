@@ -10,30 +10,11 @@ type=0; noR=0; Sgran=0;
 [M,I]=peaksearch(D,0);
 [QRS1,Rp,Sp,R2p,QRS2,ymaxaux,type,Sgran]=Rwave(n,X,Xpb,D,Der,PKni,M,I,Fs,Kr,Ks,Krr);
 
-if isempty(Rp)
-	Ir=[];
-	imax=[]; ymax=[];
-	imin=[]; ymin=[];
-	if type==2 dermax=[]; end
-else
-	Ir=find(I<Rp);
-	if ~isempty(Ir)
-		imax=I(Ir(length(Ir)));
-		ymax=M(Ir(length(Ir)));
-	else
-		imax = [];
-		ymax = [];
-	end
-	Ir=find(I>Rp); 
-	if ~isempty(Ir)
-		imin=I(Ir(1));
-		ymin=M(Ir(1));
-	else
-		imin = [];
-		ymin = [];
-	end
-	if type==2 dermax=max(abs(ymax),abs(ymin)); end
-end
+Ir=find(I<Rp);
+imax=I(Ir(length(Ir))); ymax=M(Ir(length(Ir)));
+Ir=find(I>Rp); 
+imin=I(Ir(1)); ymin=M(Ir(1));
+if type==2 dermax=max(abs(ymax),abs(ymin)); end
 
 % ---- QRS type ----
 % Protection against cases in which the derivative presents several
@@ -92,11 +73,7 @@ if (type==4)
    QRS1=imin-QRS1+1;
 
    ilim=QRS1-round(35e-3*Fs);
-   if ilim > 0
-   	Daux=D(ilim:QRS1);
-   else
-	Daux=[];
-   end
+   Daux=D(ilim:QRS1);
    [ymax2,imax2]=max(Daux); imax2=ilim+imax2-1;
    [yaux,iaux]=min(Daux); iaux=ilim+iaux-1;
 

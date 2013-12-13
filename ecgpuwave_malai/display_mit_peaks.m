@@ -12,7 +12,7 @@ global ecg_mat_puwave
 ecg_mat_puwave = ecg_mat;
 clear ecg_mat;
 global peak_labels_puwave
-peak_labels_puwave = zeros(size(ecg_mat_puwave));
+peak_labels_puwave = ones(size(ecg_mat_puwave)) .* 6;
 peak_labels_puwave(1, annt.P(~isnan(annt.P))) = 1;
 peak_labels_puwave(1, annt.Q(~isnan(annt.Q))) = 2;
 peak_labels_puwave(1, annt.R(~isnan(annt.R))) = 3;
@@ -21,8 +21,8 @@ peak_labels_puwave(1, annt.T(~isnan(annt.T))) = 5;
 
 global crf_pred_lbl
 if strcmp(record_no, 'P20_040d_atest')
-	crf_pred_lbl = load(sprintf('/home/anataraj/NIH-craving/misc_mats/P20_040_crf_lab_peaks.mat'));
-	crf_pred_lbl = crf_pred_lbl.temp(1, [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:length(crf_pred_lbl.temp)]);
+	misc_mat = load(sprintf('/home/anataraj/NIH-craving/misc_mats/P20_040_crf_lab_peaks.mat'));
+	crf_pred_lbl = misc_mat.temp(1, [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:length(misc_mat.temp)]);
 	assert(isequal(size(crf_pred_lbl), size(ecg_mat_puwave)));
 	assert(sum(isnan(crf_pred_lbl)) == 0);
 	assert(sum(isnan(peak_labels_puwave)) == 0);
@@ -38,6 +38,16 @@ if strcmp(record_no, 'P20_040d_atest')
 		end
 		fprintf('%s wave count = %d\n', label_str{i}, ccount);
 	end
+	
+	ecg_test_Y = misc_mat.ts_idx(1, [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:length(misc_mat.ts_idx)]);
+	target_idx = find(misc_mat.ts_idx(1, [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:length(misc_mat.ts_idx)]));
+	confusion_mat = confusionmat(ecg_test_Y(target_idx), crf_pred_lbl(target_idx))
+	confusion_mat = bsxfun(@rdivide, confusion_mat, sum(confusion_mat, 2));
+	confusion_mat2 = confusionmat(ecg_test_Y(target_idx), peak_labels_puwave(target_idx))
+	confusion_mat2 = bsxfun(@rdivide, confusion_mat2, sum(confusion_mat2, 2));
+
+	two_two_confusion_mats(confusion_mat, confusion_mat2)
+	keyboard
 end
 
 global start_time
@@ -222,7 +232,7 @@ for lbl = 1:length(label_str)-1
 		plot(find(idx4), ecg_mat_puwave(1, data_idx(find(idx4))) - 7, sprintf('%s%s', label_clr{lbl}, label_str2{lbl}),...
 		'MarkerSize', 10, 'MarkerFaceColor', label_clr{lbl});
 
-	case {2, 4, 6}
+	case {2, 4}
 		%text(find(idx4), ecg_mat_puwave(1, data_idx(find(idx4))) + 7, label_str2{lbl}, 'FontSize', 20, 'FontWeight', 'Bold',...
 		%								'color', label_clr{lbl});
 		plot(find(idx4), ecg_mat_puwave(1, data_idx(find(idx4))) + 7, sprintf('%s%s', label_str2{lbl}, label_clr{lbl}),...
@@ -231,4 +241,59 @@ for lbl = 1:length(label_str)-1
 	end
 end	
 hold off;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = two_two_confusion_mats(crf_summary_mat, puw_summary_mat)
+
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
+ylim_l = min([min(puw_summary_mat(:)), min(crf_summary_mat(:))]);
+ylim_u = max([max(puw_summary_mat(:)), max(crf_summary_mat(:))]);
+
+[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
+figure('visible', 'on'); set(gcf, 'Position', [70, 10, 1200, 500]);
+set(gcf, 'PaperPosition', [0 0 6 4]);
+set(gcf, 'PaperSize', [6 4]);
+colormap bone;
+
+subplot(1, 2, 1);
+imagesc(puw_summary_mat);
+textStrings = strtrim(cellstr(num2str(puw_summary_mat(:), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(puw_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('PUWave'), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+set(gca, 'XTick', 1:length(label_str));
+set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+set(gca, 'YTick', 1:length(label_str));
+set(gca, 'YTickLabel', label_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Predicted', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Ground', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+
+subplot(1, 2, 2);
+imagesc(crf_summary_mat);
+textStrings = strtrim(cellstr(num2str(crf_summary_mat(:), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(crf_summary_mat(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+title(sprintf('Basic CRF'), 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+set(gca, 'XTick', 1:length(label_str));
+set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+set(gca, 'YTick', 1:length(label_str));
+set(gca, 'YTickLabel', label_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Predicted', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Ground', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 

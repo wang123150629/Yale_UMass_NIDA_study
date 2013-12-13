@@ -4,6 +4,9 @@ dirhea = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirhea));
 dirsig = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirsig));
 dirann = fullfile(pwd, 'ecgpuwave', sprintf('%s/', dirann));
 
+% a = limits('osea20-gcc', 'osea20-gcc', 'osea20-gcc', '100', 'atr', 0)
+% b = sum(~isnan(a.P) + ~isnan(a.Q) + ~isnan(a.R) + ~isnan(a.S) + ~isnan(a.T))
+
 %-----  WL Principal program  ----------------------
 %Detecci�n de puntos significativos en el ECG.
 %
@@ -394,6 +397,7 @@ end
 
 fclose('all');    
 
+%{
 mit_bih_peaks = struct();
 if exist(fullfile(dirsig, sprintf('%s.csv', ecgnr)))
 	ecg_mat = csvread(fullfile(dirsig, sprintf('%s.csv', ecgnr)));
@@ -403,4 +407,5 @@ end
 mit_bih_peaks.ecg_mat = ecg_mat';
 mit_bih_peaks.annt = annt;
 save(fullfile(pwd, 'ecgpuwave', 'annotations', sprintf('%s_%s.mat', ecgnr, anot)), '-struct', 'mit_bih_peaks');
+%}
 

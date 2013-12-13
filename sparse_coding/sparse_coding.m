@@ -61,20 +61,45 @@ for hr1 = 1:size(hr_bins, 1)
 end
 sparse_coding_plots(9, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors, hr_bins, title_str, analysis_id);
 
-[crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
-sparse_coding_plots(16, ecg_data, time_matrix, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
+% [crf_learn_predlbl{1}, learn_clusters{1}] = label_learn_samples(train_alpha, ecg_train_Y, tr_idx, learn_alpha{1}', ln_idx{1});
+% sparse_coding_plots(16, ecg_data, time_matrix, crf_learn_predlbl, learn_clusters, ln_idx, analysis_id);
 
 temp = zeros(1, 5945750);
 filter_size = 10000;
 filter_size = filter_size/2 - 1;
-temp(1, filter_size+tr_idx{1}) = ecg_train_Y{hr1}';
-temp(1, filter_size+ts_idx{1}) = crf_predicted_label';
-temp(1, filter_size+ln_idx{1}) = crf_learn_predlbl{1}';
-assert(sum(temp(1:filter_size)) == 0);
-assert(sum(temp(end-filter_size:end)) == 0);
-save('P20_040_crf_lab_peaks.mat', 'temp');
-%{
+misc_mat = struct();
+misc_mat.temp(1, filter_size+tr_idx{1}) = ecg_train_Y{hr1}';
+misc_mat.temp(1, filter_size+ts_idx{1}) = crf_predicted_label';
+misc_mat.temp(1, filter_size+ln_idx{1}) = crf_learn_predlbl{1}';
+assert(sum(misc_mat.temp(1:filter_size)) == 0);
+assert(sum(misc_mat.temp(end-filter_size:end)) == 0);
+misc_mat.tr_idx = zeros(1, 5945750);
+misc_mat.tr_idx(filter_size+tr_idx{1}) = ecg_train_Y{1};
+misc_mat.ts_idx = zeros(1, 5945750);
+misc_mat.ts_idx(filter_size+ts_idx{1}) = ecg_test_Y{1};
+misc_mat.ln_idx = zeros(1, 5945750);
+misc_mat.ln_idx(filter_size+ln_idx{1}) = -1;
+
 keyboard
+
+save('misc_mats/P20_040_crf_lab_peaks.mat', '-struct', 'misc_mat');
+
+%{
+aa = load('misc_mats/P20_040_crf_lab_peaks.mat');
+filter_size = 10000;
+filter_size = filter_size/2 - 1;
+misc_mat = struct();
+misc_mat.temp = aa.temp;
+assert(isempty(intersect(tr_idx{1}, ts_idx{1})));
+misc_mat.tr_idx = zeros(1, 5945750);
+misc_mat.tr_idx(filter_size+tr_idx{1}) = ecg_train_Y{1};
+misc_mat.ts_idx = zeros(1, 5945750);
+misc_mat.ts_idx(filter_size+ts_idx{1}) = ecg_test_Y{1};
+misc_mat.ln_idx = zeros(1, 5945750);
+misc_mat.ln_idx(filter_size+ln_idx{1}) = -1;
+keyboard
+save('misc_mats/P20_040_crf_lab_peaks.mat', '-struct', 'misc_mat');
+
 write_to_html(analysis_id, subject_id, lambda, 100, first_baseline_subtract, sparse_code_peaks, variable_window, normalize,...
 		add_height, add_summ_diff, add_all_diff, mul_summary_mat, crf_summary_mat, mul_total_errors, crf_total_errors,...
 		data_split, dimm);
@@ -104,6 +129,7 @@ for t = 1:nTestSamples
 	unary_marginals = all_unary_marginals{t};
 	[junk, predicted_label(test_clusters(1, t):test_clusters(2, t), 1)] = max([unary_marginals{:}], [], 1);
 end
+assert(any(isnan(predicted_label)));
 confusion_mat = confusionmat(ecg_test_Y, predicted_label);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

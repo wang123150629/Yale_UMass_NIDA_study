@@ -18,7 +18,7 @@ subject_timestamp = subject_profile.events{event}.timestamp;
 subject_threshold = subject_profile.events{event}.rr_thresholds;
 cut_off_heart_rate = get_project_settings('cut_off_heart_rate');
 
-crf_rr_mat = load('misc_mats/P20_040_crf_lab_peaks.mat');
+load('misc_mats/P20_040_crf_lab_peaks.mat');
 ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp, sprintf('%s_ECG.csv', subject_timestamp)), 1, 0);
 behav_mat = csvread(fullfile(data_dir, subject_id, sprintf('%s_behav.csv', subject_id)), 1, 0);
 summary_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp,...
@@ -48,7 +48,7 @@ for s = 1:size(st_end, 1)
 		fprintf('rr:%d:%d:%0.4f to %d:%d:%0.4f\n', ecg_mat(target_idx(1), 4:6), ecg_mat(target_idx(end), 4:6));
 	end
 
-	crf_rr = find(crf_rr_mat.temp(target_idx) == 3);
+	crf_rr = find(misc_mat.temp(target_idx) == 3);
 	crf_start_end = [crf_rr(1:end-1); crf_rr(2:end)-1]';
 	crf_hr_tmp = crf_start_end(:, 2) - crf_start_end(:, 1) + 1;
 	% crf_hr_tmp = crf_hr_tmp(crf_hr_tmp > cut_off_heart_rate(1) & crf_hr_tmp <= cut_off_heart_rate(2));
