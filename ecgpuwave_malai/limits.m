@@ -112,6 +112,9 @@ if typerec==0,
 	    timeoffset=0;
        end
     end
+	if heasig.gain == 0
+		heasig.gain = 200;
+	end
 end
 
 % ---- Matlab file ----
@@ -273,7 +276,7 @@ while ilat<no_beats-3
        X=sinal(nl,ti+1:tf)';
    end
    
-   
+
 %get signals for processing.
 [Xpa,Xpb,D,F,Der]=lynfilt(index,X,Fs,ns); 
 
@@ -396,16 +399,3 @@ end
 %if res==0 save('fanot','banot'); end
 
 fclose('all');    
-
-%{
-mit_bih_peaks = struct();
-if exist(fullfile(dirsig, sprintf('%s.csv', ecgnr)))
-	ecg_mat = csvread(fullfile(dirsig, sprintf('%s.csv', ecgnr)));
-else
-	[junk, ecg_mat, junk] = textread(fullfile(dirsig, sprintf('%s.txt', ecgnr)), '%d\t%d\t%d');
-end
-mit_bih_peaks.ecg_mat = ecg_mat';
-mit_bih_peaks.annt = annt;
-save(fullfile(pwd, 'ecgpuwave', 'annotations', sprintf('%s_%s.mat', ecgnr, anot)), '-struct', 'mit_bih_peaks');
-%}
-

@@ -1,7 +1,7 @@
 function[learned_feature_params, learned_trans_params] = optimize_feat_trans_params(train_chunks, ecg_train_X, ecg_train_Y, labels)
 
 global l2_penalty
-l2_penalty  = 0.01;
+l2_penalty  = 1e-4;
 global nLabels
 nLabels = length(labels);
 global nFeatures

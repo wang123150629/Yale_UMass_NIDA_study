@@ -22,6 +22,7 @@ case 9, summ_confusion_mats(varargin{:});
 case 14, orig_recon_diff(varargin{:});
 case 15, preprocess_ribbons(varargin{:});
 case 16, gen_set_labels(varargin{:});
+case 17, print_confusion_mats(varargin{:});
 %{
 case 1, dist_bw_complexes();
 case 3, train_test_linear(varargin{:});
@@ -35,6 +36,46 @@ case 12, sparse_heat_maps(varargin{:});
 case 13, incorrect_sample_time_series(varargin{:});
 %}
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = print_confusion_mats(varargin)
+
+global plot_dir;
+global image_format;
+
+title_str = varargin{1};
+analysis_id = varargin{2};
+offset = 2;
+nMatrices = length(varargin(offset+1:end));
+
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+[x, y] = meshgrid(1:length(label_str)); %# Create x and y coordinates for the strings
+
+font_size = get_project_settings('font_size');
+tl_fs = font_size(6);
+
+total_entries = nMatrices*length(label_str)*length(label_str);
+ylim_l = min(reshape(cell2mat(varargin(offset+1:end)), 1, total_entries));
+ylim_u = max(reshape(cell2mat(varargin(offset+1:end)), 1, total_entries));
+
+figure('visible', 'on');
+if length(varargin) > 2
+	set(gcf, 'Position', [70, 900, 1300, 400]);
+else
+	set(gcf, 'Position', [70, 900, 1200, 500]);
+end
+set(gcf, 'PaperPosition', [0 0 6 4]);
+set(gcf, 'PaperSize', [6 4]);
+colormap bone;
+
+for i = 1:nMatrices
+	subplot(1, nMatrices, i);
+	fancy_write_out_mat(varargin{i+offset}, x, y, ylim_l, ylim_u)
+	title(title_str{i}, 'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+end
+
+file_name = sprintf('%s/sparse_coding/%s/comp_conf_mats', plot_dir, analysis_id);
+savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = orig_recon_diff(varargin)
@@ -501,6 +542,31 @@ labelled_set.time_matrix = time_matrix;
 labelled_set.peak_labels = peak_labels;
 labelled_set.idx_for_boundary = idx_for_boundary;
 save(sprintf('%s/sparse_coding/%s/%s_labelled_set.mat', plot_dir, analysis_id(1:7), analysis_id), '-struct', 'labelled_set');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = fancy_write_out_mat(A, x, y, ylim_l, ylim_u)
+
+label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+font_size = get_project_settings('font_size');
+le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+
+imagesc(A);
+textStrings = strtrim(cellstr(num2str(A(:), '%0.2f')));  %# Remove any space padding
+hStrings = text(x(:), y(:), textStrings(:), 'HorizontalAlignment', 'center', 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
+% Choose white or black for the text color of the strings so they can be easily seen over the background color
+textColors = repmat(A(:) < midValue, 1, 3);
+set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
+h = colorbar;
+set(h, 'ylim', [ylim_l, ylim_u]);
+
+set(gca, 'XTick', 1:length(label_str));
+set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+set(gca, 'YTick', 1:length(label_str));
+set(gca, 'YTickLabel', label_str, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+xlabel('Predicted', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+ylabel('Ground', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 
 %{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

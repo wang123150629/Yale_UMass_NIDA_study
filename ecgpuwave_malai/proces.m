@@ -103,12 +103,15 @@ while n<nqrs-1&(ns-iqrs(n))/Fs>500e-3
          
 % ---- Detection of QRS complex position and limits ----
        [QRS1,Qp,Rp,Sp,R2p,QRS2,dermax,Rtype,Sgran]=qrsbound(n,X(bwind+1:ewind),Xpb(bwind+1:ewind),D(bwind+1:ewind),Der(bwind+1:ewind),PKni,prevt,Fs,Kq,Kr,Ks,Krr);
+	% fprintf('%d, %d, %d, %d, %d, %d\n', QRS1, bwind, prevt, n, QRS1-8, QRS1-50);
+
          if ~isempty(QRS1) iqbeg(n)=bwind+QRS1; end
          if ~isempty(Qp) iqpos(n)=bwind+Qp; end
          if ~isempty(Rp) irpos(n)=bwind+Rp; end
          if ~isempty(Sp) ispos(n)=bwind+Sp; end
          if ~isempty(R2p) ir2pos(n)=bwind+R2p; end
          if ~isempty(QRS2) isend(n)=bwind+QRS2; end
+
 
 % ---- P wave detection ----
 [P1,Pp,P2,Ptype]=pbound(n,X(bwind+1:ewind),Xpb(bwind+1:ewind),...
@@ -133,7 +136,7 @@ F(bwind+1:ewind),PKni,Rp,QRS1,prevt,dermax,Fs,Kpb,Kpe);
                   end
              end
          else
-	      if iqbeg(n) > 0
+	      if iqbeg(n) > 0 & iqbeg(n)-ntre_q-nqui_q > 0 & iqbeg(n)-nqui_q < length(X)
 		      Xaux=X(iqbeg(n)-ntre_q-nqui_q:iqbeg(n)-nqui_q);
 		      basel=sum(Xaux)/length(Xaux);
 	      else
@@ -196,7 +199,7 @@ end
              Qamp(n)=X(iqpos(n))-basel;
              AMP.Q(n)=Qamp(n);
          end
-         if ~isempty(Rp)
+         if ~isempty(Rp) & ~isempty(basel)
              Ramp(n)=X(irpos(n))-basel;
              AMP.R(n)=Ramp(n);
          end
@@ -216,7 +219,7 @@ end
 	if ~isempty(Tp2)
 		AMP.T2(n)=X(it2pos(n))-basel;
 	end
-	if ~isempty(Tp)
+	if ~isempty(Tp) & ~isempty(basel)
 		AMP.T(n)=X(itpos(n))-basel;
 	end
 
