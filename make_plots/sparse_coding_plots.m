@@ -23,6 +23,7 @@ case 14, orig_recon_diff(varargin{:});
 case 15, preprocess_ribbons(varargin{:});
 case 16, gen_set_labels(varargin{:});
 case 17, print_confusion_mats(varargin{:});
+case 18, make_slack_plots(varargin{:});
 %{
 case 1, dist_bw_complexes();
 case 3, train_test_linear(varargin{:});
@@ -36,6 +37,67 @@ case 12, sparse_heat_maps(varargin{:});
 case 13, incorrect_sample_time_series(varargin{:});
 %}
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function[] = make_slack_plots(varargin)
+
+global plot_dir;
+global image_format;
+
+labels_A = varargin{1};
+labels_B = varargin{2};
+matching_pm = varargin{3};
+disp_flag = varargin{4};
+legend_str = varargin{5};
+xlabel_str = varargin{6};
+record_no = varargin{7};
+analysis_id = varargin{8};
+
+b_entries = length(labels_B);
+labels_B_idx = find(labels_B);
+labels_B_only = labels_B(labels_B_idx);
+nLabels = length(unique(labels_B_only));
+assert(matching_pm > 0);
+switch xlabel_str
+case 'Predictions', tit_str = 'Precision';
+case 'Ground-truth', tit_str = 'Recall';
+otherwise, error('Invalid X label string!');
+end
+slack_range = -1 * matching_pm:matching_pm;
+slack_results = NaN(length(slack_range), nLabels);
+
+for s = 1:length(slack_range)
+	best_match = [];
+	shifted_labels_B = zeros(1, b_entries);
+	assert(min(labels_B_idx+slack_range(s)) >= 1);
+	assert(max(labels_B_idx+slack_range(s)) <= b_entries);
+	shifted_labels_B(labels_B_idx+slack_range(s)) = labels_B_only;
+
+	best_match = matching_driver(labels_A, shifted_labels_B, matching_pm, nLabels, disp_flag);
+	if slack_range(s) == 0
+		temp = confusionmat(labels_A(find(labels_A)), labels_B_only);
+		assert(isequal(best_match, temp));
+	end
+
+	best_match = bsxfun(@rdivide, best_match, sum(best_match, 2));
+	slack_results(s, :) = diag(best_match);
+end
+assert(all(~isnan(slack_results(:))));
+
+figure(); set(gcf, 'Position', get_project_settings('figure_size'));
+plot(slack_results, 'o-', 'LineWidth', 2);
+grid on;
+xlabel(sprintf('%s offset by', xlabel_str));
+ylabel('Accuracy'); ylim([min(slack_results(:)) - 0.01, 1]);
+title(sprintf('%s, Record %s', tit_str, get_project_settings('strrep_subj_id', record_no)));
+set(gca, 'XTick', 1:length(slack_range));
+set(gca, 'XTickLabel', slack_range);
+legend(legend_str, 'Location', 'SouthEast', 'Orientation', 'Horizontal');
+xlim([1, length(slack_range)]);
+
+file_name = fullfile(plot_dir, 'sparse_coding', 'slack', sprintf('%s_%s_%s_peaks', analysis_id, record_no,...
+			get_project_settings('strrep_subj_id', xlabel_str)));
+savesamesize(gcf, 'file', file_name, 'format', image_format);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = print_confusion_mats(varargin)

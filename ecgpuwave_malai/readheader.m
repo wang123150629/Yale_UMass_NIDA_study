@@ -39,24 +39,30 @@ end
 [s1 s]=strtok(s,pp);
 heasig.nsamp=str2num(s1);
 
+hour2 = 0;
+min2 = 0;
+sec2 = 0;
 if ~isempty(deblank(s))
    [s1 s]=strtok(s,':');
-   hour=str2num(s1);
+   hour2=str2num(s1);
    [s1 s]=strtok(s,':');
-   min=str2num(s1);
+   min2=str2num(s1);
    [s1 s]=strtok(s,pp);
-   sec=str2num(s1);  
+   sec2=str2num(s1);  
 end
 
+year2 = 0;
+month2 = 0;
+day2 = 0;
 if ~isempty(deblank(s))
    [s1 s]=strtok(s,'/');
-   month=str2num(s1);
+   month2=str2num(s1);
    [s1 s]=strtok(s,'/');
-   day=str2num(s1);
+   day2=str2num(s1);
    [s1 s]=strtok(s,pp);
-   year=str2num(s1);  
+   year2=str2num(s1);  
 end
-if exist('hour','var') heasig.date=datenum(year,month,day,hour,min,sec); end
+if exist('hour2','var') heasig.date=datenum(year2,month2,day2,hour2,min2,sec2); end
 
 % default values
 for i=1:heasig.nsig

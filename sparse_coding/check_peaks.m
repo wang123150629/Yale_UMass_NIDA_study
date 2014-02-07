@@ -1,7 +1,7 @@
 function[] = check_peaks(varargin)
 
 % For P20_040_1_3pm_chunk was originally grabbed from timestamps [13.0000   14.0000   56.4360] to [15.0000   54.0000   16.4360]
-% check_peaks('P20_040_cocaine_time');
+% check_peaks('P20_040_grnd_trth');
 % old; check_peaks('P20_040_1_3pm_chunk');
 % old: check_peaks('P20_048_new_labels');
 

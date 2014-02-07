@@ -10,19 +10,8 @@ h = h / sum(h);
 
 ecg_mat = csvread(fullfile(data_dir, subject_id, subject_sensor, subject_timestamp, sprintf('%s_ECG.csv', subject_timestamp)), 1, 0);
 ecg_mat = ecg_mat(:, end);
-% ecg_mat = ecg_mat - conv(ecg_mat, h, 'same');
-% ecg_mat = ecg_mat(filter_size/2:end-filter_size/2);
-% plot(ecg_mat)
 
 % I am only choosing part of the ECG data from cocaine day since the parts with signal dropouts are causing the ECGPUWave toolboxes to break
-
-% temp = ecg_mat(1.919*10^6+2000:1.919*10^6+4000, 7); % good results but very small chunk
-% temp = ecg_mat(:, 7); % crap, only 39,201 peaks all over the place though
-temp = ecg_mat([1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:size(ecg_mat, 1)]);
-% temp = ecg_mat(1.881e+6:1.881e+6+2500); % good results but very small chunk
-plot(temp)
-
-keyboard
-
-csvwrite(sprintf('/home/anataraj/NIH-craving/ecgpuwave/osea20-gcc/P20_040d.csv'), temp);
+magic_idx = get_project_settings('magic_idx', subject_id);
+csvwrite(sprintf('/home/anataraj/NIH-craving/ecgpuwave/osea20-gcc/P20_040d.csv'), ecg_mat(magic_idx));
 

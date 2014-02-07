@@ -7,6 +7,8 @@ case 'data'
 	out = fullfile(pwd, 'ecg_data');
 case 'results'
 	out = fullfile(pwd, 'results');
+case 'annotations'
+	out = fullfile(pwd, 'ecgpuwave', 'annotations');
 case 'log'
 	out = fullfile(pwd, 'log');
 case 'pdf_result_location'
@@ -33,6 +35,11 @@ case 'raw_ecg_mat_time_res'
 	out = 250;
 case 'summ_mat_time_res'
 	out = 60;
+case 'clusters_apart'
+	out = 100;
+case 'magic_idx'
+	assert(strcmp(varargin{1}, 'P20_040'));
+	out = [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:5945750];
 case 'event_window_length'
 	out = 5; % in minutes = 5 x 60 = 300 seconds
 case 'strrep_subj_id'

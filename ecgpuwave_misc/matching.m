@@ -6,6 +6,18 @@ cluster_conf_mat = zeros(nLabels, nLabels);
 appended_pred_lbl = [pred_l_lbl, repmat(dummy_var, 1, length(grnd_t_lbl))];
 appended_grnd_lbl = [grnd_t_lbl, repmat(dummy_var, 1, length(pred_l_lbl))];
 
+if disp_flag
+	fprintf('Ground truth loc: ')
+	dispf('%d ', grnd_t_loc)
+	fprintf('Predicted loc:    ')
+	dispf('%d ', pred_l_loc)
+
+	fprintf('Ground truth: ')
+	dispf('%d ', grnd_t_lbl)
+	fprintf('Predicted:    ')
+	dispf('%d ', pred_l_lbl)
+end
+
 adjacency_mat = abs(repmat(grnd_t_loc', 1, length(pred_l_loc)) - repmat(pred_l_loc, length(grnd_t_loc), 1));
 assert(isnumeric(adjacency_mat));
 dummy_mat = eye(length(grnd_t_loc)) .* (matching_pm + 1);
@@ -15,10 +27,19 @@ dummy_mat = eye(length(pred_l_loc)) .* (matching_pm + 1);
 dummy_mat(dummy_mat == 0) = Inf;
 dummy_mat = [dummy_mat, zeros(length(pred_l_loc), length(grnd_t_loc))];
 adjacency_mat = [adjacency_mat; dummy_mat];
+adjacency_mat(adjacency_mat > matching_pm + 1) = Inf;
+
+if disp_flag
+	adjacency_mat
+end
 
 [match_mat, cost] = Hungarian(adjacency_mat);
 assert(all(sum(match_mat, 1)));
 assert(all(sum(match_mat, 2)));
+
+if disp_flag
+	print_mat(match_mat, appended_grnd_lbl, appended_pred_lbl, 'Predicted');
+end
 
 % wiping out the fourth quadrant
 temp_mat = ones(size(match_mat));
@@ -35,17 +56,6 @@ for s = 1:length(appended_pred_lbl)
 end
 
 if disp_flag
-	fprintf('Ground truth loc: ')
-	dispf('%d ', grnd_t_loc)
-	fprintf('Predicted loc:    ')
-	dispf('%d ', pred_l_loc)
-
-	fprintf('Ground truth: ')
-	dispf('%d ', grnd_t_lbl)
-	fprintf('Predicted:    ')
-	dispf('%d ', pred_l_lbl)
-
-	print_mat(match_mat, appended_grnd_lbl, appended_pred_lbl, 'Predicted');
 	print_mat(cluster_conf_mat, 1:nLabels, 1:nLabels, 'Predicted label');
 end
 

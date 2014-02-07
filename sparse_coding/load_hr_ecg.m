@@ -7,6 +7,7 @@ function[train_alpha, ecg_train_Y, tr_idx, test_alpha,...
 results_dir = get_project_settings('results');
 
 window_size = 25;
+clusters_apart = get_project_settings('clusters_apart');
 % Checking if window size is odd
 assert(mod(window_size, 2) > 0);
 tr_partition = 50;
@@ -16,17 +17,18 @@ h = fspecial('gaussian', [1, filter_size], 150);
 h = h / sum(h);
 time_matrix = [];
 
-if strcmp(subject_id, 'P20_040')
-	% New file : Six labels P, Q, R, S, T, U - Unknown; only chunk of cocaine day from 1 to 3pm
-	% New file : Six labels P, Q, R, S, T, U - Unknown; the whole cocaine day
-	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_cocaine_time.mat', subject_id)));
-	% load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
-
-	% The last entry is a pair of empty ""
-	% time_matrix = time_matrix(1, 1:end-1);
-	% time_matrix = time_matrix(1, filter_size/2:end-filter_size/2);
-else
-	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_cocaine_time.mat', subject_id)));
+% P20_040 - Six labels P, Q, R, S, T, U - Unknown; only chunk of cocaine day from 1 to 3pm
+% load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_new_labels.mat', subject_id)));
+% P20_040 - New file : Six labels P, Q, R, S, T, U - Unknown; the whole cocaine day. Refer to check_peaks.m
+% QTDB Records - Labels are matched as per ECGPUwave predictions. Refer to qtdb_subj.m
+load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_grnd_trth.mat', subject_id)));
+% The last entry is a pair of empty ""
+% time_matrix = time_matrix(1, 1:end-1);
+% time_matrix = time_matrix(1, filter_size/2:end-filter_size/2);
+switch subject_id
+case 'P20_040'
+	magic_idx = get_project_settings('magic_idx', subject_id);
+	labeled_peaks = labeled_peaks(:, magic_idx);
 end
 
 % Reading off data from the interface file
@@ -39,7 +41,7 @@ else
 end
 ecg_data = ecg_data(filter_size/2:end-filter_size/2);
 
-peak_idx = labeled_peaks(2, :) > 0;
+peak_idx = labeled_peaks(3, :) > 0;
 peak_idx = peak_idx(filter_size/2:end-filter_size/2);
 peak_idx(1, [1:window_size, end-window_size:end]) = 0;
 
@@ -98,7 +100,7 @@ for hr1 = 1:size(hr_bins, 1)
 	% Training instances. Finding which of the hand labelled peaks fall within the valid HR range
 	valid_hr_idx = estimated_hr >= hr_bins(hr1, 1) & estimated_hr <= hr_bins(hr1, 2);
 	valid_hr_idx = find(valid_hr_idx & labeled_peaks_idx);
-	valid_clusters = [0, find(diff(valid_hr_idx) > 100)];
+	valid_clusters = [0, find(diff(valid_hr_idx) > clusters_apart)];
 
 	switch partition_train_set
 	case 1, ordered_valid_clusters = 1:length(valid_clusters);
@@ -121,14 +123,14 @@ for hr1 = 1:size(hr_bins, 1)
 		tr_temp_idx = [tr_temp_idx, valid_hr_idx(valid_clusters(train_clusters(tr))+1:valid_clusters(train_clusters(tr)+1))];
 	end
 	tr_idx{hr1} = sort(tr_temp_idx); % valid_hr_idx(1:floor(length(valid_hr_idx) * tr_partition / 100));
-	assert(isequal(sum(diff(tr_idx{hr1}) > 100)+1, length(train_clusters)));
+	assert(isequal(sum(diff(tr_idx{hr1}) > clusters_apart)+1, length(train_clusters)));
 
 	ts_temp_idx = [];
 	for ts = 1:length(test_clusters)
 		ts_temp_idx = [ts_temp_idx, valid_hr_idx(valid_clusters(test_clusters(ts))+1:valid_clusters(test_clusters(ts)+1))];
 	end
 	ts_idx{hr1} = sort(ts_temp_idx); % valid_hr_idx(floor(length(valid_hr_idx) * tr_partition / 100)+1:end);
-	assert(isequal(sum(diff(ts_idx{hr1}) > 100)+1, length(test_clusters)));
+	assert(isequal(sum(diff(ts_idx{hr1}) > clusters_apart)+1, length(test_clusters)));
 
 	assert(isequal(length(tr_idx{hr1}) + length(ts_idx{hr1}), length(valid_hr_idx)));
 
