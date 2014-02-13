@@ -188,7 +188,7 @@ for hr1 = 1:size(hr_bins, 1)
 		param.mode = 2;
 
 		D = mexTrainDL(ecg_learn, param);
-		sparse_coding_plots(2, param.K, D, analysis_id);
+		% sparse_coding_plots(2, param.K, D, analysis_id);
 
 		learn_alpha{hr1} = mexLasso(ecg_learn, D, param);
 		train_alpha{hr1} = mexLasso(ecg_train, D, param);

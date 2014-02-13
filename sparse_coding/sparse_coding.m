@@ -115,9 +115,15 @@ matching_total_errors = sum(matching_confusion_mat(:)) - sum(diag(matching_confu
 pred_crf_test_labels = zeros(1, (length(ecg_data)+2*filter_size+1));
 pred_crf_test_labels(filter_size+ts_idx{1}) = crf_predicted_label;
 if give_it_some_slack
+	%{
 	sparse_coding_plots(18, ground_truth_test_labels, pred_crf_test_labels, matching_pm,...
 		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Predictions', grnd_trth_subject_id, analysis_id);
 	sparse_coding_plots(18, pred_crf_test_labels, ground_truth_test_labels, matching_pm,...
+		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Ground-truth', grnd_trth_subject_id, analysis_id);
+	%}
+	sparse_coding_plots(19, ground_truth_test_labels, pred_crf_test_labels, 50,...
+		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Predictions', grnd_trth_subject_id, analysis_id);
+	sparse_coding_plots(19, pred_crf_test_labels, ground_truth_test_labels, 50,...
 		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Ground-truth', grnd_trth_subject_id, analysis_id);
 end
 

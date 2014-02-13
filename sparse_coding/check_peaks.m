@@ -1,9 +1,9 @@
 function[] = check_peaks(varargin)
 
-% For P20_040_1_3pm_chunk was originally grabbed from timestamps [13.0000   14.0000   56.4360] to [15.0000   54.0000   16.4360]
 % check_peaks('P20_040_grnd_trth');
 % old; check_peaks('P20_040_1_3pm_chunk');
 % old: check_peaks('P20_048_new_labels');
+% For P20_040_1_3pm_chunk was originally grabbed from timestamps [13.0000   14.0000   56.4360] to [15.0000   54.0000   16.4360]
 
 close all;
 
@@ -110,9 +110,11 @@ S.pk_pushh = uicontrol('Style', 'pushbutton', 'String', 'LABEL PEAKS',...
 		  'Position', [20 y_location-90 100 20],...
 		  'Callback', {@monitor_clicks, S});
 
+%{
 S.un_pushh = uicontrol('Style', 'pushbutton', 'String', 'UNDO',...
 		  'Position', [20 y_location-120 100 20],...
 		  'Callback', {@undo_peaks, S});
+%}
 
 S.sv_pushh = uicontrol('Style', 'pushbutton', 'String', 'SAVE LABELS',...
 		  'Position', [20 y_location-150 100 20],...
@@ -174,7 +176,6 @@ plot_data();
 function[] = left_shift_start_time(varargin)
 
 global start_time;
-global ecg_mat;
 global window_length;
 
 S = varargin{3};  % Get the structure.
@@ -219,7 +220,21 @@ global start_time;
 
 time = clock();
 rand('twister', sum(100 * clock));
-start_time = randi(length(ecg_mat), 1);
+start_time = randi(length(ecg_mat), 1)
+
+results_dir = get_project_settings('results');
+
+global ecg_peaks;
+global indicator_matrix;
+global time_matrix;
+assert(isequal(size(indicator_matrix, 2), size(ecg_peaks, 2)));
+assert(isequal(size(indicator_matrix, 2), size(ecg_mat, 1)));
+labeled_peaks = [ecg_mat'; ecg_peaks; indicator_matrix];
+file_name{1} = 'P20_040_140209';
+peaks_information = struct();
+peaks_information.labeled_peaks = labeled_peaks;
+peaks_information.time_matrix = time_matrix;
+save(fullfile(results_dir, 'labeled_peaks', sprintf('%s.mat', file_name{1})), '-struct', 'peaks_information');
 
 plot_data();
 

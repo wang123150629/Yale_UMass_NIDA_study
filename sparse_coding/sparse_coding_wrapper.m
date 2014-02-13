@@ -36,7 +36,7 @@ normalize = -1;
 add_height = -1;
 add_summ_diff = false;
 add_all_diff = false;
-give_it_some_slack = false;
+give_it_some_slack = true;
 
 switch pipeline
 case 13
