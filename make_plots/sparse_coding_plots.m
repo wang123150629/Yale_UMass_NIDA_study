@@ -693,8 +693,8 @@ midValue = mean(get(gca, 'CLim'));  %# Get the middle value of the color range
 % Choose white or black for the text color of the strings so they can be easily seen over the background color
 textColors = repmat(A(:) < midValue, 1, 3);
 set(hStrings, {'Color'}, num2cell(textColors, 2));  %# Change the text colors
-h = colorbar;
-set(h, 'ylim', [ylim_l, ylim_u]);
+% h = colorbar;
+% set(h, 'ylim', [ylim_l, ylim_u]);
 
 set(gca, 'XTick', 1:length(label_str));
 set(gca, 'XTickLabel', label_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
