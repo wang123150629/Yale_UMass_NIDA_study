@@ -4,8 +4,8 @@ matching_confusion_mat = zeros(nLabels, nLabels);
 nWins = 1;
 clusters_apart = get_project_settings('clusters_apart');
 
-assert(all(unique(vector_a) <= 6) & all(unique(vector_a) >= 0));
-assert(all(unique(vector_b) <= 6) & all(unique(vector_b) >= 0));
+assert(all(unique(vector_a) >= 0) & all(unique(vector_a) <= 6));
+assert(all(unique(vector_b) >= 0) & all(unique(vector_b) <= 5));
 vector_a_idx = find(vector_a);
 vector_b_idx = find(vector_b);
 

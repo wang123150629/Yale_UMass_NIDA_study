@@ -6,8 +6,6 @@ results_dir = get_project_settings('results');
 
 global record_no
 record_no = rec_no;
-global target_rec
-target_rec = 'P20_040';
 global prblm_start_time
 prblm_start_time = 0;
 global start_time
@@ -415,45 +413,4 @@ for lbl = 1:length(label_str)
 	clear idxx;
 end
 hold off;
-
-%{
-label_str2 = {'o', '+', 's', '*', 'd', '+'};
-
-[rr, rs] = rrextract(raw_ecg_data(data_idx)', 250, 0.05);
-rr_start_end = [rr(1:end-1); rr(2:end)-1]';
-heart_rate = (1000 * 60) ./ (4 .* mean(rr_start_end(:, 2) - rr_start_end(:, 1)));
-text(900, max(raw_ecg_data(data_idx)) + 10, sprintf('HR=%0.2f', heart_rate));
-
-grid on;
-win_puwave_labels = puwave_labels(1, data_idx);
-
-if strcmp(record_no(1:length(target_rec)), target_rec) | strcmp(record_no(1:length(target_rec)), target_rec)
-	win_peak_labels_crf = crf_labels(1, data_idx);
-end
-
-for lbl = 1:length(label_str)-1
-	clear idx3;
-	idx3 = win_puwave_labels == lbl;
-	text(find(idx3), raw_ecg_data(1, data_idx(find(idx3))), label_str{lbl}, 'FontSize', 16, 'FontWeight', 'Bold',...
-									'color', label_clr{lbl});
-	if strcmp(record_no(1:length(target_rec)), target_rec) | strcmp(record_no(1:length(target_rec)), target_rec)
-		clear idx4;
-		idx4 = win_peak_labels_crf == lbl;
-
-		switch lbl
-		case {1, 3, 5}
-			%text(find(idx4), raw_ecg_data(1, data_idx(find(idx4))) - 7, label_str2{lbl}, 'FontSize', 20,...
-			% 'FontWeight', 'Bold', 'color', label_clr{lbl});
-			plot(find(idx4), raw_ecg_data(1, data_idx(find(idx4))) - 7, sprintf('%s%s', label_str2{lbl}, label_clr{lbl}),...
-			'MarkerSize', 10, 'MarkerFaceColor', label_clr{lbl});
-
-		case {2, 4}
-			%text(find(idx4), raw_ecg_data(1, data_idx(find(idx4))) + 7, label_str2{lbl}, 'FontSize', 20,...
-			% 'FontWeight', 'Bold', 'color', label_clr{lbl});
-			plot(find(idx4), raw_ecg_data(1, data_idx(find(idx4))) + 7, sprintf('%s%s', label_str2{lbl}, label_clr{lbl}),...
-			'MarkerSize', 15);
-		end
-	end
-end	
-%}
 

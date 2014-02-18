@@ -2,19 +2,18 @@ function[] = check_peaks(varargin)
 
 % check_peaks('P20_040_grnd_trth');
 % old; check_peaks('P20_040_1_3pm_chunk');
-% old: check_peaks('P20_048_new_labels');
+% old: check_peaks('P20_048_140217');
 % For P20_040_1_3pm_chunk was originally grabbed from timestamps [13.0000   14.0000   56.4360] to [15.0000   54.0000   16.4360]
 
 close all;
 
-subject_id = 'P20_040';
-peak_thres = 0.02;
-event = 1;
-
-subject_profile = subject_profiles(subject_id);
-
 data_dir = get_project_settings('data');
 results_dir = get_project_settings('results');
+
+subject_id = 'P20_048';
+peak_thres = 0.02;
+event = 1;
+subject_profile = subject_profiles(subject_id);
 subject_sensor = subject_profile.events{event}.sensor;
 subject_timestamp = subject_profile.events{event}.timestamp;
 event_label = subject_profile.events{event}.label;
@@ -55,7 +54,7 @@ else
 	indicator_matrix(1, maxtab(:, 1)) = 100;
 	indicator_matrix(1, mintab(:, 1)) = 100;
 
-	time_matrix = ecg_mat_all(:, 4:6)';
+	time_matrix = round(ecg_mat_all(:, 4:6))';
 	time_matrix = sprintf('%d:%d:%d*', time_matrix);
 	time_matrix = regexp(time_matrix, '*', 'split');
 end
@@ -201,10 +200,13 @@ assert(isequal(size(indicator_matrix, 2), size(ecg_peaks, 2)));
 assert(isequal(size(indicator_matrix, 2), size(ecg_mat, 1)));
 labeled_peaks = [ecg_mat'; ecg_peaks; indicator_matrix];
 
+%{
 prompt = {'Enter file name(without .mat) ...'};
 dlg_title = 'Save as';
 num_lines = 1;
 file_name = inputdlg(prompt, dlg_title, num_lines);
+%}
+file_name{1} = 'P20_048_140217';
 
 peaks_information = struct();
 peaks_information.labeled_peaks = labeled_peaks;
@@ -220,10 +222,13 @@ global start_time;
 
 time = clock();
 rand('twister', sum(100 * clock));
-start_time = randi(length(ecg_mat), 1)
+start_time = randi(length(ecg_mat), 1);
 
+%{
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Included to make my life less miserable
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 results_dir = get_project_settings('results');
-
 global ecg_peaks;
 global indicator_matrix;
 global time_matrix;
@@ -235,6 +240,7 @@ peaks_information = struct();
 peaks_information.labeled_peaks = labeled_peaks;
 peaks_information.time_matrix = time_matrix;
 save(fullfile(results_dir, 'labeled_peaks', sprintf('%s.mat', file_name{1})), '-struct', 'peaks_information');
+%}
 
 plot_data();
 
@@ -337,7 +343,6 @@ set(ax(2), 'xlim', [0, length(data_idx)]);
 set(ax(2), 'ylim', [1, nIndicators]);
 set(ax(2), 'YTick', 1:nIndicators);
 set(ax(2), 'YTickLabel', {'P', 'Q', 'R', 'S', 'T', 'U'}, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-
 set(ax(2), 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]),...
 					'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
 grid on;

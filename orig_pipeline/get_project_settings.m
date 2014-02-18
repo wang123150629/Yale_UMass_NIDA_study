@@ -23,6 +23,8 @@ case 'font_size'
 	out = [12, 20, 20, 12, 12, 20];
 case 'how_many_sec_per_win'
 	out = 30;
+case 'filter_size'
+	out = 10000;
 case 'how_many_sec_to_slide'
 	out = 1;
 case 'figure_size'

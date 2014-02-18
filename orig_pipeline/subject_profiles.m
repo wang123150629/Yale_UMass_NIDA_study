@@ -343,6 +343,44 @@ case 'P20_094'
 	subject_profile.events{1, 4}.end_time = [13, 22];
 	subject_profile.events{1, 4}.scaling_factor = 0.004882812500000;
 
+case 'P20_098'
+	subject_profile.ylim = [-5, 6];
+	subject_profile.events = {};
+
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 1}.timestamp = sprintf('2014_01_10-07_39_55');
+	subject_profile.events{1, 1}.rr_thresholds = 0.02;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = [0:4];
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+	subject_profile.events{1, 1}.scaling_factor = 0.001220703125;
+
+	subject_profile.events{1, 2} = struct();
+	subject_profile.events{1, 2}.label = sprintf('exercise');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 2}.timestamp = sprintf('2014_01_08-14_44_50');
+	subject_profile.events{1, 2}.rr_thresholds = 0.02;
+	subject_profile.events{1, 2}.file_name = 'exer';
+	subject_profile.events{1, 2}.exp_sessions = 1;
+	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.start_time = [15, 08];
+	subject_profile.events{1, 2}.end_time = [15, 28];
+	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
+
+	subject_profile.events{1, 3} = struct();
+	subject_profile.events{1, 3}.label = sprintf('exercise 2');
+	subject_profile.events{1, 3}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 3}.timestamp = sprintf('2014_01_13-14_12_32');
+	subject_profile.events{1, 3}.rr_thresholds = 0.02;
+	subject_profile.events{1, 3}.file_name = 'exer2';
+	subject_profile.events{1, 3}.exp_sessions = 1;
+	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.start_time = [15, 00];
+	subject_profile.events{1, 3}.end_time = [15, 20];
+	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
+
 case 'Malai_zephyr_drift_test'
 	subject_profile.ylim = [-4.5, 6];
 	subject_profile.events = {};

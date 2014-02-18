@@ -26,11 +26,21 @@ test_annotation_file = 'wqrs';
 % Use annotations and get peak labels
 % Verified that the annotations wqrs as well as limits are both referring to the same signal/lead
 
-load(fullfile('ecgpuwave/osea20-gcc', sprintf('nsrdb_%s.mat', record_no)));
-% matlab_label_assgnmnts = limits('osea20-gcc', 'osea20-gcc', 'osea20-gcc', record_no, grnd_annotation_file, record_type);
-% matlab_label_assgnmnts2 = limits('osea20-gcc', 'osea20-gcc', 'osea20-gcc', record_no, test_annotation_file, record_type);
-% [junk, ecg_mat, junk] = textread(sprintf('ecgpuwave/osea20-gcc/%s.csv', record_no), '%d %d %d');
-% [maxtab, mintab] = peakdet(ecg_mat, peak_thres);
+if exist(fullfile('ecgpuwave/osea20-gcc', sprintf('nsrdb_%s.mat', record_no)))
+	load(fullfile('ecgpuwave/osea20-gcc', sprintf('nsrdb_%s.mat', record_no)));
+else
+	matlab_label_assgnmnts = limits('osea20-gcc', 'osea20-gcc', 'osea20-gcc', record_no, grnd_annotation_file, record_type);
+	[junk, ecg_mat, junk] = textread(sprintf('ecgpuwave/osea20-gcc/%s.csv', record_no), '%d %d %d');
+	[maxtab, mintab] = peakdet(ecg_mat, peak_thres);
+	nsrdb_info = struct();
+	nsrdb_info.matlab_label_assgnmnts = matlab_label_assgnmnts;
+	nsrdb_info.ecg_mat = ecg_mat;
+	nsrdb_info.maxtab = maxtab;
+	nsrdb_info.mintab = mintab;
+	save(fullfile('ecgpuwave/osea20-gcc', sprintf('nsrdb_%s.mat', record_no)), '-struct', 'nsrdb_info');
+end
+
+keyboard
 
 ground_truth_locations = [matlab_label_assgnmnts.P, matlab_label_assgnmnts.Q, matlab_label_assgnmnts.R,...
 			  matlab_label_assgnmnts.S, matlab_label_assgnmnts.T];
@@ -146,4 +156,5 @@ end
 %}
 
 % make_csv_for_puwave();
+% matlab_label_assgnmnts2 = limits('osea20-gcc', 'osea20-gcc', 'osea20-gcc', record_no, test_annotation_file, record_type);
 

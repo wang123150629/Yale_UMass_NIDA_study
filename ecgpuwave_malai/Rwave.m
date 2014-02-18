@@ -82,7 +82,11 @@ if (Xpb(PKni)<0)|(ydi>0&ydd<0&(kpi*ydi<(-1)*ydd|kpi*(-1)*ydd<ydi))
             ncero=zerocross(Daux);
             ncero=mpici-ncero+1;
 	    if ~isempty(ncero) return; end
-            Ir=find(I<ncero);
+	    if ~isempty(ncero)
+	            Ir=find(I<ncero);
+	    else
+		    Ir=[];
+	    end
 	    if ~isempty(Ir)
 		 mpic=I(Ir(length(Ir)));
                  if (~((1+perc)*abs(ydi)>abs(D(mpic))&(1-perc)*abs(ydi)<abs(D(mpic))))
@@ -155,7 +159,12 @@ if (type==3)
          ncero=zerocross(Daux);
   	 if isempty(ncero) return; end
  	 ncero=mpicd+ncero-1;
-         Ir=find(I>ncero); mpda=I(Ir(1));
+         Ir=find(I>ncero);
+	 if ~isempty(Ir)
+		mpda=I(Ir(1));
+	 else
+		mpda=[];
+	 end
          if (ncero-PKni)/Fs>150e-3|(-1)*D(mpda)<ydd/10
             Sgran=1;
          else Rp=ncero;

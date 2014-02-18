@@ -1,4 +1,4 @@
-1. Download data from scp -r anataraj@none.cs.umass.edu:/srv/data/aparate/yale-subjects/P20_hhh .
+1. Download data from scp -r anataraj@none.cs.umass.edu:/srv/data/aparate/yale-subjects/P20_RWSN_inpnt/P20_hhh .
 1a Phone data is located at scp -r anataraj@none.cs.umass.edu:/nfs/none/users4/aparate/mhealth-data/yale/P20_hhh/ecg .
 
 2. Rename 'Sensor k' folders within the subject directory as 'Sensor_k'
@@ -7,9 +7,7 @@
 	- Take a look at the output and figure out what directories to keep and what to move to 'others' directory
 	- You will need the study_calendar from Ed OR the start and end timestamps of all important sessions
 
-4. Run 'bash format_csv_files.sh P20_hhh ECG' and 'bash format_csv_files.sh P20_hhh Summary'
-	- This will reformat all the target 2013_* folders within each Sensor_k folders
-
+4. Run 'bash format_csv_files.sh P20_hhh ECG' and NOT NECESSARY --> 'bash format_csv_files.sh P20_hhh Summary'
 	- This will reformat all the target 2013_* folders within each Sensor_k folders
 
 5. Open P20_hhh_UMASS.xlsx
