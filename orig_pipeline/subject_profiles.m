@@ -45,6 +45,45 @@ raw_ecg.actual_ss = 6;
 raw_ecg.ecg = 7;
 
 switch subject_id
+case 'Malai_zephyr_drift_test'
+	subject_profile.ylim = [-4.5, 6];
+	subject_profile.events = {};
+
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('central');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_100');
+	subject_profile.events{1, 1}.timestamp = sprintf('2013_11_04_16_24_33');
+	subject_profile.events{1, 1}.rr_thresholds = 0.05;
+	subject_profile.events{1, 1}.file_name = 'central';
+	subject_profile.events{1, 1}.exp_sessions = 1;
+	subject_profile.events{1, 1}.dosage_levels = 0;
+	subject_profile.events{1, 1}.start_time = [16, 24, 52];
+	subject_profile.events{1, 1}.end_time = [16, 29, 52];
+	subject_profile.events{1, 1}.scaling_factor = 0.004882812500000;
+
+	subject_profile.events{1, 2} = struct();
+	subject_profile.events{1, 2}.label = sprintf('right');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_100');
+	subject_profile.events{1, 2}.timestamp = sprintf('2013_11_04_16_24_33');
+	subject_profile.events{1, 2}.rr_thresholds = 0.05;
+	subject_profile.events{1, 2}.file_name = 'right';
+	subject_profile.events{1, 2}.exp_sessions = 1;
+	subject_profile.events{1, 2}.dosage_levels = 0;
+	subject_profile.events{1, 2}.start_time = [16, 30, 52];
+	subject_profile.events{1, 2}.end_time = [16, 36, 1];
+	subject_profile.events{1, 2}.scaling_factor = 0.004882812500000;
+
+	subject_profile.events{1, 3} = struct();
+	subject_profile.events{1, 3}.label = sprintf('bottom');
+	subject_profile.events{1, 3}.sensor = sprintf('Sensor_100');
+	subject_profile.events{1, 3}.timestamp = sprintf('2013_11_04_16_24_33');
+	subject_profile.events{1, 3}.rr_thresholds = 0.05;
+	subject_profile.events{1, 3}.file_name = 'bottom';
+	subject_profile.events{1, 3}.exp_sessions = 1;
+	subject_profile.events{1, 3}.dosage_levels = 0;
+	subject_profile.events{1, 3}.start_time = [16, 36, 33];
+	subject_profile.events{1, 3}.end_time = [16, 42, 11];
+	subject_profile.events{1, 3}.scaling_factor = 0.004882812500000;
 case 'P20_036'
 	subject_profile.ylim = [-3, 6];
 	subject_profile.events = cell(1, 1);
@@ -126,7 +165,7 @@ case 'P20_060'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'exer';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	subject_profile.events{1, 2}.start_time = [18, 00];
 	subject_profile.events{1, 2}.end_time = [18, 15];
 	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
@@ -138,7 +177,7 @@ case 'P20_060'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'mph2';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [11, 01];
 	subject_profile.events{1, 3}.end_time = [12, 30];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
@@ -163,7 +202,7 @@ case 'P20_061'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'acti';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	% subject normally exercised between 3 and 7pm. No exact days!
 	% I am treating this data as other activity not necessarily exercise
 	subject_profile.events{1, 2}.start_time = [15, 00];
@@ -178,7 +217,7 @@ case 'P20_061'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'exer';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [16, 55];
 	subject_profile.events{1, 3}.end_time = [17, 20];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
@@ -195,7 +234,7 @@ case 'P20_061'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [09, 52];
 	subject_profile.events{1, 3}.end_time = [12, 22];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
@@ -222,7 +261,7 @@ case 'P20_079'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'bike';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	subject_profile.events{1, 2}.start_time = [09, 24];
 	subject_profile.events{1, 2}.end_time = [09, 44];
 	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
@@ -234,7 +273,7 @@ case 'P20_079'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [10, 52];
 	subject_profile.events{1, 3}.end_time = [12, 22];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
@@ -249,7 +288,7 @@ case 'P20_079'
 	subject_profile.events{1, 3}.rr_thresholds = 0.05;
 	subject_profile.events{1, 3}.file_name = 'bike2';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [13, 00];
 	subject_profile.events{1, 3}.end_time = [13, 50];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
@@ -276,7 +315,7 @@ case 'P20_053'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'ping';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	subject_profile.events{1, 2}.start_time = [21, 32];
 	subject_profile.events{1, 2}.end_time = [21, 55];
 	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
@@ -288,7 +327,7 @@ case 'P20_053'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [10, 55];
 	subject_profile.events{1, 3}.end_time = [12, 25];
 	subject_profile.events{1, 3}.scaling_factor = 0.004882812500000;
@@ -314,7 +353,7 @@ case 'P20_094'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'exer';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	subject_profile.events{1, 2}.start_time = [15, 39];
 	subject_profile.events{1, 2}.end_time = [15, 59];
 	subject_profile.events{1, 2}.scaling_factor = 0.004882812500000;
@@ -326,7 +365,7 @@ case 'P20_094'
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
 	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
+	subject_profile.events{1, 3}.dosage_levels = 0;
 	subject_profile.events{1, 3}.start_time = [11, 00];
 	subject_profile.events{1, 3}.end_time = [12, 30];
 	subject_profile.events{1, 3}.scaling_factor = 0.004882812500000;
@@ -338,7 +377,7 @@ case 'P20_094'
 	subject_profile.events{1, 4}.rr_thresholds = 0.02;
 	subject_profile.events{1, 4}.file_name = 'exer2';
 	subject_profile.events{1, 4}.exp_sessions = 1;
-	subject_profile.events{1, 4}.dosage_levels = [0];
+	subject_profile.events{1, 4}.dosage_levels = 0;
 	subject_profile.events{1, 4}.start_time = [13, 02];
 	subject_profile.events{1, 4}.end_time = [13, 22];
 	subject_profile.events{1, 4}.scaling_factor = 0.004882812500000;
@@ -364,62 +403,123 @@ case 'P20_098'
 	subject_profile.events{1, 2}.rr_thresholds = 0.02;
 	subject_profile.events{1, 2}.file_name = 'exer';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
+	subject_profile.events{1, 2}.dosage_levels = 0;
 	subject_profile.events{1, 2}.start_time = [15, 08];
 	subject_profile.events{1, 2}.end_time = [15, 28];
 	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
 
 	subject_profile.events{1, 3} = struct();
-	subject_profile.events{1, 3}.label = sprintf('exercise 2');
-	subject_profile.events{1, 3}.sensor = sprintf('Sensor_3');
-	subject_profile.events{1, 3}.timestamp = sprintf('2014_01_13-14_12_32');
+	subject_profile.events{1, 3}.label = sprintf('MPH day 2');
+	subject_profile.events{1, 3}.sensor = sprintf('Sensor_5');
+	subject_profile.events{1, 3}.timestamp = sprintf('2014_01_15-08_44_13');
 	subject_profile.events{1, 3}.rr_thresholds = 0.02;
-	subject_profile.events{1, 3}.file_name = 'exer2';
+	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
-	subject_profile.events{1, 3}.start_time = [15, 00];
-	subject_profile.events{1, 3}.end_time = [15, 20];
+	subject_profile.events{1, 3}.dosage_levels = 0;
+	subject_profile.events{1, 3}.start_time = [10, 51];
+	subject_profile.events{1, 3}.end_time = [11, 21];
 	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
 
-case 'Malai_zephyr_drift_test'
-	subject_profile.ylim = [-4.5, 6];
+	subject_profile.events{1, 4} = struct();
+	subject_profile.events{1, 4}.label = sprintf('exercise 2');
+	subject_profile.events{1, 4}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 4}.timestamp = sprintf('2014_01_13-14_12_32');
+	subject_profile.events{1, 4}.rr_thresholds = 0.02;
+	subject_profile.events{1, 4}.file_name = 'exer2';
+	subject_profile.events{1, 4}.exp_sessions = 1;
+	subject_profile.events{1, 4}.dosage_levels = 0;
+	subject_profile.events{1, 4}.start_time = [15, 00];
+	subject_profile.events{1, 4}.end_time = [15, 20];
+	subject_profile.events{1, 4}.scaling_factor = 0.001220703125;
+
+case 'P20_101'
+	subject_profile.ylim = [-5, 6];
 	subject_profile.events = {};
 
 	subject_profile.events{1, 1} = struct();
-	subject_profile.events{1, 1}.label = sprintf('central');
-	subject_profile.events{1, 1}.sensor = sprintf('Sensor_100');
-	subject_profile.events{1, 1}.timestamp = sprintf('2013_11_04_16_24_33');
-	subject_profile.events{1, 1}.rr_thresholds = 0.05;
-	subject_profile.events{1, 1}.file_name = 'central';
-	subject_profile.events{1, 1}.exp_sessions = 1;
-	subject_profile.events{1, 1}.dosage_levels = [0];
-	subject_profile.events{1, 1}.start_time = [16, 24, 52];
-	subject_profile.events{1, 1}.end_time = [16, 29, 52];
-	subject_profile.events{1, 1}.scaling_factor = 0.004882812500000;
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	% Note this is Sensor 50 since I fused two files on January 24th to create this file. Missing 9 minutes of data in between
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_50');
+	subject_profile.events{1, 1}.timestamp = sprintf('2014_01_24-08_08_22');
+	subject_profile.events{1, 1}.rr_thresholds = 0.02;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = [0:4];
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+	subject_profile.events{1, 1}.scaling_factor = 0.001220703125;
 
 	subject_profile.events{1, 2} = struct();
-	subject_profile.events{1, 2}.label = sprintf('right');
-	subject_profile.events{1, 2}.sensor = sprintf('Sensor_100');
-	subject_profile.events{1, 2}.timestamp = sprintf('2013_11_04_16_24_33');
-	subject_profile.events{1, 2}.rr_thresholds = 0.05;
-	subject_profile.events{1, 2}.file_name = 'right';
+	subject_profile.events{1, 2}.label = sprintf('exercise');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_2');
+	subject_profile.events{1, 2}.timestamp = sprintf('2014_01_25-05_37_09');
+	subject_profile.events{1, 2}.rr_thresholds = 0.02;
+	subject_profile.events{1, 2}.file_name = 'exer';
 	subject_profile.events{1, 2}.exp_sessions = 1;
-	subject_profile.events{1, 2}.dosage_levels = [0];
-	subject_profile.events{1, 2}.start_time = [16, 30, 52];
-	subject_profile.events{1, 2}.end_time = [16, 36, 1];
-	subject_profile.events{1, 2}.scaling_factor = 0.004882812500000;
+	subject_profile.events{1, 2}.dosage_levels = 0;
+	subject_profile.events{1, 2}.start_time = [11, 56];
+	subject_profile.events{1, 2}.end_time = [12, 16];
+	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
 
 	subject_profile.events{1, 3} = struct();
-	subject_profile.events{1, 3}.label = sprintf('bottom');
-	subject_profile.events{1, 3}.sensor = sprintf('Sensor_100');
-	subject_profile.events{1, 3}.timestamp = sprintf('2013_11_04_16_24_33');
-	subject_profile.events{1, 3}.rr_thresholds = 0.05;
-	subject_profile.events{1, 3}.file_name = 'bottom';
+	subject_profile.events{1, 3}.label = sprintf('MPH day 1');
+	subject_profile.events{1, 3}.sensor = sprintf('Sensor_2');
+	subject_profile.events{1, 3}.timestamp = sprintf('2014_01_16-08_08_39');
+	subject_profile.events{1, 3}.rr_thresholds = 0.02;
+	subject_profile.events{1, 3}.file_name = 'mph';
 	subject_profile.events{1, 3}.exp_sessions = 1;
-	subject_profile.events{1, 3}.dosage_levels = [0];
-	subject_profile.events{1, 3}.start_time = [16, 36, 33];
-	subject_profile.events{1, 3}.end_time = [16, 42, 11];
-	subject_profile.events{1, 3}.scaling_factor = 0.004882812500000;
+	subject_profile.events{1, 3}.dosage_levels = 0;
+	subject_profile.events{1, 3}.start_time = [10, 51];
+	subject_profile.events{1, 3}.end_time = [11, 21];
+	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
+
+case 'P20_103'
+	subject_profile.ylim = [-5, 6];
+	subject_profile.events = {};
+
+	subject_profile.events{1, 1} = struct();
+	subject_profile.events{1, 1}.label = sprintf('cocaine');
+	subject_profile.events{1, 1}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 1}.timestamp = sprintf('2014_02_07-09_56_38');
+	subject_profile.events{1, 1}.rr_thresholds = 0.02;
+	subject_profile.events{1, 1}.file_name = 'cocn';
+	subject_profile.events{1, 1}.exp_sessions = [0:4];
+	subject_profile.events{1, 1}.dosage_levels = [8, 16, 32, -3];
+	subject_profile.events{1, 1}.scaling_factor = 0.001220703125;
+
+	subject_profile.events{1, 2} = struct();
+	subject_profile.events{1, 2}.label = sprintf('exercise');
+	subject_profile.events{1, 2}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 2}.timestamp = sprintf('2014_02_12-05_50_34');
+	subject_profile.events{1, 2}.rr_thresholds = 0.02;
+	subject_profile.events{1, 2}.file_name = 'exer';
+	subject_profile.events{1, 2}.exp_sessions = 1;
+	subject_profile.events{1, 2}.dosage_levels = 0;
+	subject_profile.events{1, 2}.start_time = [09, 47];
+	subject_profile.events{1, 2}.end_time = [10, 07];
+	subject_profile.events{1, 2}.scaling_factor = 0.001220703125;
+
+	subject_profile.events{1, 3} = struct();
+	subject_profile.events{1, 3}.label = sprintf('MPH day 2');
+	subject_profile.events{1, 3}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 3}.timestamp = sprintf('2014_02_12-05_50_34');
+	subject_profile.events{1, 3}.rr_thresholds = 0.02;
+	subject_profile.events{1, 3}.file_name = 'mph';
+	subject_profile.events{1, 3}.exp_sessions = 1;
+	subject_profile.events{1, 3}.dosage_levels = 0;
+	subject_profile.events{1, 3}.start_time = [12, 05];
+	subject_profile.events{1, 3}.end_time = [13, 35];
+	subject_profile.events{1, 3}.scaling_factor = 0.001220703125;
+
+	subject_profile.events{1, 4} = struct();
+	subject_profile.events{1, 4}.label = sprintf('exercise 2');
+	subject_profile.events{1, 4}.sensor = sprintf('Sensor_3');
+	subject_profile.events{1, 4}.timestamp = sprintf('2014_02_11-00_00_00');
+	subject_profile.events{1, 4}.rr_thresholds = 0.02;
+	subject_profile.events{1, 4}.file_name = 'exer2';
+	subject_profile.events{1, 4}.exp_sessions = 1;
+	subject_profile.events{1, 4}.dosage_levels = 0;
+	subject_profile.events{1, 4}.start_time = [09, 20];
+	subject_profile.events{1, 4}.end_time = [09, 40];
+	subject_profile.events{1, 4}.scaling_factor = 0.001220703125;
 otherwise
 	error(sprintf('Invalid subject id=%s!', subject_id));
 end

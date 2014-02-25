@@ -1,63 +1,82 @@
 function[] = plot_wsubj_class_results(tr_percent, varargin)
 
+% plot_wsubj_class_results(60)
+
 close all;
 
+paper_quality = false;
 if length(varargin) > 0
 	paper_quality = varargin{1};
-else
-	paper_quality = false;
 end
 
-nSubjects = 10;
+if paper_quality
+	font_size = get_project_settings('font_size');
+	le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
+	xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
+end
+
+nSubjects = 13;
 subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 plot_dir = get_project_settings('plots');
 image_format = get_project_settings('image_format');
 
-for s = 6:nSubjects
+for s = 1:nSubjects
 	classifier_results = load(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_results_tr%d.mat', subject_ids{s},...
 										tr_percent)));
+
 	nAnalysis = length(classifier_results.mean_over_runs);
 	legend_str = {};
 	for a = 1:nAnalysis
-		% mean_over_runs = classifier_results.mean_over_runs{1, a};
-		% errorbars_over_runs = classifier_results.errorbars_over_runs{1, a};
-		nFeatures = length(classifier_results.mean_over_runs{a});
-		feature_str = classifier_results.feature_str{1, a};
 		class_label = classifier_results.class_label{1, a};
-		legend_str{a} = sprintf('%s vs %s', class_label{1}, class_label{2});
+		switch class_label{1}
+		case 'base', c1 = 'B';
+		case 'dosage', c1 = 'A';
+		end
+		switch class_label{2}
+		case 'fix 8mg', c2 = '8';
+		case 'fix 16mg', c2 = '16';
+		case 'fix 32mg', c2 = '32';
+		case 'dosage', c2 = 'A';
+		case 'excse', c2 = 'EX';
+		case 'excse2', c2 = 'E2';
+		case 'MPH', c2 = 'MP';
+		end
+		
+		legend_str{a} = sprintf('%sv%s', c1, c2);
 	end
+	feature_str = classifier_results.feature_str{1, a};
+	nFeatures = length(classifier_results.mean_over_runs{a});
 
-	figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
-	bar([classifier_results.auc_over_runs{:}]);
-	% legend(legend_str, 'Location', 'NorthEastOutside', 'Orientation', 'Vertical');
-	legend(legend_str, 'Location', 'South', 'Orientation', 'Horizontal');
-	xlabel('Features'); ylabel('AUROC');
-	set(gca, 'XTick', 1:nFeatures);
-	set(gca, 'XTickLabel', feature_str);
-	xlim([0.5, nFeatures+0.5]); grid on;
-	title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
-	file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
-	savesamesize(gcf, 'file', file_name, 'format', image_format);
-	% saveas(gcf, file_name, 'pdf');
-
-	%{
-	font_size = get_project_settings('font_size');
-	le_fs = font_size(1); xl_fs = font_size(2); yl_fs = font_size(3);
-	xt_fs = font_size(4); yt_fs = font_size(5); tl_fs = font_size(6);
-	figure('visible', 'off');
-	set(gcf, 'PaperPosition', [0 0 6 4]);
-	set(gcf, 'PaperSize', [6 4]);
-	bar([classifier_results.auc_over_runs{:}]);
-	xlabel('Features', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-	ylabel('AUROC', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
-	set(gca, 'XTick', 1:nFeatures);
-	set(gca, 'XTickLabel', feature_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-	title('Baseline vs. Physical Exercise');
-	xlim([0.5, nFeatures+0.5]); grid on;
-	file_name = sprintf('/home/anataraj/Presentations/Images/p20_079_base_exer_class');
-	saveas(gcf, file_name, 'pdf') % Save figure
-	%}
+	if paper_quality
+		figure('visible', 'off');
+		set(gcf, 'PaperPosition', [0 0 10 6]);
+		set(gcf, 'PaperSize', [10 6]);
+		bar([classifier_results.auc_over_runs{:}]);
+		% legend(legend_str, 'Location', 'NorthEastOutside', 'Orientation', 'Vertical');
+		legend(legend_str, 'Location', 'South', 'Orientation', 'Horizontal');
+		xlabel('Features', 'FontSize', xl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		ylabel('AUROC', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		set(gca, 'XTick', 1:nFeatures);
+		set(gca, 'XTickLabel', feature_str, 'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		xlim([0.5, nFeatures+0.5]); grid on;
+		title(sprintf('%s, within subject, Logistic reg, Area under ROC',...
+			get_project_settings('strrep_subj_id', subject_ids{s})),...
+			'FontSize', tl_fs, 'FontWeight', 'b', 'FontName', 'Times');
+		file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
+		saveas(gcf, file_name, 'pdf');
+	else
+		figure('visible', 'off'); set(gcf, 'Position', get_project_settings('figure_size'));
+		bar([classifier_results.auc_over_runs{:}]);
+		legend(legend_str, 'Location', 'South', 'Orientation', 'Horizontal');
+		xlabel('Features'); ylabel('AUROC');
+		set(gca, 'XTick', 1:nFeatures);
+		set(gca, 'XTickLabel', feature_str);
+		xlim([0.5, nFeatures+0.5]); grid on;
+		title(sprintf('%s, within subject, Logistic reg, Area under ROC', get_project_settings('strrep_subj_id', subject_ids{s})));
+		file_name = sprintf('%s/%s/class_subj%d_tr%d_auroc', plot_dir, subject_ids{s}, s, tr_percent);
+		savesamesize(gcf, 'file', file_name, 'format', image_format);
+	end
 end
 
 %{

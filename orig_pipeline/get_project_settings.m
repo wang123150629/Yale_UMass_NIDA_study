@@ -40,8 +40,13 @@ case 'summ_mat_time_res'
 case 'clusters_apart'
 	out = 100;
 case 'magic_idx'
-	assert(strcmp(varargin{1}, 'P20_040'));
-	out = [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:5945750];
+	assert(length(varargin) == 1);
+	switch varargin{1}
+	case 'P20_040'
+		out = [1.29e+5:7.138e+5, 7.806e+5:3.4e+6, 3.515e+6:5945750];
+	otherwise
+		error('No magic Idx for this subject!');
+	end
 case 'event_window_length'
 	out = 5; % in minutes = 5 x 60 = 300 seconds
 case 'strrep_subj_id'

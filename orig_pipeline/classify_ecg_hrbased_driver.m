@@ -3,7 +3,7 @@ function[] = classify_ecg_hrbased_driver(tr_percent)
 % classify_ecg_hrbased_driver(50)
 % This is a clone of classify_ecg_driver()
 
-nSubjects = 10;
+nSubjects = 13;
 set_of_features_to_try = [1, 7, 8, 9];
 nRuns = 1;
 classifierList = {@two_class_logreg};
@@ -11,38 +11,42 @@ subject_ids = get_subject_ids(nSubjects);
 result_dir = get_project_settings('results');
 
 % Looping over each subject and performing classification
-for s = 6:nSubjects
+for s = 1:nSubjects
+	classes_to_classify = [];
 	switch subject_ids{s}
 	case 'P20_060', classes_to_classify = [5, 9; 5, 11]; % dosage vs exercise and dosage vs MPH
-	case 'P20_061', classes_to_classify = [5, 9]; % dosage vs activity and dosage vs exercise
 	case 'P20_079', classes_to_classify = [5, 13; 5, 10]; % dosage vs bike and dosage vs MPH
-	case 'P20_053', classes_to_classify = [5, 8; 5, 10]; % dosage vs ping and dosage vs MPH
-	case 'P20_094', classes_to_classify = [5, 9; 5, 15; 5, 10]; % dosage vs exercise, dosage vs exercise2 and dosage vs MPH
+	case 'P20_094', classes_to_classify = [5, 9; 5, 10]; % dosage vs exercise, dosage vs exercise2 and dosage vs MPH
+	case 'P20_098', classes_to_classify = [5, 9; 5, 10]; % dosage vs exercise, dosage vs exercise2 and dosage vs MPH
+	case 'P20_101', classes_to_classify = [5, 9; 5, 10]; % dosage vs exercise, dosage vs MPH
+	case 'P20_103', classes_to_classify = [5, 9; 5, 10]; % dosage vs exercise, dosage vs exercise2 and dosage vs MPH
 	end
-	nAnalysis = size(classes_to_classify, 1);
-	mean_over_runs = cell(1, nAnalysis);
-	errorbars_over_runs = cell(1, nAnalysis);
-	auc_over_runs = cell(1, nAnalysis);
-	feature_str = cell(1, nAnalysis);
-	class_label = cell(1, nAnalysis);
-	bin_str = cell(1, nAnalysis);
-	% Looping over each pair of classification tasks i.e. 1 vs 2, 1 vs 3, etc
-	for c = 1:nAnalysis
-		[mean_over_runs{1, c}, errorbars_over_runs{1, c}, auc_over_runs{1, c},...
-		 feature_str{1, c}, class_label{1, c}, bin_str{1, c}] =...
-				classify_ecg_data(subject_ids{s}, classes_to_classify(c, :),...
-				set_of_features_to_try, nRuns, tr_percent, classifierList);
+	if ~isempty(classes_to_classify)
+		nAnalysis = size(classes_to_classify, 1);
+		mean_over_runs = cell(1, nAnalysis);
+		errorbars_over_runs = cell(1, nAnalysis);
+		auc_over_runs = cell(1, nAnalysis);
+		feature_str = cell(1, nAnalysis);
+		class_label = cell(1, nAnalysis);
+		bin_str = cell(1, nAnalysis);
+		% Looping over each pair of classification tasks i.e. 1 vs 2, 1 vs 3, etc
+		for c = 1:nAnalysis
+			[mean_over_runs{1, c}, errorbars_over_runs{1, c}, auc_over_runs{1, c},...
+			 feature_str{1, c}, class_label{1, c}, bin_str{1, c}] =...
+					classify_ecg_data(subject_ids{s}, classes_to_classify(c, :),...
+					set_of_features_to_try, nRuns, tr_percent, classifierList);
+		end
+		% Collecting the results to be plotted later
+		classifier_results = struct();
+		classifier_results.mean_over_runs = mean_over_runs;
+		classifier_results.errorbars_over_runs = errorbars_over_runs;
+		classifier_results.auc_over_runs = auc_over_runs;
+		classifier_results.feature_str = feature_str;
+		classifier_results.class_label = class_label;
+		classifier_results.bin_str = bin_str;
+		save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_hrbased_results_tr%d', subject_ids{s}, tr_percent)),...
+								'-struct', 'classifier_results');
 	end
-	% Collecting the results to be plotted later
-	classifier_results = struct();
-	classifier_results.mean_over_runs = mean_over_runs;
-	classifier_results.errorbars_over_runs = errorbars_over_runs;
-	classifier_results.auc_over_runs = auc_over_runs;
-	classifier_results.feature_str = feature_str;
-	classifier_results.class_label = class_label;
-	classifier_results.bin_str = bin_str;
-	save(fullfile(result_dir, subject_ids{s}, sprintf('%s_classifier_hrbased_results_tr%d', subject_ids{s}, tr_percent)),...
-							'-struct', 'classifier_results');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

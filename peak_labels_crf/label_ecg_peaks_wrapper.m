@@ -12,8 +12,10 @@ if ~exist(fullfile(plot_dir, 'sparse_coding', analysis_id))
 	mkdir(fullfile(plot_dir, 'sparse_coding', analysis_id));
 end
 
-use_multiple_u_labels = false;
-give_it_some_slack = true;
+% use_multiple_u_labels = '';
+% use_multiple_u_labels = 'interintra';
+use_multiple_u_labels = 'qrsonly';
+give_it_some_slack = false;
 first_baseline_subtract = true;
 
 from_wrapper = false;

@@ -1,5 +1,7 @@
 function[] = view_test_peaks(rec_no, analysis_id)
 
+% view_test_peaks('P20_040', '1402161a')
+
 close all;
 plot_dir = get_project_settings('plots');
 results_dir = get_project_settings('results');
@@ -13,10 +15,11 @@ start_time = 1;
 global window_length;
 window_length = 500;
 global label_str
-label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+% label_str = {'P', 'Q', 'R', 'S', 'T', 'U'};
+label_str = {'P', 'Q', 'R', 'S', 'T', 'Ui', 'Ua'};
 clusters_apart = get_project_settings('clusters_apart');
 
-load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_grnd_trth.mat', record_no)));
+load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_relblu_interintra_grnd_trth.mat', record_no)));
 clear time_matrix;
 switch record_no
 case 'P20_040'

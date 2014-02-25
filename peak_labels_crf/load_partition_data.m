@@ -15,8 +15,8 @@ cluster_partition = 3;
 h = fspecial('gaussian', [1, filter_size], 150);
 h = h / sum(h);
 
-if use_multiple_u_labels
-	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_relabel_u_grnd_trth.mat', subject_id)));
+if ~isempty(use_multiple_u_labels)
+	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_relblu_%s_grnd_trth.mat', subject_id, use_multiple_u_labels)));
 	assert(size(labeled_peaks, 1) == 4);
 else
 	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_grnd_trth.mat', subject_id)));
@@ -50,7 +50,7 @@ labeled_idx = labeled_peaks(3, :) > 0 & labeled_peaks(3, :) < 100;
 labeled_idx = labeled_idx(filter_size/2:end-filter_size/2);
 labeled_idx(1, [1:window_size, end-window_size:end]) = 0;
 
-if use_multiple_u_labels
+if ~isempty(use_multiple_u_labels)
 	peak_labels = labeled_peaks(4, :);
 else
 	peak_labels = labeled_peaks(3, :);

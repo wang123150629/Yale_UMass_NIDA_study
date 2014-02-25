@@ -56,15 +56,6 @@ case 8
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
 	class_information{1, 1}.label = 'excse';
-case 9
-	class_information{1, 1} = struct();
-	class_information{1, 1}.event = 'exer';
-	class_information{1, 1}.slide_or_chunk = 'slide';
-	class_information{1, 1}.pqrst_flag = true;
-	class_information{1, 1}.time_window = 30;
-	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
-	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'excse';
 case 10
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'mph';
@@ -110,6 +101,15 @@ case 14
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
 	class_information{1, 1}.label = 'excse';
+case 9
+	class_information{1, 1} = struct();
+	class_information{1, 1}.event = 'exer';
+	class_information{1, 1}.slide_or_chunk = 'slide';
+	class_information{1, 1}.pqrst_flag = true;
+	class_information{1, 1}.time_window = 30;
+	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
+	class_information{1, 1}.dosage = 0;
+	class_information{1, 1}.label = 'excse';
 case 15
 	class_information{1, 1} = struct();
 	class_information{1, 1}.event = 'exer2';
@@ -119,36 +119,6 @@ case 15
 	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
 	class_information{1, 1}.dosage = 0;
 	class_information{1, 1}.label = 'excse2';
-%{
-case 6
-	class_information{1, 1} = struct();
-	class_information{1, 1}.event = 'cocn';
-	class_information{1, 1}.slide_or_chunk = 'slide';
-	class_information{1, 1}.pqrst_flag = true;
-	class_information{1, 1}.time_window = 30;
-	class_information{1, 1}.exp_session = 0:4; % 0, 1, 2, 3, 4
-	class_information{1, 1}.dosage = -3;
-	class_information{1, 1}.label = 'all sess baseline';
-case 8
-	class_information{1, 1} = struct();
-	class_information{1, 1}.event = 'cocn';
-	class_information{1, 1}.slide_or_chunk = 'slide';
-	class_information{1, 1}.pqrst_flag = true;
-	class_information{1, 1}.time_window = 30;
-	class_information{1, 1}.exp_session = 1:4; % 0, 1, 2, 3, 4
-	class_information{1, 1}.dosage = -3;
-	class_information{1, 1}.label = 'b/w sess baseline';
-case 11
-	class_information{1, 1} = struct();
-	class_information{1, 1}.event = 'hab';
-	class_information{1, 1}.slide_or_chunk = 'slide';
-	class_information{1, 1}.pqrst_flag = true;
-	class_information{1, 1}.time_window = 30;
-	class_information{1, 1}.exp_session = 1; % 0, 1, 2, 3, 4
-	class_information{1, 1}.dosage = 0;
-	class_information{1, 1}.label = 'Habituation day';
-%}
-
 otherwise
 	error('Invalid case!');
 end

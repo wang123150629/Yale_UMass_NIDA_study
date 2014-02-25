@@ -1,4 +1,4 @@
-function[set1_alpha, set2_alpha, title_str, D] = setup_feature(pipeline, partitioned_data, set1_str, set2_str, varargin)
+function[set1_alpha, set2_alpha, title_str, D] = setup_crf_feature(pipeline, partitioned_data, set1_str, set2_str, varargin)
 
 lambda = 0.015;
 nDictionayElements = 100;
@@ -17,12 +17,15 @@ switch pipeline
 	case 1, normalize = 1;
 	case 2, normalize = 1; add_height = 1;
 	case 3, normalize = 1; add_height = 2;
+	case 4, normalize = 3;
+	case 5, normalize = 3; add_height = 1;
+	case 6, normalize = 3; add_height = 2;
+	%{
+	% where I was dividing by the within peak std dev
 	case 4, normalize = 2; 
 	case 5, normalize = 2; add_height = 1;
 	case 6, normalize = 2; add_height = 2;
-	case 7, normalize = 3;
-	case 8, normalize = 3; add_height = 1;
-	case 9, normalize = 3; add_height = 2;
+	%}
 	otherwise, error('Invalid pipeline!');
 end
 
@@ -81,7 +84,7 @@ if ~isempty(title_str)
 	switch normalize
 	case 1, title_str = strcat(title_str, 'snorm+');
 	case 2, title_str = strcat(title_str, 'snorm(w)+');
-	case 3, title_str = strcat(title_str, 'norm(p)+');
+	case 3, title_str = strcat(title_str, 'snorm(p)+');
 	otherwise, error('Invalid normalize option!');
 	end
 	switch add_height

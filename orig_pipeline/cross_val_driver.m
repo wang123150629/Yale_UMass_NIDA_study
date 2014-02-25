@@ -1,13 +1,16 @@
 function[] = cross_val_driver()
 
-nSubjects = 6;
-set_of_features_to_try = [7, 8, 9];
+nSubjects = 13;
+set_of_features_to_try = [8, 9];
 nRuns = 1;
 classifierList = {@two_class_l2_logreg};
 classes_to_classify = [1, 2; 1, 3; 1, 4; 1, 5];
 
 nAnalysis = size(classes_to_classify, 1);
 subject_ids = get_subject_ids(nSubjects);
+% Leaving out subjects P20_053 and P20_061 since they only have blinded session data (no baseline, no fixed sessions)
+subject_ids = subject_ids(1, [1:6, 8, 10:end]);
+nSubjects = length(subject_ids);
 result_dir = get_project_settings('results');
 
 for s = 1:nSubjects

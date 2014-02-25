@@ -5,7 +5,7 @@ function[mul_confusion_mat, matching_confusion_mat, crf_confusion_mat,...
 									use_multiple_u_labels)
 
 plot_dir = get_project_settings('plots');
-nPipelines = 9;
+nPipelines = 6;
 if nPipelines == 1, dispf('WARNING! number of pipelines is 1'); end
 
 [partitioned_data, title_str] = load_partition_data(analysis_id, subject_id, first_baseline_subtract,...
@@ -18,7 +18,7 @@ for p = 1:nPipelines
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CRF learn feature and transition params
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	[train_alpha, validate_alpha] = setup_feature(p, partitioned_data, 'train', 'validate');
+	[train_alpha, validate_alpha] = setup_crf_feature(p, partitioned_data, 'train', 'validate');
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% CRF validate set predictions
@@ -45,9 +45,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [junk, best_crf_pipeline] = min(crf_validate_errors);
 fprintf('Best Pipeline=%d ', best_crf_pipeline);
-[train_alpha, test_alpha, crf_title_str, D] = setup_feature(best_crf_pipeline, partitioned_data, 'train', 'test', title_str);
+[train_alpha, test_alpha, crf_title_str, D] = setup_crf_feature(best_crf_pipeline, partitioned_data, 'train', 'test', title_str);
 [feature_params, trans_params] = build_feature_trans_parms(train_alpha, partitioned_data.train_Y, partitioned_data.train_idx);
-[crf_confusion_mat, crf_predicted_label] = basic_crf_classification(test_alpha, partitioned_data.test_Y,...
+[crf_confusion_mat, crf_predicted_label, crf_pred_lbl_prob] = basic_crf_classification(test_alpha, partitioned_data.test_Y,...
 						partitioned_data.test_idx,...
 						feature_params, trans_params, partitioned_data.nLabels);
 assert(isequal(sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat)), sum(crf_predicted_label ~= partitioned_data.test_Y)));
@@ -56,7 +56,7 @@ assert(isequal(sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat)), sum(crf
 % MUl. Log. Reg. test set predictions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [junk, best_mul_pipeline] = min(mul_validate_errors);
-[train_alpha, test_alpha, mul_title_str] = setup_feature(best_mul_pipeline, partitioned_data, 'train', 'test', title_str);
+[train_alpha, test_alpha, mul_title_str] = setup_crf_feature(best_mul_pipeline, partitioned_data, 'train', 'test', title_str);
 [mul_confusion_mat, mul_predicted_label] = multinomial_log_reg(train_alpha, partitioned_data.train_Y,...
 							test_alpha, partitioned_data.test_Y);
 assert(isequal(sum(mul_confusion_mat(:)) - sum(diag(mul_confusion_mat)), sum(mul_predicted_label ~= partitioned_data.test_Y)));
@@ -68,12 +68,13 @@ filter_size = get_project_settings('filter_size');
 filter_size = filter_size / 2 - 1;
 ground_truth_test_labels = zeros(1, (partitioned_data.raw_ecg_data_length+2*filter_size+1));
 ground_truth_test_labels(filter_size+partitioned_data.test_idx) = partitioned_data.test_Y;
-if use_multiple_u_labels
+if ~isempty(use_multiple_u_labels)
 	ground_truth_test_labels(ground_truth_test_labels > 6) = 6;
 end
 nLabels = sum(unique(ground_truth_test_labels) > 0);
 
-puwave_labels = {'P', 'Q', 'R', 'S', 'T'};
+% puwave_labels = {'P', 'Q', 'R', 'S', 'T'};
+puwave_labels = {'P', 'R', 'T'};
 load(fullfile(pwd, 'ecgpuwave', 'annotations', sprintf('%s_wqrs.mat', subject_id)));
 temp_indices = [annt.P, annt.Q, annt.R, annt.S, annt.T];
 puwave_pred_labels = zeros(1, max(temp_indices));
@@ -90,13 +91,16 @@ matching_confusion_mat = matching_driver(ground_truth_test_labels, puwave_pred_l
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 pred_crf_test_labels = zeros(1, (partitioned_data.raw_ecg_data_length+2*filter_size+1));
 pred_crf_test_labels(filter_size+partitioned_data.test_idx) = crf_predicted_label;
-if use_multiple_u_labels
+if ~isempty(use_multiple_u_labels)
 	pred_crf_test_labels(pred_crf_test_labels > 6) = 6;
 end
+
+slack_pred = [];
+slack_grnd = [];
 if give_it_some_slack
-	ecg_label_misc_plots(19, ground_truth_test_labels, pred_crf_test_labels, 50,...
+	slack_pred = make_another_slack_plot(ground_truth_test_labels, pred_crf_test_labels, 50,...
 		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Predictions', subject_id, analysis_id);
-	ecg_label_misc_plots(19, pred_crf_test_labels, ground_truth_test_labels, 50,...
+	slack_grnd = make_another_slack_plot(pred_crf_test_labels, ground_truth_test_labels, 50,...
 		false, {'P', 'Q', 'R', 'S', 'T', 'U'}, 'Ground-truth', subject_id, analysis_id);
 end
 
@@ -104,7 +108,8 @@ end
 % Generating plots and book keeping
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~from_wrapper
-	ecg_label_misc_plots(17, {sprintf('Mul Log. Reg.'), sprintf('Matching, %s%d', setstr(177), matching_pm),...
+	ecg_label_misc_plots(17, {sprintf('%s\nMul Log. Reg.', get_project_settings('strrep_subj_id', subject_id)),...
+				sprintf('PUWave mat-win=%s%d', setstr(177), matching_pm),...
 				sprintf('Basic CRF\n%s', crf_title_str)}, analysis_id,...
 				bsxfun(@rdivide, mul_confusion_mat, sum(mul_confusion_mat, 2)),...
 				bsxfun(@rdivide, matching_confusion_mat, sum(matching_confusion_mat, 2)),...
@@ -135,7 +140,11 @@ if ~from_wrapper
 	crf_model.crf = pred_crf_test_labels;
 	crf_model.crf_validate_errors = crf_validate_errors;
 	crf_model.mul_validate_errors = mul_validate_errors;
+	crf_model.slack_pred = slack_pred;
+	crf_model.slack_grnd = slack_grnd;
 	save(sprintf('%s/sparse_coding/%s/%s_results.mat', plot_dir, analysis_id, analysis_id), '-struct', 'crf_model');
+
+	keyboard
 
 	write_to_html(analysis_id, subject_id, mul_title_str, crf_title_str, mul_confusion_mat, matching_confusion_mat, crf_confusion_mat);
 end

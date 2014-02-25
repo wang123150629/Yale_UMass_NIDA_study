@@ -5,12 +5,12 @@ close all;
 slide_or_chunk = 'slide';
 peak_detect_appr = 4;
 pqrst_flag = true;
-number_of_subjects = 11;
+number_of_subjects = 13;
 
 subject_ids = get_subject_ids(number_of_subjects);
 result_dir = get_project_settings('results');
 
-for s = 11:number_of_subjects
+for s = 1:number_of_subjects
 	% create a subject profile
 	if ~exist(fullfile(result_dir, subject_ids{s}, sprintf('subject_profile.mat')))
 		subject_profile = subject_profiles(subject_ids{s});
