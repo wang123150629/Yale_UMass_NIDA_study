@@ -1,4 +1,4 @@
-function[confusion_mat, yhatt] = multinomial_log_reg(train_alpha, ecg_train_Y, test_alpha, ecg_test_Y)
+function[confusion_mat, yhatt, AUC] = multinomial_log_reg(train_alpha, ecg_train_Y, test_alpha, ecg_test_Y)
 
 labels = unique(ecg_train_Y);
 nClasses = length(labels);
@@ -19,4 +19,6 @@ wSoftmax = [wSoftmax, zeros(nVars+1, 1)];
 [junk, yhatt] = max(test_alpha * wSoftmax, [], 2);
 
 confusion_mat = confusionmat(ecg_test_Y, yhatt);
+
+AUC = one_vs_all_auc(nClasses, ecg_test_Y, test_alpha * wSoftmax);
 

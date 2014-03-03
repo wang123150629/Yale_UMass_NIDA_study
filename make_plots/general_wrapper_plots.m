@@ -1,5 +1,7 @@
 function[] = general_wrapper_plots(which_plot, analysis_id, varargin)
 
+% general_wrapper_plots(5, 'dummyyy');
+
 close all;
 
 global plot_dir
@@ -25,39 +27,59 @@ function[] = fetch_results(analysis_id)
 global plot_dir
 
 load(sprintf('%s/sparse_coding/%s/%s_results.mat', plot_dir, analysis_id, analysis_id));
-compute_prec_recall(ground_truth, crf);
+compute_prec_recall(ground_truth, crf, crf_AUC, slack_pres, slack_rcal);
 compute_prec_recall(matching_confusion_mat);
-compute_prec_recall(ground_truth, mul_nom);
+compute_prec_recall(ground_truth, mul_nom, mul_AUC);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = compute_prec_recall(varargin)
 
-if length(varargin) == 2
+switch length(varargin)
+case 5
 	vector_a = varargin{1};
 	vector_b = varargin{2};
 	confusion_mat = confusionmat(vector_a(vector_a > 0), vector_b(vector_b > 0));
-else
+	auc = mean(varargin{3}(1, 1:end-1));
+	pres_another = mean(varargin{4}(5, 1:end-1));
+	rcal_another = mean(varargin{5}(5, 1:end-1));
+case 3
+	vector_a = varargin{1};
+	vector_b = varargin{2};
+	confusion_mat = confusionmat(vector_a(vector_a > 0), vector_b(vector_b > 0));
+	auc = mean(varargin{3});
+	pres_another = 0;
+	rcal_another = 0;
+case 1
 	confusion_mat = varargin{1};
+	auc = 0;
+	pres_another = 0;
+	rcal_another = 0;
 end
+tp = diag(confusion_mat)';
+fp = sum(confusion_mat, 1) - tp;
+fn = sum(confusion_mat, 2)' - tp;
+stats = [tp ./ (tp + fp); tp ./ (tp + fn)];
+% Leaving out U's
+stats = stats(:, 1:end-1);
+% Taking mean over five peaks
+another_stats = [mean(stats, 2); auc; pres_another; rcal_another];
+
+% New display with precision, recall, AUC, precision(matching), recall(matching)
+dispf('\\textbf{} & \\textbf{} & \\textbf{} & $%0.4f$ & $%0.4f$ & $%0.4f$ & $%0.4f$ & $%0.4f$ \\\\ \\hline', another_stats);
+
 % dispf('Label counts');
 % sum(confusion_mat, 2)'
 % dispf('Accuracies');
 % bsxfun(@rdivide, confusion_mat, sum(confusion_mat, 2))
 
-confusion_mat
-
-tp = diag(confusion_mat)';
-fp = sum(confusion_mat, 1) - tp;
-fn = sum(confusion_mat, 2)' - tp;
-
-stats = [tp; fp; fn; tp ./ (tp + fp); tp ./ (tp + fn)];
+% Old display with tp, fp, fn, precision, recall
+% stats = [tp; fp; fn; tp ./ (tp + fp); tp ./ (tp + fn)];
+% stats = stats(:, 1:end-1);
+% another_stats = [mean(stats, 2)'; std(stats, [], 2)'];
+% dispf('\\textbf{} & \\textbf{} & %0.2f$\\pm%0.2f$ & %0.2f$\\pm%0.2f$ & %0.2f$\\pm%0.2f$ & %0.4f$\\pm%0.2f$ & %0.4f$\\pm%0.2f$ \\\\ \\hline',...
+%					another_stats);
 % dispf('tp fp fn pres recal');
 % dispf('\\textbf{} & \\textbf{P} & %d & %d & %d & %0.4f & %0.4f \\\\ \\hline\n', stats);
-
-stats = stats(:, 1:end-1);
-another_stats = [mean(stats, 2)'; std(stats, [], 2)'];
-
-% dispf('\\textbf{} & \\textbf{} & %0.2f$\\pm%0.2f$ & %0.2f$\\pm%0.2f$ & %0.2f$\\pm%0.2f$ & %0.4f$\\pm%0.2f$ & %0.4f$\\pm%0.2f$ \\\\ \\hline\n', another_stats);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function[] = cross_validation(analysis_id, paper_quality)

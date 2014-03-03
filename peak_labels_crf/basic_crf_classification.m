@@ -1,9 +1,9 @@
-function[confusion_mat, predicted_label, predicted_lbl_prob] = basic_crf_classification(vector_alpha, vector_Y, vector_idx,...
-										feature_params, trans_params, nLabels)
+function[confusion_mat, predicted_label, AUC] = basic_crf_classification(vector_alpha, vector_Y, vector_idx,...
+										feature_params, trans_params, nLabels, varargin)
 
 confusion_mat = [];
 predicted_label = NaN(size(vector_alpha, 1), 1);
-predicted_lbl_prob = NaN(size(vector_alpha, 1), 1);
+predicted_lbl_prob = NaN(size(vector_alpha, 1), nLabels);
 used_clusters = [];
 clusters_apart = get_project_settings('clusters_apart');
 
@@ -26,9 +26,13 @@ end
 nSamples = length(all_unary_marginals);
 for t = 1:nSamples
 	unary_marginals = all_unary_marginals{t};
-	[predicted_lbl_prob(used_clusters(1, t):used_clusters(2, t), 1), predicted_label(used_clusters(1, t):used_clusters(2, t), 1)] =...
+	[junk, predicted_label(used_clusters(1, t):used_clusters(2, t), 1)] =...
 								max([unary_marginals{:}], [], 1);
+	predicted_lbl_prob(used_clusters(1, t):used_clusters(2, t), :) = [unary_marginals{:}]';
 end
 assert(~any(isnan(predicted_label)));
 confusion_mat = confusionmat(vector_Y, predicted_label);
 
+if length(varargin) > 0
+	AUC = one_vs_all_auc(nLabels, varargin{1}, predicted_lbl_prob);
+end

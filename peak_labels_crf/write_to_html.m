@@ -1,5 +1,5 @@
 function[] = write_to_html(analysis_id, grnd_trth_subject_id, mul_title_str, crf_title_str,...
-				mul_confusion_mat, matching_confusion_mat, crf_confusion_mat)
+				mul_confusion_mat, matching_confusion_mat, crf_confusion_mat, crf_AUC, mul_AUC)
 
 log_dir = get_project_settings('log');
 line_str = '';
@@ -8,12 +8,13 @@ line_str = strcat(line_str, sprintf('<td>%s</td>', grnd_trth_subject_id));
 line_str = strcat(line_str, sprintf('<td>%s</td>', mul_title_str));
 line_str = strcat(line_str, sprintf('<td>%0.2f</td>', sum(diag(mul_confusion_mat)) / sum(mul_confusion_mat(:))));
 line_str = strcat(line_str, sprintf('<td>%d</td>', sum(mul_confusion_mat(:)) - sum(diag(mul_confusion_mat))));
+line_str = strcat(line_str, sprintf('<td>%0.2f</td>', mean(mul_AUC)));
 line_str = strcat(line_str, sprintf('<td>%0.2f</td>', sum(diag(matching_confusion_mat)) / sum(matching_confusion_mat(:))));
 line_str = strcat(line_str, sprintf('<td>%d</td>', sum(matching_confusion_mat(:)) - sum(diag(matching_confusion_mat))));
 line_str = strcat(line_str, sprintf('<td>%s</td>', crf_title_str));
 line_str = strcat(line_str, sprintf('<td>%0.2f</td>', sum(diag(crf_confusion_mat)) / sum(crf_confusion_mat(:))));
-line_str = strcat(line_str, sprintf('<td>%d</td></tr>\n</table> </body> </html>',...
-		sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat))));
+line_str = strcat(line_str, sprintf('<td>%d</td>', sum(crf_confusion_mat(:)) - sum(diag(crf_confusion_mat))));
+line_str = strcat(line_str, sprintf('<td>%0.2f</td></tr>\n</table> </body> </html>', mean(crf_AUC)));
 
 text = fileread(fullfile(log_dir, 'log.html'));
 text = text(1:end - 25);

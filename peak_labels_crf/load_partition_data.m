@@ -16,7 +16,7 @@ h = fspecial('gaussian', [1, filter_size], 150);
 h = h / sum(h);
 
 if ~isempty(use_multiple_u_labels)
-	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_relblu_%s_grnd_trth.mat', subject_id, use_multiple_u_labels)));
+	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_uu_%s_grnd_trth.mat', subject_id, use_multiple_u_labels)));
 	assert(size(labeled_peaks, 1) == 4);
 else
 	load(fullfile(results_dir, 'labeled_peaks', sprintf('%s_grnd_trth.mat', subject_id)));

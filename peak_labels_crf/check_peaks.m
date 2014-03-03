@@ -54,9 +54,9 @@ else
 	indicator_matrix(1, maxtab(:, 1)) = 100;
 	indicator_matrix(1, mintab(:, 1)) = 100;
 
-	time_matrix = round(ecg_mat_all(:, 4:6))';
-	time_matrix = sprintf('%d:%d:%d*', time_matrix);
-	time_matrix = regexp(time_matrix, '*', 'split');
+	% time_matrix = round(ecg_mat_all(:, 4:6))';
+	% time_matrix = sprintf('%d:%d:%d*', time_matrix);
+	% time_matrix = regexp(time_matrix, '*', 'split');
 end
 
 S.fh = figure('units','pixels',...
@@ -200,13 +200,13 @@ assert(isequal(size(indicator_matrix, 2), size(ecg_peaks, 2)));
 assert(isequal(size(indicator_matrix, 2), size(ecg_mat, 1)));
 labeled_peaks = [ecg_mat'; ecg_peaks; indicator_matrix];
 
-%{
 prompt = {'Enter file name(without .mat) ...'};
 dlg_title = 'Save as';
 num_lines = 1;
 file_name = inputdlg(prompt, dlg_title, num_lines);
-%}
+%{
 file_name{1} = 'P20_048_140217';
+%}
 
 peaks_information = struct();
 peaks_information.labeled_peaks = labeled_peaks;
@@ -336,15 +336,16 @@ set(ax(1), 'YTick', y_entries);
 set(ax(1), 'ylim', y_lim);
 y_ticks = get(ax(1), 'YTickLabel');
 set(ax(1), 'YTickLabel', y_ticks, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-set(ax(1), 'XTickLabel', '');
+% set(ax(1), 'XTickLabel', '');
 
 set(get(ax(2), 'Ylabel'), 'String', 'Peaks', 'FontSize', yl_fs, 'FontWeight', 'b', 'FontName', 'Times');
 set(ax(2), 'xlim', [0, length(data_idx)]);
 set(ax(2), 'ylim', [1, nIndicators]);
 set(ax(2), 'YTick', 1:nIndicators);
 set(ax(2), 'YTickLabel', {'P', 'Q', 'R', 'S', 'T', 'U'}, 'FontSize', yt_fs, 'FontWeight', 'b', 'FontName', 'Times');
-set(ax(2), 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]),...
-					'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+% set(ax(2), 'XTickLabel', time_matrix(1, [data_idx(1:window_length/10:window_length), data_idx(end)]),...
+%					'FontSize', xt_fs, 'FontWeight', 'b', 'FontName', 'Times');
+
 grid on;
 hold on;
 peak_idx = find(ecg_peaks(data_idx));

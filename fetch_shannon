@@ -1,0 +1,1 @@
+scp -r anataraj@shannon.cs.umass.edu:/mnt/nfs/work1/marlin/anataraj/NIH-craving/scripts .

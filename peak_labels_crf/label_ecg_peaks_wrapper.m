@@ -12,21 +12,22 @@ if ~exist(fullfile(plot_dir, 'sparse_coding', analysis_id))
 	mkdir(fullfile(plot_dir, 'sparse_coding', analysis_id));
 end
 
-% use_multiple_u_labels = '';
-% use_multiple_u_labels = 'interintra';
-use_multiple_u_labels = 'qrsonly';
-give_it_some_slack = false;
+give_it_some_slack = true;
 first_baseline_subtract = true;
 
+use_multiple_u_labels = '';
+if length(varargin) > 0
+	use_multiple_u_labels = varargin{1};
+end
 from_wrapper = false;
 partition_train_set = 1;
-if length(varargin) > 0
-	partition_train_set = varargin{1};
+if length(varargin) > 1
+	partition_train_set = varargin{2};
 	from_wrapper = true;
 end
 matching_pm = 4;
-if length(varargin) > 1
-	matching_pm = varargin{2};
+if length(varargin) > 2
+	matching_pm = varargin{3};
 	from_wrapper = true;
 end
 

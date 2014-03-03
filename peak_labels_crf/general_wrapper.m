@@ -2,10 +2,11 @@ function[] = general_wrapper()
 
 % general_wrapper()
 
-super_analysis_id = {'1402171'};
-subject_id = {'P20_040'};
-% super_analysis_id = {'1402161', '1402162'};
-% subject_id = {'P20_040' , '16773_atr'};
+% super_analysis_id = {'1402171'};
+% subject_id = {'P20_040'};
+
+super_analysis_id = {'1403021', '1403022'};
+subject_id = {'P20_040' , '16773_atr'};
 
 assert(numel(super_analysis_id) == numel(subject_id));
 for s = 1:numel(subject_id)
@@ -22,16 +23,18 @@ dispf('subject=%s', subject_id);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get statistics on clusters for each subject
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% rename_peaks(subject_id, false);
+peak_counts(subject_id);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Regular analysis pick best of 9 pipelines
+% Regular analysis pick best of 6 pipelines
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%{
 analysis_id = sprintf('%sa', super_analysis_id);
 label_ecg_peaks_wrapper(analysis_id, subject_id);
-%}
 
+analysis_id = sprintf('%sb', super_analysis_id);
+label_ecg_peaks_wrapper(analysis_id, subject_id, 'interintra');
+
+%{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Perf as a function of k-fold cross validation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,7 +103,7 @@ mul_validate_errors = {};
 for m = 1:k_fold
 	dispf('>>>>>>>> fold %d <<<<<<<\n', m);
 	[mul_confusion_mat{m}, matching_confusion_mat{m}, crf_confusion_mat{m},...
-		crf_validate_errors{m}, mul_validate_errors{m}] = label_ecg_peaks_wrapper(analysis_id, subject_id, 3);
+		crf_validate_errors{m}, mul_validate_errors{m}] = label_ecg_peaks_wrapper(analysis_id, subject_id, '', 3);
 end
 results = struct();
 results.mul_confusion_mat = mul_confusion_mat;
@@ -109,10 +112,11 @@ results.crf_confusion_mat = crf_confusion_mat;
 results.crf_validate_errors = crf_validate_errors;
 results.mul_validate_errors = mul_validate_errors;
 results.subject_id = subject_id;
-results.k_fold = k_fold;
+gresults.k_fold = k_fold;
 save(sprintf('%s/sparse_coding/%s/%s_results.mat', plot_dir, analysis_id, analysis_id), '-struct', 'results');
 
 general_wrapper_plots(4, analysis_id);
+%}
 
 %=============================================================================================================
 %=============================================================================================================

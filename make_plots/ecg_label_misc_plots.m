@@ -113,7 +113,7 @@ nMatrices = length(varargin(offset+1:end));
 
 label_str1 = {'P', 'Q', 'R', 'S', 'T', 'U'};
 label_str2 = {'P', 'Q', 'R', 'S', 'T', 'Upq', 'Ust', 'Utp'};
-label_str3 = {'P', 'Q', 'R', 'S', 'T', 'Ui', 'Ua'};
+label_str3 = {'P', 'Q', 'R', 'S', 'T', 'Uw', 'Ua'};
 label_str4 = {'P', 'QRS', 'T', 'U'};
 
 font_size = get_project_settings('font_size');
